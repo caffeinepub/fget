@@ -4,10 +4,12 @@ import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import List "mo:core/List";
 import Map "mo:core/Map";
-import Nat "mo:core/Nat";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Text "mo:core/Text";
+import Nat "mo:core/Nat";
+
+
 
 actor {
   let storage = Storage.new();
@@ -19,8 +21,9 @@ actor {
   let userProfiles = Map.empty<Principal, UserProfile>();
   var frontendCanisterId : Text = "";
   var backendCanisterId : Text = "";
+  var firstAdmin : ?Principal = null;
 
-  let appVersion = "0.2.67";
+  let appVersion = "0.1.60";
 
   type FileMetadata = {
     id : Text;
@@ -54,18 +57,6 @@ actor {
     #folder : FolderMetadata;
   };
 
-  public type SearchResult = {
-    name : Text;
-    fullPath : Text;
-    isFolder : Bool;
-    id : Text;
-  };
-
-  public type FolderSearchResults = {
-    folders : [FolderMetadata];
-    files : [FileMetadata];
-  };
-
   public type FileMove = {
     id : Text;
     newParentId : ?Text;
@@ -83,6 +74,10 @@ actor {
 
   public shared ({ caller }) func initializeAccessControl() : async () {
     AccessControl.initialize(accessControlState, caller);
+    switch (firstAdmin) {
+      case (null) { firstAdmin := ?caller };
+      case (?_) {};
+    };
   };
 
   // Approval Functions
@@ -201,12 +196,30 @@ actor {
     let result = List.empty<AdminInfo>();
     let seenPrincipals = Map.empty<Principal, Bool>();
 
+    // First, add the original admin if exists
+    switch (firstAdmin) {
+      case (?adminPrincipal) {
+        let profile = userProfiles.get(adminPrincipal);
+        let username = switch (profile) {
+          case (?p) { p.name };
+          case (null) { "Admin" };
+        };
+        result.add({
+          principal = adminPrincipal;
+          username;
+          role = #admin;
+        });
+        seenPrincipals.add(adminPrincipal, true);
+      };
+      case (null) {};
+    };
+
     // Get all approved users from the approval list
     let approvals = UserApproval.listApprovals(approvalState);
     for (approval in approvals.values()) {
       if (approval.status == #approved) {
         let userPrincipal = approval.principal;
-        // Skip if already added
+        // Skip if already added (e.g., the first admin)
         switch (seenPrincipals.get(userPrincipal)) {
           case (?_) { /* already added */ };
           case (null) {
@@ -273,6 +286,16 @@ actor {
       Runtime.trap("Cannot remove yourself");
     };
 
+    // Protect the first/original admin from deletion
+    switch (firstAdmin) {
+      case (?first) {
+        if (principal == first) {
+          Runtime.trap("Cannot remove the original admin");
+        };
+      };
+      case (null) {};
+    };
+
     // Fully reset member-specific identity state
     userProfiles.remove(principal);
     UserApproval.setApproval(approvalState, principal, #pending);
@@ -322,13 +345,6 @@ actor {
     };
   };
 
-  public query ({ caller }) func getFileMetadata(id : Text) : async ?FileMetadata {
-    if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can view file metadata");
-    };
-    files.get(id);
-  };
-
   public query ({ caller }) func searchFiles(searchTerm : Text) : async [FileMetadata] {
     if (getEffectiveRole(caller) == #guest) {
       Runtime.trap("Unauthorized: Only admins and approved users can search files");
@@ -342,68 +358,7 @@ actor {
     );
   };
 
-  public query ({ caller }) func searchSubtree(searchTerm : Text, startFolderId : ?Text) : async [FileSystemItem] {
-    if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can search folders");
-    };
-
-    let lowercaseTerm = searchTerm.toLower();
-    let matches = List.empty<FileSystemItem>();
-
-    func searchFolder(folderId : ?Text) {
-      for ((_, folder) in folders.entries()) {
-        switch (folder.parentId) {
-          case (?parent) {
-            if (parent ==? folderId) {
-              if (folder.name.toLower().contains(#text lowercaseTerm)) {
-                matches.add(#folder(folder));
-              };
-              // Always search subfolders recursively if parent matches
-              searchFolder(?folder.id);
-            };
-          };
-          case (null) {
-            if (folderId == null and folder.name.toLower().contains(#text lowercaseTerm)) {
-              matches.add(#folder(folder));
-              searchFolder(?folder.id);
-            };
-          };
-        };
-      };
-
-      for ((_, file) in files.entries()) {
-        switch (file.parentId) {
-          case (?parent) {
-            if (parent ==? folderId and file.name.toLower().contains(#text lowercaseTerm)) {
-              matches.add(#file(file));
-            };
-          };
-          case (null) {
-            if (folderId == null and file.name.toLower().contains(#text lowercaseTerm)) {
-              matches.add(#file(file));
-            };
-          };
-        };
-      };
-    };
-
-    searchFolder(startFolderId);
-    matches.toArray();
-  };
-
-  public query ({ caller }) func searchFolders(searchTerm : Text) : async [FolderMetadata] {
-    if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can search folders");
-    };
-
-    let lowercaseTerm = searchTerm.toLower();
-    folders.values().toArray().filter(
-      func(folder) {
-        folder.name.toLower().contains(#text lowercaseTerm);
-      }
-    );
-  };
-
+  // Folder Management
   public shared ({ caller }) func createFolder(name : Text, parentId : ?Text) : async Text {
     if (getEffectiveRole(caller) == #guest) {
       Runtime.trap("Unauthorized: Only admins and approved users can create folders");
@@ -561,3 +516,4 @@ actor {
     };
   };
 };
+

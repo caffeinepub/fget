@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Download, ChevronLeft, ChevronRight, Loader2, AlertCircle, Maximize2, Minimize2, File, FileText, Image as ImageIcon, Video as VideoIcon, Music, Archive } from 'lucide-react';
+import { X, Download, ChevronLeft, ChevronRight, Loader2, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
 import { Dialog, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { getFileExtension, getMimeType, isImage, isVideo, isAudio, isDocument, isText } from '../lib/fileTypes';
 import type { FileMetadata } from '../backend';
@@ -11,18 +10,18 @@ interface FilePreviewModalProps {
   file: FileMetadata | null;
   isOpen: boolean;
   onClose: () => void;
-  allFiles?: FileMetadata[];
-  currentFileIndex?: number;
-  onNavigateFile?: (index: number) => void;
+  allImages?: FileMetadata[];
+  currentImageIndex?: number;
+  onNavigate?: (index: number) => void;
 }
 
 export function FilePreviewModal({
   file,
   isOpen,
   onClose,
-  allFiles = [],
-  currentFileIndex = 0,
-  onNavigateFile,
+  allImages = [],
+  currentImageIndex = 0,
+  onNavigate,
 }: FilePreviewModalProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,9 +38,9 @@ export function FilePreviewModal({
   const isDocumentFile = isDocument(extension);
   const isTextFile = isText(extension);
 
-  const canNavigate = allFiles.length > 1;
-  const hasPrevious = canNavigate && currentFileIndex > 0;
-  const hasNext = canNavigate && currentFileIndex < allFiles.length - 1;
+  const canNavigate = isImageFile && allImages.length > 1;
+  const hasPrevious = canNavigate && currentImageIndex > 0;
+  const hasNext = canNavigate && currentImageIndex < allImages.length - 1;
 
   useEffect(() => {
     if (!file || !isOpen) {
@@ -147,14 +146,14 @@ export function FilePreviewModal({
   };
 
   const handlePrevious = () => {
-    if (hasPrevious && onNavigateFile) {
-      onNavigateFile(currentFileIndex - 1);
+    if (hasPrevious && onNavigate) {
+      onNavigate(currentImageIndex - 1);
     }
   };
 
   const handleNext = () => {
-    if (hasNext && onNavigateFile) {
-      onNavigateFile(currentFileIndex + 1);
+    if (hasNext && onNavigate) {
+      onNavigate(currentImageIndex + 1);
     }
   };
 
@@ -203,21 +202,11 @@ export function FilePreviewModal({
     }
   }, [isOpen, hasPrevious, hasNext]);
 
-  const getFileIcon = (fileName: string) => {
-    const ext = getFileExtension(fileName);
-    if (isImage(ext)) return <ImageIcon className="h-4 w-4" />;
-    if (isVideo(ext)) return <VideoIcon className="h-4 w-4" />;
-    if (isAudio(ext)) return <Music className="h-4 w-4" />;
-    if (isText(ext)) return <FileText className="h-4 w-4" />;
-    if (ext === 'zip' || ext === 'rar' || ext === '7z') return <Archive className="h-4 w-4" />;
-    return <File className="h-4 w-4" />;
-  };
-
   if (!file) return null;
 
   const viewerSizeClass = isMaximized 
     ? 'w-[95vw] h-[95vh]' 
-    : 'w-[90vw] max-w-6xl h-[85vh] sm:w-[85vw] sm:h-[80vh]';
+    : 'w-[90vw] max-w-5xl h-[85vh] sm:w-[85vw] sm:h-[80vh]';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -288,160 +277,127 @@ export function FilePreviewModal({
               </div>
             </div>
 
-            {/* Main Content Area with Sidebar */}
-            <div className="flex-1 flex overflow-hidden min-h-0">
-              {/* File List Sidebar */}
-              {canNavigate && (
-                <div className="w-48 sm:w-64 border-r bg-muted/30 flex-shrink-0 flex flex-col">
-                  <div className="px-3 py-2 border-b bg-background/50 flex-shrink-0">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Files ({allFiles.length})
-                    </p>
-                  </div>
-                  <ScrollArea className="flex-1">
-                    <div className="p-2 space-y-1">
-                      {allFiles.map((f, idx) => (
-                        <button
-                          key={f.id}
-                          onClick={() => onNavigateFile?.(idx)}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
-                            idx === currentFileIndex
-                              ? 'bg-primary text-primary-foreground'
-                              : 'hover:bg-muted'
-                          }`}
-                          title={f.name}
-                        >
-                          {getFileIcon(f.name)}
-                          <span className="truncate flex-1">{f.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </ScrollArea>
+            {/* Content */}
+            <div className="relative flex-1 flex items-center justify-center bg-muted/30 overflow-hidden">
+              {isLoading && (
+                <div className="flex flex-col items-center justify-center gap-3 p-4 sm:p-8">
+                  <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
+                  <p className="text-xs sm:text-sm text-muted-foreground">Loading preview...</p>
                 </div>
               )}
 
-              {/* Preview Content */}
-              <div className="relative flex-1 flex items-center justify-center bg-muted/30 overflow-hidden min-h-0">
-                {isLoading && (
-                  <div className="flex flex-col items-center justify-center gap-3 p-4 sm:p-8">
-                    <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
-                    <p className="text-xs sm:text-sm text-muted-foreground">Loading preview...</p>
-                  </div>
-                )}
+              {error && (
+                <div className="flex flex-col items-center justify-center gap-3 p-4 sm:p-8">
+                  <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-destructive" />
+                  <p className="text-xs sm:text-sm text-muted-foreground text-center">{error}</p>
+                  <Button onClick={handleDownload} variant="outline" className="gap-2" size="sm">
+                    <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                    Download file instead
+                  </Button>
+                </div>
+              )}
 
-                {error && (
-                  <div className="flex flex-col items-center justify-center gap-3 p-4 sm:p-8">
-                    <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-destructive" />
-                    <p className="text-xs sm:text-sm text-muted-foreground text-center">{error}</p>
-                    <Button onClick={handleDownload} variant="outline" className="gap-2" size="sm">
-                      <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                      Download file instead
+              {!isLoading && !error && (
+                <div className="w-full h-full overflow-auto">
+                  {/* Image Preview */}
+                  {isImageFile && blobUrl && (
+                    <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
+                      <img
+                        src={blobUrl}
+                        alt={file.name}
+                        className="max-w-full max-h-full object-contain"
+                        onError={() => setError('Failed to load image')}
+                      />
+                    </div>
+                  )}
+
+                  {/* Video Preview */}
+                  {isVideoFile && blobUrl && (
+                    <div className="w-full h-full flex items-center justify-center p-2 sm:p-4">
+                      <video
+                        src={blobUrl}
+                        controls
+                        className="max-w-full max-h-full"
+                        onError={() => setError('Failed to load video')}
+                      >
+                        Your browser does not support video playback.
+                      </video>
+                    </div>
+                  )}
+
+                  {/* Audio Preview */}
+                  {isAudioFile && blobUrl && (
+                    <div className="w-full h-full flex items-center justify-center p-4 sm:p-8">
+                      <audio
+                        src={blobUrl}
+                        controls
+                        className="w-full max-w-2xl"
+                        onError={() => setError('Failed to load audio')}
+                      >
+                        Your browser does not support audio playback.
+                      </audio>
+                    </div>
+                  )}
+
+                  {/* Document Preview */}
+                  {isDocumentFile && blobUrl && (
+                    <div className="w-full h-full">
+                      <iframe
+                        src={blobUrl}
+                        className="w-full h-full border-0"
+                        title={file.name}
+                        onError={() => {
+                          setError('Document preview not supported in your browser');
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Text Preview */}
+                  {isTextFile && textContent !== null && (
+                    <div className="w-full h-full overflow-auto p-3 sm:p-6">
+                      <pre className="text-xs sm:text-sm font-mono whitespace-pre-wrap break-words bg-background/50 p-3 sm:p-4 rounded-lg border">
+                        {textContent}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Navigation Arrows for Images */}
+              {canNavigate && !isLoading && !error && (
+                <>
+                  {hasPrevious && (
+                    <Button
+                      onClick={handlePrevious}
+                      size="icon"
+                      variant="secondary"
+                      className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg"
+                      title="Previous (←)"
+                    >
+                      <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                     </Button>
-                  </div>
-                )}
-
-                {!isLoading && !error && (
-                  <div className="w-full h-full flex flex-col min-h-0">
-                    {/* Image Preview */}
-                    {isImageFile && blobUrl && (
-                      <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4 overflow-auto">
-                        <img
-                          src={blobUrl}
-                          alt={file.name}
-                          className="max-w-full max-h-full object-contain"
-                          onError={() => setError('Failed to load image')}
-                        />
-                      </div>
-                    )}
-
-                    {/* Video Preview */}
-                    {isVideoFile && blobUrl && (
-                      <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 overflow-auto">
-                        <video
-                          src={blobUrl}
-                          controls
-                          className="max-w-full max-h-full"
-                          onError={() => setError('Failed to load video')}
-                        >
-                          Your browser does not support video playback.
-                        </video>
-                      </div>
-                    )}
-
-                    {/* Audio Preview */}
-                    {isAudioFile && blobUrl && (
-                      <div className="w-full h-full flex items-center justify-center p-4 sm:p-8 overflow-auto">
-                        <audio
-                          src={blobUrl}
-                          controls
-                          className="w-full max-w-2xl"
-                          onError={() => setError('Failed to load audio')}
-                        >
-                          Your browser does not support audio playback.
-                        </audio>
-                      </div>
-                    )}
-
-                    {/* Document Preview */}
-                    {isDocumentFile && blobUrl && (
-                      <div className="w-full h-full overflow-auto">
-                        <iframe
-                          src={blobUrl}
-                          className="w-full h-full border-0"
-                          title={file.name}
-                          onError={() => {
-                            setError('Document preview not supported in your browser');
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Text Preview with horizontal and vertical scrolling */}
-                    {isTextFile && textContent !== null && (
-                      <div className="w-full h-full overflow-auto p-3 sm:p-6">
-                        <pre className="text-xs sm:text-sm font-mono whitespace-pre bg-background/50 p-3 sm:p-4 rounded-lg border overflow-x-auto">
-                          {textContent}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Navigation Arrows */}
-                {canNavigate && !isLoading && !error && (
-                  <>
-                    {hasPrevious && (
-                      <Button
-                        onClick={handlePrevious}
-                        size="icon"
-                        variant="secondary"
-                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg z-10"
-                        title="Previous (←)"
-                      >
-                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    )}
-                    {hasNext && (
-                      <Button
-                        onClick={handleNext}
-                        size="icon"
-                        variant="secondary"
-                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg z-10"
-                        title="Next (→)"
-                      >
-                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
+                  )}
+                  {hasNext && (
+                    <Button
+                      onClick={handleNext}
+                      size="icon"
+                      variant="secondary"
+                      className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg"
+                      title="Next (→)"
+                    >
+                      <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Footer with navigation info */}
             {canNavigate && (
               <div className="flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 border-t bg-background/95 backdrop-blur flex-shrink-0">
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  File {currentFileIndex + 1} of {allFiles.length}
+                  Image {currentImageIndex + 1} of {allImages.length}
                 </p>
               </div>
             )}

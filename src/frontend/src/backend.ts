@@ -167,7 +167,6 @@ export interface backendInterface {
     getAllFolders(): Promise<Array<FolderMetadata>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getFile(id: string): Promise<FileMetadata | null>;
-    getFileMetadata(id: string): Promise<FileMetadata | null>;
     getFiles(): Promise<Array<FileMetadata>>;
     getFolder(id: string): Promise<FolderMetadata | null>;
     getFolderContents(folderId: string | null): Promise<Array<FileSystemItem>>;
@@ -186,8 +185,6 @@ export interface backendInterface {
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchFiles(searchTerm: string): Promise<Array<FileMetadata>>;
-    searchFolders(searchTerm: string): Promise<Array<FolderMetadata>>;
-    searchSubtree(searchTerm: string, startFolderId: string | null): Promise<Array<FileSystemItem>>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setBackendCanisterId(canisterId: string): Promise<void>;
     setFrontendCanisterId(canisterId: string): Promise<void>;
@@ -388,20 +385,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getFile(arg0);
-            return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getFileMetadata(arg0: string): Promise<FileMetadata | null> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getFileMetadata(arg0);
-                return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getFileMetadata(arg0);
             return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
         }
     }
@@ -655,34 +638,6 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.searchFiles(arg0);
             return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async searchFolders(arg0: string): Promise<Array<FolderMetadata>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.searchFolders(arg0);
-                return from_candid_vec_n12(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.searchFolders(arg0);
-            return from_candid_vec_n12(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async searchSubtree(arg0: string, arg1: string | null): Promise<Array<FileSystemItem>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.searchSubtree(arg0, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg1));
-                return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.searchSubtree(arg0, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg1));
-            return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
         }
     }
     async setApproval(arg0: Principal, arg1: ApprovalStatus): Promise<void> {

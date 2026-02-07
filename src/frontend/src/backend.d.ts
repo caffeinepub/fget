@@ -75,7 +75,6 @@ export interface backendInterface {
     getAllFolders(): Promise<Array<FolderMetadata>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getFile(id: string): Promise<FileMetadata | null>;
-    getFileMetadata(id: string): Promise<FileMetadata | null>;
     getFiles(): Promise<Array<FileMetadata>>;
     getFolder(id: string): Promise<FolderMetadata | null>;
     getFolderContents(folderId: string | null): Promise<Array<FileSystemItem>>;
@@ -94,8 +93,6 @@ export interface backendInterface {
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchFiles(searchTerm: string): Promise<Array<FileMetadata>>;
-    searchFolders(searchTerm: string): Promise<Array<FolderMetadata>>;
-    searchSubtree(searchTerm: string, startFolderId: string | null): Promise<Array<FileSystemItem>>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setBackendCanisterId(canisterId: string): Promise<void>;
     setFrontendCanisterId(canisterId: string): Promise<void>;

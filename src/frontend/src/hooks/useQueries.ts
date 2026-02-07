@@ -3,7 +3,6 @@ import { useActor } from './useActor';
 import { ExternalBlob } from '../backend';
 import type { UserProfile, FileMetadata, AdminInfo, StorageStats, FileSystemItem, FolderMetadata, FileMove, UserRole } from '../backend';
 import { Principal } from '@icp-sdk/core/principal';
-import { normalizeSearchTerm } from '../lib/search';
 
 export function useGetCallerUserRole() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -137,26 +136,6 @@ export function useSearchFiles(searchTerm: string) {
   });
 }
 
-export function useSearchSubtree(searchTerm: string, startFolderId: string | null) {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
-
-  // Normalize the search term for consistent matching
-  const normalizedTerm = normalizeSearchTerm(searchTerm);
-  const hasSearchTerm = normalizedTerm.length > 0;
-
-  return useQuery<FileSystemItem[]>({
-    queryKey: ['subtreeSearch', startFolderId, normalizedTerm],
-    queryFn: async () => {
-      if (!actor) return [];
-      if (!hasSearchTerm) return [];
-      return actor.searchSubtree(normalizedTerm, startFolderId);
-    },
-    enabled: !!actor && !actorFetching && !accessLoading && hasAccess && hasSearchTerm,
-    retry: false,
-  });
-}
-
 export function useAddFile() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -181,7 +160,6 @@ export function useAddFile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
       queryClient.invalidateQueries({ queryKey: ['storageStats'] });
     },
   });
@@ -199,7 +177,6 @@ export function useDeleteFile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
       queryClient.invalidateQueries({ queryKey: ['storageStats'] });
     },
   });
@@ -304,7 +281,6 @@ export function useCreateFolder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
     },
   });
 }
@@ -321,7 +297,6 @@ export function useDeleteFolder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
     },
   });
 }
@@ -369,7 +344,6 @@ export function useMoveItem() {
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
       queryClient.invalidateQueries({ queryKey: ['files'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
     },
   });
 }
