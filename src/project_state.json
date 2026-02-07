@@ -1,0 +1,359 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 46,
+  "summary": "fget is an Internet Computer (ICP) canister-based personal file storage and sharing web app. Users authenticate via Internet Identity, create a unique username profile, and (when authorized) can upload/download files, organize them into folders, search within a folder, and move/delete items. Admins can view storage statistics, manage member roles, and maintain system configuration such as the frontend canister ID. The backend is written in Motoko with modular access-control and a separate user-approval layer, plus a blob-storage mixin that integrates with a lower-level storage/blob lifecycle API (including gateway authorization updates, dead-blob pruning, and cycles refill to a “cashier” canister).",
+  "existing_features": [
+    {
+      "id": "IF-1",
+      "title": "Internet Identity authentication (login/logout) with persisted identity",
+      "synonyms": [
+        "II auth",
+        "Internet Identity provider"
+      ],
+      "description": "Provides an InternetIdentityProvider wrapping @dfinity/auth-client to initialize/load stored delegations, perform login with configurable identityProvider, and logout/clear identity. Exposes status flags (initializing/logging-in/success/error) to the app.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-2",
+      "title": "Backend actor creation with identity and access-control initialization",
+      "synonyms": [
+        "Actor hook",
+        "Authenticated canister client"
+      ],
+      "description": "useActor creates an anonymous or authenticated backend actor via createActorWithConfig; when authenticated it calls backend.initializeAccessControl() and invalidates/refetches all non-actor React Query caches on identity changes.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-3",
+      "title": "Role-based access control (admin/user/guest) enforced in backend and frontend",
+      "synonyms": [
+        "RBAC",
+        "Permissions"
+      ],
+      "description": "Motoko AccessControl assigns the first registered principal as admin and subsequent principals as users; backend methods trap on insufficient permissions. Frontend conditionally enables queries and conditionally renders admin/user UI based on getCallerUserRole().",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-4",
+      "title": "User profile creation with unique username validation",
+      "synonyms": [
+        "Profile setup",
+        "Username registration"
+      ],
+      "description": "Users create a profile containing a username; frontend debounces uniqueness checks via isUsernameUnique and submits saveCallerUserProfile. Backend trims/validates non-empty usernames and rejects duplicates.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-5",
+      "title": "Access denied / pending approval screen with Principal ID copy",
+      "synonyms": [
+        "Pending approval UI",
+        "No access screen"
+      ],
+      "description": "Authenticated users without access are shown an AccessDenied view displaying their username and shortened Principal ID with copy-to-clipboard support and guidance to contact an admin.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-6",
+      "title": "File listing, download, and shareable direct link copying",
+      "synonyms": [
+        "File browser",
+        "Download files"
+      ],
+      "description": "FileList renders files with type-based icons, formatted sizes, and actions to download (fetch bytes from ExternalBlob and create a browser Blob URL) or copy a shareable direct URL via blob.getDirectURL().",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-7",
+      "title": "File upload with progress tracking and drag-and-drop (including folder drops)",
+      "synonyms": [
+        "Upload files",
+        "Drag-and-drop upload"
+      ],
+      "description": "FileList supports file selection, folder selection (webkitdirectory), and drag-and-drop. Uploads are performed sequentially; each file is converted to ExternalBlob.fromBytes(...).withUploadProgress(...) and sent to backend.addFile() with optional parentId.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-8",
+      "title": "Folder management: create, navigate with breadcrumbs, list contents",
+      "synonyms": [
+        "Directories",
+        "Folder navigation"
+      ],
+      "description": "Backend supports createFolder and getFolderContents(parentId). Frontend maintains currentFolderId and a breadcrumb path, renders mixed FileSystemItem lists, and allows navigation into folders and back via the breadcrumb trail.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-9",
+      "title": "Move files and folders between folders",
+      "synonyms": [
+        "Relocate items",
+        "Change parent folder"
+      ],
+      "description": "Backend moveItem/moveItems update an item’s parentId. Frontend provides Move dialogs for files/folders with destination selection (root or another folder) and invalidates folder/file queries on success.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-10",
+      "title": "Delete files and delete-empty-folders with confirmation dialogs",
+      "synonyms": [
+        "Remove items",
+        "Trash"
+      ],
+      "description": "Backend deleteFile removes file metadata; deleteFolder validates emptiness via hasChildItems before removal. Frontend shows confirmation dialogs and displays contextual errors (e.g., folder must be empty).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-11",
+      "title": "Search/filter items in current folder (client-side) and backend file search API",
+      "synonyms": [
+        "Search",
+        "Filter"
+      ],
+      "description": "Frontend FileList performs instant local filtering over current folder contents by name. Backend also implements searchFiles(searchTerm) over all files (exposed via hooks), though FileList currently relies on local filtering for folder contents.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-12",
+      "title": "Admin manage panel: members list, role assignment, member removal, and storage statistics",
+      "synonyms": [
+        "Admin console",
+        "Manage dialog"
+      ],
+      "description": "Admins can open ManagePanel to view total storage used (sum of file sizes), list approved members with roles, copy principal IDs, assign roles to a principal, and remove a member (with frontend logic to logout the current user if removed).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-13",
+      "title": "Canister ID discovery and backend configuration of frontend canister ID",
+      "synonyms": [
+        "Canister ID resolution",
+        "Environment detection"
+      ],
+      "description": "Frontend resolves backend/frontend canister IDs from multiple sources (Vite env, window, URL params, hostname, process.env). When a user with access logs in, the app attempts to set the frontend canister ID in the backend (admin-only endpoint).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-14",
+      "title": "Blob storage maintenance mixin (gateway authorization, dead-blob pruning, cycles refill)",
+      "synonyms": [
+        "Storage mixin",
+        "Caffeine storage integration"
+      ],
+      "description": "backend/blob-storage exposes methods to update authorized gateway principals from a cashier canister, check blob liveness, list dead blobs to delete, confirm deletion (pruning + GC trigger), and refill cashier with available cycles. Included into the main actor via include MixinStorage(storage).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-15",
+      "title": "Theming and UI framework integration",
+      "synonyms": [
+        "Dark mode",
+        "Tailwind theme"
+      ],
+      "description": "Uses TailwindCSS with OKLCH-based design tokens and next-themes for system/light/dark switching. UI is composed using shadcn-style components (Card, Button, Dialog, AlertDialog, etc.) and lucide icons.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-16",
+      "title": "Canister state migration stub for user profiles",
+      "synonyms": [
+        "Upgrade migration",
+        "Data migration"
+      ],
+      "description": "A migration module maps an old actor schema to a new one, currently preserving userProfiles across upgrades (other state like approvals/files/folders is not migrated here).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-17",
+      "title": "Correct member deletion rules (only prevents deleting the first/original admin)",
+      "synonyms": [
+        "Member removal fix",
+        "Admin deletion constraint"
+      ],
+      "description": "Backend/admin member removal now correctly allows deleting newly added admins/users while preventing deletion of the initial/original admin account (instead of blocking removal for any approved principal).",
+      "reqIds": [
+        "AR-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-18",
+      "title": "Full member-state cleanup on deletion (roles/approvals/profile reset)",
+      "synonyms": [
+        "Hard delete member",
+        "Reset user state"
+      ],
+      "description": "When an admin deletes a member, the backend removes or resets all related state (approval status, role assignments, user profile, and any associated entries) so the next login is treated as a brand-new user.",
+      "reqIds": [
+        "AR-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-20",
+      "title": "Completed new-user welcome / pending-approval flow with Principal ID guidance",
+      "synonyms": [
+        "Welcome screen",
+        "Approval pending UI",
+        "Request approval flow"
+      ],
+      "description": "New/unapproved users are routed to a dedicated welcome/pending-approval screen that shows their Principal ID (with copy support) and clear instructions to contact an admin. Frontend now invokes the backend approval workflow so pending state is correctly reflected.",
+      "reqIds": [
+        "AR-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-22",
+      "title": "Strict unapproved-user gating (backend authorization + frontend query gating) to prevent file-loading errors",
+      "synonyms": [
+        "AR-6 fix",
+        "Pending approval hard gate",
+        "Unapproved access prevention"
+      ],
+      "description": "Backend now blocks unapproved/pending users from accessing file/folder listing and management APIs (while keeping public direct links accessible as intended). Frontend consistently routes pending users to the pending-approval screen and disables any file-loading queries/mutations for unapproved accounts, preventing the UI from flipping to 'Error loading files' after initially showing the pending state.",
+      "reqIds": [
+        "AR-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-23",
+      "title": "Fixed admin member management (member list populates; approvals grant access)",
+      "synonyms": [
+        "AR-7 fix",
+        "Members list fix",
+        "Approval access fix"
+      ],
+      "description": "Admin \"Current members\" list now correctly populates (including the initial/original admin). Adding/approving a member now takes effect so the approved user is granted access (no longer stuck on the pending-approval screen after refresh).",
+      "reqIds": [
+        "AR-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-24",
+      "title": "Clickable filenames with in-app preview modal for supported file types; fallback to download",
+      "synonyms": [
+        "File preview",
+        "AR-8",
+        "Preview modal",
+        "Open file on click"
+      ],
+      "description": "File list filenames are now interactive. Clicking a file opens a FilePreviewModal that can display/play supported formats (e.g., images, video, and text) directly in the UI; unsupported types fall back to triggering a download.",
+      "reqIds": [
+        "AR-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-25",
+      "title": "UI version updated to 0.1.60 (including selected element)",
+      "synonyms": [
+        "Version label bump",
+        "AR-9"
+      ],
+      "description": "The displayed app version label in the UI was updated to 0.1.60, including where the selected element displays the version.",
+      "reqIds": [
+        "AR-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-in-app-file-preview-ui-the-modal-opened-from-clicking-a-filename-into-a-more-professional-player-style-viewer-that-is-mobile-friendly-and-supports-all-currently-previewable-file-types-images-text-json-audio-video-and-documents-the-viewer-must-open-at-a-noticeably-larger-default-size-than-the-current-modal-and-adapt-responsively-to-screen-size-including-small-mobile-screens",
+      "title": "Redesign the in-app file preview UI (the modal opened from clicking a filename) into a more professional, player-style viewer that is mobile-friendly and supports all currently previewable file types (images, text, JSON, audio, video, and documents). The viewer must open at a noticeably larger default size than the current modal and adapt responsively to screen size (including small mobile screens).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-fullscreen-capability-to-the-file-preview-viewer-fullscreen-behavior-must-work-well-on-both-desktop-and-mobile-choose-the-best-approach-and-provide-an-obvious-ui-control-in-the-viewer-header-for-entering-exiting-fullscreen",
+      "title": "Add fullscreen capability to the file preview viewer. Fullscreen behavior must work well on both desktop and mobile (choose the best approach), and provide an obvious UI control in the viewer header for entering/exiting fullscreen.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-the-file-preview-viewer-resizable-in-a-user-friendly-way-that-works-across-desktop-and-mobile-the-implementation-choice-is-up-to-the-developer-but-resizing-must-be-possible-or-effectively-achieved-via-maximize-fullscreen-and-responsive-sizing-without-breaking-preview-rendering-for-any-supported-file-type",
+      "title": "Make the file preview viewer resizable in a user-friendly way that works across desktop and mobile. The implementation choice is up to the developer, but resizing must be possible (or effectively achieved via maximize/fullscreen and responsive sizing) without breaking preview rendering for any supported file type.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-duplicate-close-x-controls-in-the-file-preview-viewer-so-only-one-close-control-is-shown-and-ensure-the-close-control-is-consistently-placed-and-visually-aligned-with-the-rest-of-the-viewer-header-actions",
+      "title": "Remove the duplicate close (X) controls in the file preview viewer so only one close control is shown, and ensure the close control is consistently placed and visually aligned with the rest of the viewer header actions.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-app-version-shown-in-the-manage-section-from-0-1-60-to-0-1-61-and-ensure-the-manage-ui-reads-the-version-from-a-single-source-of-truth-not-a-hardcoded-string-in-the-jsx-to-prevent-future-out-of-sync-version-labels",
+      "title": "Update the app version shown in the Manage section from 0.1.60 to 0.1.61, and ensure the Manage UI reads the version from a single source of truth (not a hardcoded string in the JSX) to prevent future out-of-sync version labels.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-10",
+      "summary": "Improve in-app file viewer/preview into a more professional resizable player with fullscreen support; address small non-resizable window and duplicate close icons",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Update displayed app version in Manage section to 0.1.61",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "architectural_notes": [
+    "Frontend uses React + TanStack React Query for all backend interactions (queries/mutations) and cache invalidation.",
+    "Authentication is encapsulated in an InternetIdentityProvider context using @dfinity/auth-client; identity persistence is loaded on mount and supports explicit login/logout.",
+    "Backend actor creation is centralized in a useActor hook; authenticated actors call initializeAccessControl() to ensure roles are assigned.",
+    "Role-based gating is applied both server-side (traps on unauthorized calls) and client-side (conditional query enabling and UI rendering).",
+    "File organization is modeled as a simple hierarchical filesystem: files/folders carry an optional parentId; folder contents are computed by filtering maps by parentId.",
+    "Admin UI is implemented as a modal Manage panel that composes multiple queries (members, storage stats) and mutations (assign role, remove member).",
+    "Motoko backend is modularized: authorization/access-control.mo and user-approval/approval.mo are separate modules used by main.mo.",
+    "Blob storage capabilities are mixed into the backend via blob-storage/Mixin.mo, wrapping a transient Storage.State and exposing internal maintenance endpoints.",
+    "TailwindCSS theme is customized with OKLCH variables and next-themes for dark/light switching; UI uses shadcn-style components and lucide icons.",
+    "A migration entrypoint (backend/migration.mo) exists to map old canister state to a new schema (currently preserving userProfiles)."
+  ],
+  "known_issues": [
+    "Folder move destination filtering in FileList only excludes the current folder and its direct children (parentId !== folder.id); it does not exclude deeper descendants, so cycles may be possible.",
+    "Upload progress in FileList is tracked as a single percentage shared across potentially multiple sequential uploads; UI can be confusing for multi-file uploads.",
+    "Backend data structures (files/folders/userProfiles) are kept in in-memory Maps; long-term persistence and upgrade-stable behavior is unclear beyond the limited migration stub.",
+    "No pagination/limits for listing files/folders/members; large datasets may impact canister/query performance.",
+    "Directory uploads rely on non-standard webkitdirectory/webkitGetAsEntry APIs, which may not work uniformly across browsers.",
+    "File preview modal appears too small and is not resizable; UI shows duplicate close (X) controls in the top-right.",
+    "App version label has been inconsistent across screens (especially Manage section) due to multiple sources/hardcoded value; requires single source of truth."
+  ],
+  "isFixRequest": true,
+  "gameProjectType": "none",
+  "projectName": "fget",
+  "clarification_mode": "pro",
+  "clarification_rounds": 0
+}
