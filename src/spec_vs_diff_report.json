@@ -1,49 +1,54 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-04T21:04:35.163Z",
-  "summary": "Diff clearly implements centralized app version constant (0.1.61) and imports it into ManagePanel. FilePreviewModal has new state and event handling for fullscreen/maximize, but the diff is truncated before showing the actual rendered viewer layout, header controls, resizing behavior, or close/Escape handling—so REQ-1..REQ-4 cannot be confirmed as implemented from the provided evidence.",
+  "generatedAt": "2026-02-07T13:02:05.217Z",
+  "summary": "Diff adds frontend utilities to normalize search terms and updates FileList/useQueries to use normalized terms, but the provided diff summary is too truncated to confirm the backend search implementation and all UI acceptance criteria behaviors (especially actual case-insensitive substring matching performed by the search results and restoring normal folder listing when clearing the term).",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Redesign the in-app file preview UI into a more professional, player-style viewer that is mobile-friendly, opens noticeably larger by default, is responsive, and continues to support all currently previewable file types without regressions.",
-      "reason": "The FilePreviewModal diff is truncated before any JSX/layout changes are shown. While file-type detection and blob/text loading logic is present, there is no visible evidence of a larger, player-style responsive viewer layout or confirmation that all preview renderers (image/video/audio/document/text/JSON) are still rendered exactly as before.",
+      "requirement": "Search returns matching files/folders using case-insensitive substring matching (e.g., \"cs\" matches \"cs.json\").",
+      "reason": "The diff shows frontend normalization helpers, but does not provide evidence that the backend search endpoint (or the hook call path) actually applies case-insensitive substring matching to file/folder names. backend/main.mo is truncated before any search logic is shown.",
       "evidence": [
-        "frontend/src/components/FilePreviewModal.tsx (truncated)"
+        "backend/main.mo (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "Add fullscreen capability with a visible toggle control in the viewer header; entering fullscreen uses maximum viewport and exiting restores prior size/state.",
-      "reason": "There is evidence of fullscreen state and a fullscreenchange listener, but the diff is truncated before the UI is shown (no confirmed header toggle control, no confirmed requestFullscreen/exitFullscreen wiring, no confirmed restore behavior).",
+      "id": "REQ-1",
+      "requirement": "When the search term is cleared, the UI returns to showing the normal folder contents list.",
+      "reason": "FileList introduces normalizedSearchTerm/isSearching, but the diff is truncated before showing the rendering logic that conditionally switches between search results and normal folder contents when the term becomes empty.",
       "evidence": [
-        "frontend/src/components/FilePreviewModal.tsx (truncated)"
+        "frontend/src/components/FileList.tsx (truncated)"
       ]
     },
     {
-      "id": "REQ-3",
-      "requirement": "Make the viewer resizable in a user-friendly way across desktop and mobile (resize or maximize/restore + fullscreen), with content reflow and mobile-friendly layout.",
-      "reason": "State and icons for maximize/minimize are present, but the diff is truncated before showing any resize/maximize controls, sizing styles, or responsive/mobile layout implementation, so resize behavior and content reflow cannot be verified.",
+      "id": "REQ-1",
+      "requirement": "Search works while inside a subfolder (uses the current folder as the start point for the search).",
+      "reason": "FileList passes currentFolderId into useSearchSubtree, but the hook implementation is truncated and backend search behavior is not shown, so it is not verifiable that the backend searches relative to the current folder subtree rather than globally.",
       "evidence": [
-        "frontend/src/components/FilePreviewModal.tsx (truncated)"
+        "frontend/src/components/FileList.tsx (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)",
+        "backend/main.mo (truncated)"
       ]
     },
     {
-      "id": "REQ-4",
-      "requirement": "Remove duplicate close (X) controls so only one close control is shown, aligned in the viewer header; closing works via close button and Escape key (desktop) without duplication.",
-      "reason": "The diff is truncated before the modal header JSX is shown; there is no visible evidence that duplicate close controls were removed or that Escape key handling is implemented/maintained without duplication.",
+      "id": "REQ-1",
+      "requirement": "No console errors are emitted during searching, and the search request is actually executed via the existing search query hook.",
+      "reason": "A call to useSearchSubtree(searchTerm, currentFolderId) is present, but the diff is truncated so it is not possible to confirm there are no console errors during search interactions and that the hook definitely issues a backend request (e.g., enabled conditions, queryFn behavior).",
       "evidence": [
-        "frontend/src/components/FilePreviewModal.tsx (truncated)"
+        "frontend/src/components/FileList.tsx (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)"
       ]
     }
   ],
   "hallucinated_features": [],
-  "confidence": 0.62,
+  "confidence": 0.48,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/FilePreviewModal.tsx",
-    "frontend/src/components/ManagePanel.tsx",
-    "frontend/src/lib/appVersion.ts",
+    "frontend/src/components/FileList.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/search.ts",
     "project_state.json"
   ]
 }

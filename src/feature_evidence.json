@@ -2,10 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-redesign-the-in-app-file-preview-ui-the-modal-opened-from-clicking-a-filename-into-a-more-professional-player-style-viewer-that-is-mobile-friendly-and-supports-all-currently-previewable-file-types-images-text-json-audio-video-and-documents-the-viewer-must-open-at-a-noticeably-larger-default-size-than-the-current-modal-and-adapt-responsively-to-screen-size-including-small-mobile-screens",
-      "featureTitle": "Redesign the in-app file preview UI (the modal opened from clicking a filename) into a more professional, player-style viewer that is mobile-friendly and supports all currently previewable file types (images, text, JSON, audio, video, and documents). The viewer must open at a noticeably larger default size than the current modal and adapt responsively to screen size (including small mobile screens).",
+      "featureId": "feature-fix-the-file-search-feature-so-typing-into-the-file-manager-search-bar-returns-matching-files-folders-using-case-insensitive-substring-matching-instead-of-returning-no-results",
+      "featureTitle": "Fix the file search feature so typing into the File Manager search bar returns matching files/folders using case-insensitive substring matching, instead of returning no results.",
       "files": [
-        "frontend/src/components/FilePreviewModal.tsx"
+        "frontend/src/components/FileList.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/lib/search.ts"
       ],
       "components": [
         "blob-storage@3.0.0",
@@ -19,91 +21,6 @@
       ],
       "testIds": [
         "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-fullscreen-capability-to-the-file-preview-viewer-fullscreen-behavior-must-work-well-on-both-desktop-and-mobile-choose-the-best-approach-and-provide-an-obvious-ui-control-in-the-viewer-header-for-entering-exiting-fullscreen",
-      "featureTitle": "Add fullscreen capability to the file preview viewer. Fullscreen behavior must work well on both desktop and mobile (choose the best approach), and provide an obvious UI control in the viewer header for entering/exiting fullscreen.",
-      "files": [
-        "frontend/src/components/FilePreviewModal.tsx"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-make-the-file-preview-viewer-resizable-in-a-user-friendly-way-that-works-across-desktop-and-mobile-the-implementation-choice-is-up-to-the-developer-but-resizing-must-be-possible-or-effectively-achieved-via-maximize-fullscreen-and-responsive-sizing-without-breaking-preview-rendering-for-any-supported-file-type",
-      "featureTitle": "Make the file preview viewer resizable in a user-friendly way that works across desktop and mobile. The implementation choice is up to the developer, but resizing must be possible (or effectively achieved via maximize/fullscreen and responsive sizing) without breaking preview rendering for any supported file type.",
-      "files": [
-        "frontend/src/components/FilePreviewModal.tsx"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-remove-the-duplicate-close-x-controls-in-the-file-preview-viewer-so-only-one-close-control-is-shown-and-ensure-the-close-control-is-consistently-placed-and-visually-aligned-with-the-rest-of-the-viewer-header-actions",
-      "featureTitle": "Remove the duplicate close (X) controls in the file preview viewer so only one close control is shown, and ensure the close control is consistently placed and visually aligned with the rest of the viewer header actions.",
-      "files": [
-        "frontend/src/components/FilePreviewModal.tsx"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-app-version-shown-in-the-manage-section-from-0-1-60-to-0-1-61-and-ensure-the-manage-ui-reads-the-version-from-a-single-source-of-truth-not-a-hardcoded-string-in-the-jsx-to-prevent-future-out-of-sync-version-labels",
-      "featureTitle": "Update the app version shown in the Manage section from 0.1.60 to 0.1.61, and ensure the Manage UI reads the version from a single source of truth (not a hardcoded string in the JSX) to prevent future out-of-sync version labels.",
-      "files": [
-        "frontend/src/components/ManagePanel.tsx",
-        "frontend/src/lib/appVersion.ts"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
       ],
       "confidence": "high"
     }

@@ -1,10 +1,10 @@
-import { Download, File, FileText, Image, Video, Music, Archive, Link2, Check, Loader2, Trash2, Search, Folder, FolderPlus, MoveRight, ChevronRight, Upload, FolderUp } from 'lucide-react';
+import { Download, File, FileText, Image, Video, Music, Archive, Link2, Check, Loader2, Trash2, Search, Folder, FolderPlus, MoveRight, ChevronRight, Upload, FolderUp, Eye } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { useGetFolderContents, useDeleteFile, useDeleteFolder, useCreateFolder, useMoveItem, useGetAllFolders, useAddFile } from '../hooks/useQueries';
+import { useGetFolderContents, useDeleteFile, useDeleteFolder, useCreateFolder, useMoveItem, useGetAllFolders, useAddFile, useSearchSubtree } from '../hooks/useQueries';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useState, useMemo, useCallback, useRef } from 'react';
@@ -35,21 +35,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { FilePreviewModal } from './FilePreviewModal';
 import { getFileExtension, getMimeType, isPreviewable, isImage } from '../lib/fileTypes';
+import { normalizeSearchTerm } from '../lib/search';
 
 export function FileList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [folderPath, setFolderPath] = useState<Array<{ id: string | null; name: string }>>([{ id: null, name: 'Root' }]);
+  const [folderPath, setFolderPath] = useState<Array<{ id: string | null; name: string }>>([{ id: null, name: 'Drive' }]);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -57,53 +50,101 @@ export function FileList() {
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
   const [previewFile, setPreviewFile] = useState<FileMetadata | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [copiedFileId, setCopiedFileId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   
   const { data: items, isLoading, error } = useGetFolderContents(currentFolderId);
+  
+  // Normalize search term for consistent matching
+  const normalizedSearchTerm = normalizeSearchTerm(searchTerm);
+  const isSearching = normalizedSearchTerm.length > 0;
+  
+  const { data: searchResults, isLoading: searchLoading } = useSearchSubtree(searchTerm, currentFolderId);
   const { data: allFolders } = useGetAllFolders();
   const createFolder = useCreateFolder();
   const addFile = useAddFile();
 
-  // Filter items locally for instant feedback
-  const filteredItems = useMemo(() => {
-    if (!items) return [];
-    if (!searchTerm.trim()) return items;
+  // Build a map of folder ID to full path for search results
+  const folderPathMap = useMemo(() => {
+    if (!allFolders) return new Map<string, string>();
     
-    const lowerSearch = searchTerm.toLowerCase();
-    return items.filter(item => {
-      if (item.__kind__ === 'file') {
-        return item.file.name.toLowerCase().includes(lowerSearch);
-      } else {
-        return item.folder.name.toLowerCase().includes(lowerSearch);
+    const map = new Map<string, string>();
+    
+    // Helper to build path for a folder
+    const buildPath = (folderId: string): string => {
+      const folder = allFolders.find(f => f.id === folderId);
+      if (!folder) return '';
+      
+      if (!folder.parentId) {
+        return folder.name;
       }
+      
+      const parentPath = buildPath(folder.parentId);
+      return parentPath ? `${parentPath}/${folder.name}` : folder.name;
+    };
+    
+    allFolders.forEach(folder => {
+      map.set(folder.id, buildPath(folder.id));
     });
-  }, [items, searchTerm]);
+    
+    return map;
+  }, [allFolders]);
 
-  // Get all image files from current folder for gallery navigation
-  const imageFiles = useMemo(() => {
-    if (!filteredItems) return [];
-    return filteredItems
-      .filter((item): item is { __kind__: 'file'; file: FileMetadata } => 
-        item.__kind__ === 'file' && isImage(getFileExtension(item.file.name))
-      )
-      .map(item => item.file);
-  }, [filteredItems]);
+  const deleteFile = useDeleteFile();
+  const deleteFolder = useDeleteFolder();
+  const moveItem = useMoveItem();
 
-  const handleNavigateToFolder = (folderId: string, folderName: string) => {
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string; isFolder: boolean } | null>(null);
+  const [itemToMove, setItemToMove] = useState<{ id: string; name: string; isFolder: boolean } | null>(null);
+  const [moveDestination, setMoveDestination] = useState<string | null>(null);
+
+  const folders = useMemo(() => {
+    return items?.filter((item): item is { __kind__: 'folder'; folder: FolderMetadata } => 
+      item.__kind__ === 'folder'
+    ).map(item => item.folder) || [];
+  }, [items]);
+
+  const files = useMemo(() => {
+    return items?.filter((item): item is { __kind__: 'file'; file: FileMetadata } => 
+      item.__kind__ === 'file'
+    ).map(item => item.file) || [];
+  }, [items]);
+
+  // Get all previewable files in current folder for modal navigation
+  const previewableFiles = useMemo(() => {
+    return files.filter(file => isPreviewable(getFileExtension(file.name)));
+  }, [files]);
+
+  const handleNavigateToFolder = useCallback((folderId: string | null, folderName: string) => {
     setCurrentFolderId(folderId);
-    setFolderPath([...folderPath, { id: folderId, name: folderName }]);
+    
+    if (folderId === null) {
+      setFolderPath([{ id: null, name: 'Drive' }]);
+    } else {
+      const folder = allFolders?.find(f => f.id === folderId);
+      if (folder) {
+        const path: Array<{ id: string | null; name: string }> = [{ id: null, name: 'Drive' }];
+        
+        const buildPath = (f: FolderMetadata) => {
+          if (f.parentId) {
+            const parent = allFolders?.find(pf => pf.id === f.parentId);
+            if (parent) {
+              buildPath(parent);
+            }
+          }
+          path.push({ id: f.id, name: f.name });
+        };
+        
+        buildPath(folder);
+        setFolderPath(path);
+      }
+    }
+    
     setSearchTerm('');
-  };
-
-  const handleNavigateToPath = (index: number) => {
-    const newPath = folderPath.slice(0, index + 1);
-    setFolderPath(newPath);
-    setCurrentFolderId(newPath[newPath.length - 1].id);
-    setSearchTerm('');
-  };
+  }, [allFolders]);
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
@@ -112,12 +153,17 @@ export function FileList() {
     }
 
     try {
-      await createFolder.mutateAsync({ name: newFolderName, parentId: currentFolderId });
-      toast.success('Folder created', {
-        description: `${newFolderName} has been created`
+      await createFolder.mutateAsync({
+        name: newFolderName.trim(),
+        parentId: currentFolderId,
       });
-      setShowCreateFolder(false);
+      
+      toast.success('Folder created', {
+        description: `Created folder "${newFolderName}"`
+      });
+      
       setNewFolderName('');
+      setShowCreateFolder(false);
     } catch (error) {
       console.error('Create folder error:', error);
       toast.error('Failed to create folder', {
@@ -126,168 +172,144 @@ export function FileList() {
     }
   };
 
-  // File upload handlers
-  const handleFile = useCallback(
-    async (file: File) => {
-      if (!file) return;
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
 
-      const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name}`;
-      setUploadingFiles(prev => [...prev, fileId]);
-      setUploadProgress(0);
+    try {
+      if (itemToDelete.isFolder) {
+        await deleteFolder.mutateAsync(itemToDelete.id);
+        toast.success('Folder deleted', {
+          description: `Deleted folder "${itemToDelete.name}"`
+        });
+      } else {
+        await deleteFile.mutateAsync(itemToDelete.id);
+        toast.success('File deleted', {
+          description: `Deleted file "${itemToDelete.name}"`
+        });
+      }
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      const errorMessage = error?.message || 'Unknown error';
       
-      try {
+      if (errorMessage.includes('not empty')) {
+        toast.error('Cannot delete folder', {
+          description: 'Folder must be empty before deletion'
+        });
+      } else {
+        toast.error('Delete failed', {
+          description: 'Please try again'
+        });
+      }
+    } finally {
+      setItemToDelete(null);
+    }
+  };
+
+  const handleMoveConfirm = async () => {
+    if (!itemToMove) return;
+
+    try {
+      await moveItem.mutateAsync({
+        itemId: itemToMove.id,
+        newParentId: moveDestination,
+        isFolder: itemToMove.isFolder,
+      });
+      
+      toast.success('Item moved', {
+        description: `Moved "${itemToMove.name}"`
+      });
+    } catch (error) {
+      console.error('Move error:', error);
+      toast.error('Move failed', {
+        description: 'Please try again'
+      });
+    } finally {
+      setItemToMove(null);
+      setMoveDestination(null);
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    await uploadFiles(Array.from(selectedFiles));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFolderSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    await uploadFiles(Array.from(selectedFiles));
+    if (folderInputRef.current) {
+      folderInputRef.current.value = '';
+    }
+  };
+
+  const uploadFiles = async (filesToUpload: globalThis.File[]) => {
+    const fileNames = filesToUpload.map(f => f.name);
+    setUploadingFiles(fileNames);
+    setUploadProgress(0);
+
+    try {
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
         const arrayBuffer = await file.arrayBuffer();
         const bytes = new Uint8Array(arrayBuffer);
         
-        const blob = ExternalBlob.fromBytes(bytes).withUploadProgress((percentage) => {
-          setUploadProgress(percentage);
+        const externalBlob = ExternalBlob.fromBytes(bytes).withUploadProgress((percentage) => {
+          const overallProgress = ((i / filesToUpload.length) * 100) + (percentage / filesToUpload.length);
+          setUploadProgress(Math.round(overallProgress));
         });
 
         await addFile.mutateAsync({
-          id: fileId,
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           name: file.name,
           size: BigInt(file.size),
-          blob: blob,
           parentId: currentFolderId,
+          blob: externalBlob,
         });
-        
-        toast.success('File uploaded successfully', {
-          description: `${file.name} (${formatFileSize(file.size)})`
-        });
-        setUploadProgress(0);
-      } catch (error) {
-        toast.error('Error uploading file', {
-          description: error instanceof Error ? error.message : 'Unknown error'
-        });
-        setUploadProgress(0);
-      } finally {
-        setUploadingFiles(prev => prev.filter(id => id !== fileId));
-      }
-    },
-    [addFile, currentFolderId]
-  );
-
-  const handleFiles = useCallback(
-    async (files: FileList | File[]) => {
-      const fileArray = Array.from(files);
-      
-      if (fileArray.length === 0) return;
-
-      toast.info(`Uploading ${fileArray.length} file${fileArray.length > 1 ? 's' : ''}...`);
-
-      // Upload files sequentially to avoid overwhelming the system
-      for (const file of fileArray) {
-        await handleFile(file);
-      }
-    },
-    [handleFile]
-  );
-
-  const handleDrop = useCallback(
-    async (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-
-      const items = Array.from(e.dataTransfer.items);
-      const files: File[] = [];
-
-      // Process all items (files and folders)
-      for (const item of items) {
-        if (item.kind === 'file') {
-          const entry = item.webkitGetAsEntry?.();
-          if (entry) {
-            await processEntry(entry, files);
-          } else {
-            const file = item.getAsFile();
-            if (file) files.push(file);
-          }
-        }
       }
 
-      if (files.length > 0) {
-        await handleFiles(files);
-      }
-    },
-    [handleFiles]
-  );
-
-  // Recursive function to process directory entries
-  const processEntry = async (entry: any, files: File[]): Promise<void> => {
-    if (entry.isFile) {
-      return new Promise((resolve) => {
-        entry.file((file: File) => {
-          files.push(file);
-          resolve();
-        });
+      toast.success('Upload complete', {
+        description: `Uploaded ${filesToUpload.length} file${filesToUpload.length > 1 ? 's' : ''}`
       });
-    } else if (entry.isDirectory) {
-      const reader = entry.createReader();
-      return new Promise((resolve) => {
-        reader.readEntries(async (entries: any[]) => {
-          for (const childEntry of entries) {
-            await processEntry(childEntry, files);
-          }
-          resolve();
-        });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Upload failed', {
+        description: 'Please try again'
       });
+    } finally {
+      setUploadingFiles([]);
+      setUploadProgress(0);
     }
   };
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
-  }, []);
+  };
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-  }, []);
+  };
 
-  const handleFileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (files && files.length > 0) {
-        handleFiles(files);
-      }
-      e.target.value = '';
-    },
-    [handleFiles]
-  );
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
 
-  const handleFolderInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (files && files.length > 0) {
-        handleFiles(files);
-      }
-      e.target.value = '';
-    },
-    [handleFiles]
-  );
-
-  const handleFileClick = (file: FileMetadata) => {
-    const extension = getFileExtension(file.name);
-    
-    if (isPreviewable(extension)) {
-      // Find the index if it's an image
-      if (isImage(extension)) {
-        const index = imageFiles.findIndex(img => img.id === file.id);
-        setCurrentImageIndex(index >= 0 ? index : 0);
-      }
-      setPreviewFile(file);
-      setShowPreview(true);
-    } else {
-      // Start download for unsupported types
-      handleDownloadFile(file);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      await uploadFiles(droppedFiles);
     }
   };
 
-  const handleDownloadFile = async (file: FileMetadata) => {
+  const handleDownload = async (file: FileMetadata) => {
     try {
-      toast.info('Preparing download...', {
-        description: `Getting ${file.name} ready`
-      });
-
       const bytes = await file.blob.getBytes();
       const extension = getFileExtension(file.name);
       const mimeType = getMimeType(extension);
@@ -317,114 +339,150 @@ export function FileList() {
     }
   };
 
-  const handleNavigateImage = (index: number) => {
-    if (index >= 0 && index < imageFiles.length) {
-      setCurrentImageIndex(index);
-      setPreviewFile(imageFiles[index]);
+  const handleCopyLink = async (file: FileMetadata) => {
+    try {
+      const directUrl = file.blob.getDirectURL();
+      await navigator.clipboard.writeText(directUrl);
+      setCopiedFileId(file.id);
+      toast.success('Link copied', {
+        description: 'Direct file URL copied to clipboard'
+      });
+      setTimeout(() => setCopiedFileId(null), 2000);
+    } catch (error) {
+      console.error('Copy link error:', error);
+      toast.error('Failed to copy link', {
+        description: 'Please try again'
+      });
     }
   };
 
-  const isUploading = uploadingFiles.length > 0;
+  const handlePreview = (file: FileMetadata) => {
+    const extension = getFileExtension(file.name);
+    if (!isPreviewable(extension)) {
+      toast.error('Preview not available', {
+        description: 'This file type cannot be previewed'
+      });
+      return;
+    }
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>My Drive</CardTitle>
-          <CardDescription>Loading file list...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 p-4 rounded-lg border">
-                <Skeleton className="h-10 w-10 rounded" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-                <Skeleton className="h-9 w-24" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+    const fileIndex = previewableFiles.findIndex(f => f.id === file.id);
+    setCurrentFileIndex(fileIndex >= 0 ? fileIndex : 0);
+    setPreviewFile(file);
+    setShowPreview(true);
+  };
+
+  const handleNavigatePreview = (index: number) => {
+    if (index >= 0 && index < previewableFiles.length) {
+      setCurrentFileIndex(index);
+      setPreviewFile(previewableFiles[index]);
+    }
+  };
+
+  const getFileIcon = (fileName: string) => {
+    const extension = getFileExtension(fileName);
+    
+    if (isImage(extension)) {
+      return <Image className="h-5 w-5 text-blue-500" />;
+    }
+    
+    if (extension === 'mp4' || extension === 'webm' || extension === 'mov' || extension === 'avi') {
+      return <Video className="h-5 w-5 text-purple-500" />;
+    }
+    
+    if (extension === 'mp3' || extension === 'wav' || extension === 'ogg' || extension === 'flac') {
+      return <Music className="h-5 w-5 text-green-500" />;
+    }
+    
+    if (extension === 'txt' || extension === 'md' || extension === 'json' || extension === 'xml' || 
+        extension === 'csv' || extension === 'log' || extension === 'js' || extension === 'ts' || 
+        extension === 'jsx' || extension === 'tsx' || extension === 'html' || extension === 'css' ||
+        extension === 'py' || extension === 'java' || extension === 'c' || extension === 'cpp' ||
+        extension === 'rs' || extension === 'go' || extension === 'rb' || extension === 'php') {
+      return <FileText className="h-5 w-5 text-orange-500" />;
+    }
+    
+    if (extension === 'zip' || extension === 'rar' || extension === '7z' || extension === 'tar' || extension === 'gz') {
+      return <Archive className="h-5 w-5 text-yellow-500" />;
+    }
+    
+    if (extension === 'pdf' || extension === 'doc' || extension === 'docx' || extension === 'xls' || 
+        extension === 'xlsx' || extension === 'ppt' || extension === 'pptx') {
+      return <FileText className="h-5 w-5 text-red-500" />;
+    }
+    
+    return <File className="h-5 w-5 text-gray-500" />;
+  };
+
+  const formatFileSize = (bytes: bigint): string => {
+    const numBytes = Number(bytes);
+    if (numBytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(numBytes) / Math.log(k));
+    return `${parseFloat((numBytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  };
+
+  const availableFolders = useMemo(() => {
+    if (!itemToMove) return [];
+    
+    return [
+      { id: null, name: 'Drive' },
+      ...folders.filter(f => f.id !== itemToMove.id)
+    ];
+  }, [folders, itemToMove]);
 
   if (error) {
     return (
-      <Card>
+      <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle>My Drive</CardTitle>
-          <CardDescription className="text-destructive">
-            Error loading files
+          <CardTitle className="text-destructive">Error Loading Files</CardTitle>
+          <CardDescription>
+            Failed to load files. Please try refreshing the page.
           </CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
-  const fileCount = items?.filter(item => item.__kind__ === 'file').length || 0;
-  const folderCount = items?.filter(item => item.__kind__ === 'folder').length || 0;
+  // Use search results when searching, otherwise use folder contents
+  const displayItems = isSearching ? searchResults : items;
+  const displayFolders = isSearching
+    ? searchResults?.filter((item): item is { __kind__: 'folder'; folder: FolderMetadata } => 
+        item.__kind__ === 'folder'
+      ).map(item => item.folder) || []
+    : folders;
+  const displayFiles = isSearching
+    ? searchResults?.filter((item): item is { __kind__: 'file'; file: FileMetadata } => 
+        item.__kind__ === 'file'
+      ).map(item => item.file) || []
+    : files;
 
   return (
     <>
-      <input
-        ref={fileInputRef}
-        type="file"
-        className="hidden"
-        onChange={handleFileInput}
-        disabled={isUploading}
-        multiple
-      />
-      <input
-        ref={folderInputRef}
-        type="file"
-        className="hidden"
-        onChange={handleFolderInput}
-        disabled={isUploading}
-        {...({ webkitdirectory: '', directory: '' } as any)}
-        multiple
-      />
-
-      <Card
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        className={`transition-all duration-200 ${
-          isDragging ? 'ring-2 ring-primary ring-offset-2 bg-primary/5' : ''
-        }`}
-      >
+      <Card className="w-full max-w-6xl mx-auto">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>My Drive</CardTitle>
-              <CardDescription>
-                {folderCount > 0 && `${folderCount} ${folderCount === 1 ? 'folder' : 'folders'}`}
-                {folderCount > 0 && fileCount > 0 && ' • '}
-                {fileCount > 0 && `${fileCount} ${fileCount === 1 ? 'file' : 'files'}`}
-                {folderCount === 0 && fileCount === 0 && 'No items'}
-                {searchTerm && filteredItems.length !== items?.length && (
-                  <> • Showing {filteredItems.length} matching {filteredItems.length === 1 ? 'item' : 'items'}</>
-                )}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <CardTitle className="text-2xl">File Manager</CardTitle>
+              <CardDescription className="mt-1">
+                Upload, organize, and manage your files
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <Button
                 onClick={() => fileInputRef.current?.click()}
+                variant="outline"
                 size="sm"
                 className="gap-2"
-                disabled={isUploading}
               >
                 <Upload className="h-4 w-4" />
                 Upload Files
               </Button>
               <Button
                 onClick={() => folderInputRef.current?.click()}
+                variant="outline"
                 size="sm"
-                variant="secondary"
                 className="gap-2"
-                disabled={isUploading}
               >
                 <FolderUp className="h-4 w-4" />
                 Upload Folder
@@ -432,7 +490,6 @@ export function FileList() {
               <Button
                 onClick={() => setShowCreateFolder(true)}
                 size="sm"
-                variant="outline"
                 className="gap-2"
               >
                 <FolderPlus className="h-4 w-4" />
@@ -440,110 +497,263 @@ export function FileList() {
               </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Upload Progress */}
-            {isUploading && uploadProgress > 0 && (
-              <div className="space-y-2 p-4 rounded-lg border bg-muted/50">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Uploading {uploadingFiles.length} file{uploadingFiles.length > 1 ? 's' : ''}...
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <input
+            ref={folderInputRef}
+            type="file"
+            multiple
+            onChange={handleFolderSelect}
+            className="hidden"
+          />
+
+          {/* Custom Breadcrumb Navigation (non-ol) */}
+          <div className="flex items-center gap-1 text-sm mt-4 flex-wrap">
+            {folderPath.map((pathItem, index) => (
+              <div key={pathItem.id || 'root'} className="flex items-center gap-1">
+                {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                {index === folderPath.length - 1 ? (
+                  <span className="font-medium text-foreground px-2 py-1">
+                    {pathItem.name}
                   </span>
-                  <span className="font-medium">{Math.round(uploadProgress)}%</span>
-                </div>
-                <Progress value={uploadProgress} className="h-2" />
+                ) : (
+                  <button
+                    onClick={() => handleNavigateToFolder(pathItem.id, pathItem.name)}
+                    className="text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-muted"
+                  >
+                    {pathItem.name}
+                  </button>
+                )}
               </div>
-            )}
+            ))}
+          </div>
 
-            {/* Drag and Drop Overlay */}
-            {isDragging && (
-              <div className="p-8 rounded-lg border-2 border-dashed border-primary bg-primary/5 text-center">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-primary" />
-                <p className="text-lg font-medium text-primary">Drop files or folders here</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Files will be uploaded to {currentFolderId ? 'the current folder' : 'the root directory'}
-                </p>
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search files and folders..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {uploadingFiles.length > 0 && (
+            <div className="mb-6 p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Uploading {uploadingFiles.length} file(s)...</span>
+                <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
               </div>
-            )}
-
-            {/* Breadcrumb Navigation */}
-            {folderPath.length > 1 && (
-              <Breadcrumb>
-                <BreadcrumbList>
-                  {folderPath.map((path, index) => (
-                    <div key={path.id || 'root'} className="flex items-center">
-                      {index > 0 && <BreadcrumbSeparator><ChevronRight className="h-4 w-4" /></BreadcrumbSeparator>}
-                      <BreadcrumbItem>
-                        {index === folderPath.length - 1 ? (
-                          <BreadcrumbPage>{path.name}</BreadcrumbPage>
-                        ) : (
-                          <BreadcrumbLink
-                            onClick={() => handleNavigateToPath(index)}
-                            className="cursor-pointer"
-                          >
-                            {path.name}
-                          </BreadcrumbLink>
-                        )}
-                      </BreadcrumbItem>
-                    </div>
-                  ))}
-                </BreadcrumbList>
-              </Breadcrumb>
-            )}
-
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search files and folders..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+              <Progress value={uploadProgress} className="h-2" />
+              <div className="mt-2 space-y-1">
+                {uploadingFiles.map((fileName, index) => (
+                  <div key={index} className="text-xs text-muted-foreground truncate">
+                    {fileName}
+                  </div>
+                ))}
+              </div>
             </div>
+          )}
 
-            {/* Items List */}
-            {filteredItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-                  {searchTerm ? (
-                    <Search className="h-8 w-8 text-muted-foreground" />
-                  ) : (
-                    <File className="h-8 w-8 text-muted-foreground" />
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {searchTerm ? `No items found matching "${searchTerm}"` : 'No items in this folder'}
-                </p>
-                {!searchTerm && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Drag and drop files here or use the upload buttons above
-                  </p>
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`min-h-[400px] rounded-lg border-2 border-dashed transition-colors ${
+              isDragging ? 'border-primary bg-primary/5' : 'border-muted'
+            }`}
+          >
+            {isLoading || searchLoading ? (
+              <div className="p-8 space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-3 w-1/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : displayItems && displayItems.length > 0 ? (
+              <div className="p-4">
+                {isSearching && (
+                  <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Search className="h-4 w-4" />
+                    <span>
+                      Found {displayItems.length} result{displayItems.length !== 1 ? 's' : ''} for "{searchTerm}"
+                    </span>
+                  </div>
+                )}
+
+                {displayFolders.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                      <Folder className="h-4 w-4" />
+                      Folders
+                    </h3>
+                    <div className="grid gap-2">
+                      {displayFolders.map((folder) => {
+                        const fullPath = folderPathMap.get(folder.id);
+                        return (
+                          <div
+                            key={folder.id}
+                            className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
+                          >
+                            <button
+                              onClick={() => handleNavigateToFolder(folder.id, folder.name)}
+                              className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                            >
+                              <Folder className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{folder.name}</div>
+                                {isSearching && fullPath && (
+                                  <div className="text-xs text-muted-foreground truncate mt-0.5">
+                                    {fullPath}
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setItemToMove({ id: folder.id, name: folder.name, isFolder: true })}
+                                className="h-8 w-8 p-0"
+                              >
+                                <MoveRight className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setItemToDelete({ id: folder.id, name: folder.name, isFolder: true })}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {displayFiles.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                      <File className="h-4 w-4" />
+                      Files
+                    </h3>
+                    <div className="grid gap-2">
+                      {displayFiles.map((file) => {
+                        const extension = getFileExtension(file.name);
+                        const canPreview = isPreviewable(extension);
+                        const parentFolder = file.parentId ? allFolders?.find(f => f.id === file.parentId) : null;
+                        const fullPath = parentFolder ? folderPathMap.get(parentFolder.id) : null;
+                        
+                        return (
+                          <div
+                            key={file.id}
+                            className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {getFileIcon(file.name)}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{file.name}</div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                                  <span>{formatFileSize(file.size)}</span>
+                                  {isSearching && fullPath && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="truncate">{fullPath}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {canPreview && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handlePreview(file)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCopyLink(file)}
+                                className="h-8 w-8 p-0"
+                              >
+                                {copiedFileId === file.id ? (
+                                  <Check className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <Link2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownload(file)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setItemToMove({ id: file.id, name: file.name, isFolder: false })}
+                                className="h-8 w-8 p-0"
+                              >
+                                <MoveRight className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setItemToDelete({ id: file.id, name: file.name, isFolder: false })}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
-                {filteredItems.map((item) => (
-                  item.__kind__ === 'folder' ? (
-                    <FolderItem
-                      key={item.folder.id}
-                      folder={item.folder}
-                      onNavigate={handleNavigateToFolder}
-                      allFolders={allFolders || []}
-                      currentFolderId={currentFolderId}
-                    />
-                  ) : (
-                    <FileItem
-                      key={item.file.id}
-                      file={item.file}
-                      allFolders={allFolders || []}
-                      currentFolderId={currentFolderId}
-                      onFileClick={handleFileClick}
-                    />
-                  )
-                ))}
+              <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
+                {isSearching ? (
+                  <>
+                    <Search className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No results found</h3>
+                    <p className="text-sm text-muted-foreground max-w-sm">
+                      No files or folders match "{searchTerm}". Try a different search term.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No files yet</h3>
+                    <p className="text-sm text-muted-foreground max-w-sm mb-4">
+                      Drag and drop files here, or use the upload buttons above to get started
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -570,23 +780,13 @@ export function FileList() {
             }}
           />
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCreateFolder(false);
-                setNewFolderName('');
-              }}
-              disabled={createFolder.isPending}
-            >
+            <Button variant="outline" onClick={() => setShowCreateFolder(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleCreateFolder}
-              disabled={createFolder.isPending || !newFolderName.trim()}
-            >
+            <Button onClick={handleCreateFolder} disabled={createFolder.isPending}>
               {createFolder.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (
@@ -597,479 +797,90 @@ export function FileList() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {itemToDelete?.isFolder ? 'Folder' : 'File'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{itemToDelete?.name}"? This action cannot be undone.
+              {itemToDelete?.isFolder && ' The folder must be empty to be deleted.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteFile.isPending || deleteFolder.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Move Item Dialog */}
+      <Dialog open={!!itemToMove} onOpenChange={() => setItemToMove(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move {itemToMove?.isFolder ? 'Folder' : 'File'}</DialogTitle>
+            <DialogDescription>
+              Select a destination folder for "{itemToMove?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          <Select value={moveDestination || 'root'} onValueChange={(value) => setMoveDestination(value === 'root' ? null : value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select destination" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableFolders.map((folder) => (
+                <SelectItem key={folder.id || 'root'} value={folder.id || 'root'}>
+                  {folder.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setItemToMove(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleMoveConfirm} disabled={moveItem.isPending}>
+              {moveItem.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Moving...
+                </>
+              ) : (
+                'Move'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* File Preview Modal */}
-      <FilePreviewModal
-        file={previewFile}
-        isOpen={showPreview}
-        onClose={() => {
-          setShowPreview(false);
-          setPreviewFile(null);
-        }}
-        allImages={imageFiles}
-        currentImageIndex={currentImageIndex}
-        onNavigate={handleNavigateImage}
-      />
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          isOpen={showPreview}
+          onClose={() => {
+            setShowPreview(false);
+            setPreviewFile(null);
+          }}
+          allFiles={previewableFiles}
+          currentFileIndex={currentFileIndex}
+          onNavigateFile={handleNavigatePreview}
+        />
+      )}
     </>
   );
-}
-
-function FolderItem({ 
-  folder, 
-  onNavigate,
-  allFolders,
-  currentFolderId
-}: { 
-  folder: FolderMetadata; 
-  onNavigate: (id: string, name: string) => void;
-  allFolders: FolderMetadata[];
-  currentFolderId: string | null;
-}) {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showMoveDialog, setShowMoveDialog] = useState(false);
-  const [selectedDestination, setSelectedDestination] = useState<string>('root');
-  const deleteFolder = useDeleteFolder();
-  const moveItem = useMoveItem();
-
-  const handleDelete = async () => {
-    try {
-      await deleteFolder.mutateAsync(folder.id);
-      toast.success('Folder deleted', {
-        description: `${folder.name} has been removed`
-      });
-      setShowDeleteDialog(false);
-    } catch (error: any) {
-      console.error('Delete error:', error);
-      const errorMessage = error?.message || 'Unknown error';
-      toast.error('Failed to delete folder', {
-        description: errorMessage.includes('not empty') ? 'Folder must be empty before deletion' : 'Please try again'
-      });
-    }
-  };
-
-  const handleMove = async () => {
-    try {
-      const newParentId = selectedDestination === 'root' ? null : selectedDestination;
-      await moveItem.mutateAsync({ itemId: folder.id, newParentId, isFolder: true });
-      toast.success('Folder moved', {
-        description: `${folder.name} has been moved`
-      });
-      setShowMoveDialog(false);
-    } catch (error) {
-      console.error('Move error:', error);
-      toast.error('Failed to move folder', {
-        description: 'Please try again'
-      });
-    }
-  };
-
-  // Filter out current folder and its descendants from move destinations
-  const availableFolders = allFolders.filter(f => f.id !== folder.id && f.parentId !== folder.id);
-
-  return (
-    <>
-      <div className="group flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Folder className="h-5 w-5" />
-        </div>
-        
-        <div 
-          className="flex-1 min-w-0 cursor-pointer"
-          onClick={() => onNavigate(folder.id, folder.name)}
-        >
-          <p className="font-medium truncate hover:text-primary transition-colors">{folder.name}</p>
-          <p className="text-sm text-muted-foreground">Folder</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setShowMoveDialog(true)}
-            size="sm"
-            variant="outline"
-            className="gap-2"
-          >
-            <MoveRight className="h-4 w-4" />
-            Move
-          </Button>
-          <Button
-            onClick={() => setShowDeleteDialog(true)}
-            size="sm"
-            variant="destructive"
-            disabled={deleteFolder.isPending}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Folder</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>{folder.name}</strong>? The folder must be empty. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteFolder.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteFolder.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteFolder.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Move Dialog */}
-      <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Move Folder</DialogTitle>
-            <DialogDescription>
-              Select a destination for <strong>{folder.name}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          <Select value={selectedDestination} onValueChange={setSelectedDestination}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select destination" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="root">Root</SelectItem>
-              {availableFolders.map((f) => (
-                <SelectItem key={f.id} value={f.id}>
-                  {f.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowMoveDialog(false)}
-              disabled={moveItem.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleMove}
-              disabled={moveItem.isPending}
-            >
-              {moveItem.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Moving...
-                </>
-              ) : (
-                'Move'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function FileItem({ 
-  file,
-  allFolders,
-  currentFolderId,
-  onFileClick,
-}: { 
-  file: FileMetadata;
-  allFolders: FolderMetadata[];
-  currentFolderId: string | null;
-  onFileClick: (file: FileMetadata) => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showMoveDialog, setShowMoveDialog] = useState(false);
-  const [selectedDestination, setSelectedDestination] = useState<string>('root');
-  const deleteFile = useDeleteFile();
-  const moveItem = useMoveItem();
-  const fileSize = formatFileSize(Number(file.size));
-  const fileExtension = getFileExtension(file.name);
-  const FileIcon = getFileIcon(fileExtension);
-
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    try {
-      const bytesPromise = file.blob.getBytes();
-      
-      toast.info('Preparing download...', {
-        description: `Getting ${file.name} ready`
-      });
-
-      const bytes = await bytesPromise;
-      const mimeType = getMimeType(fileExtension);
-      const blob = new Blob([bytes], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.name;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 100);
-      
-      toast.success('Download started', {
-        description: `Downloading ${file.name}`
-      });
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Download failed', {
-        description: 'Please try again'
-      });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  const handleCopyLink = async () => {
-    const url = file.blob.getDirectURL();
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success('Link copied to clipboard', {
-        description: 'Share this link to allow anyone to download the file'
-      });
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      toast.error('Failed to copy link', {
-        description: 'Please try again'
-      });
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await deleteFile.mutateAsync(file.id);
-      toast.success('File deleted', {
-        description: `${file.name} has been removed`
-      });
-      setShowDeleteDialog(false);
-    } catch (error) {
-      console.error('Delete error:', error);
-      toast.error('Failed to delete file', {
-        description: 'Please try again'
-      });
-    }
-  };
-
-  const handleMove = async () => {
-    try {
-      const newParentId = selectedDestination === 'root' ? null : selectedDestination;
-      await moveItem.mutateAsync({ itemId: file.id, newParentId, isFolder: false });
-      toast.success('File moved', {
-        description: `${file.name} has been moved`
-      });
-      setShowMoveDialog(false);
-    } catch (error) {
-      console.error('Move error:', error);
-      toast.error('Failed to move file', {
-        description: 'Please try again'
-      });
-    }
-  };
-
-  return (
-    <>
-      <div className="group flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <FileIcon className="h-5 w-5" />
-        </div>
-        
-        <div 
-          className="flex-1 min-w-0 cursor-pointer"
-          onClick={() => onFileClick(file)}
-        >
-          <p className="font-medium truncate hover:text-primary transition-colors">{file.name}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-sm text-muted-foreground">{fileSize}</p>
-            {fileExtension && (
-              <>
-                <span className="text-muted-foreground">•</span>
-                <Badge variant="secondary" className="text-xs uppercase">
-                  {fileExtension}
-                </Badge>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleDownload}
-            size="sm"
-            variant="outline"
-            className="gap-2"
-            disabled={isDownloading}
-          >
-            {isDownloading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Download
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                Download
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={handleCopyLink}
-            size="sm"
-            variant="outline"
-            className="gap-2"
-          >
-            {copied ? (
-              <>
-                <Check className="h-4 w-4" />
-                Copy link
-              </>
-            ) : (
-              <>
-                <Link2 className="h-4 w-4" />
-                Copy link
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={() => setShowMoveDialog(true)}
-            size="sm"
-            variant="outline"
-            className="gap-2"
-          >
-            <MoveRight className="h-4 w-4" />
-            Move
-          </Button>
-          <Button
-            onClick={() => setShowDeleteDialog(true)}
-            size="sm"
-            variant="destructive"
-            disabled={deleteFile.isPending}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete File</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>{file.name}</strong>? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteFile.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteFile.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteFile.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Move Dialog */}
-      <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Move File</DialogTitle>
-            <DialogDescription>
-              Select a destination for <strong>{file.name}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          <Select value={selectedDestination} onValueChange={setSelectedDestination}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select destination" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="root">Root</SelectItem>
-              {allFolders.map((f) => (
-                <SelectItem key={f.id} value={f.id}>
-                  {f.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowMoveDialog(false)}
-              disabled={moveItem.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleMove}
-              disabled={moveItem.isPending}
-            >
-              {moveItem.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Moving...
-                </>
-              ) : (
-                'Move'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-
-function getFileIcon(extension: string) {
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp'];
-  const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
-  const audioExts = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'];
-  const archiveExts = ['zip', 'rar', '7z', 'tar', 'gz', 'bz2'];
-  const docExts = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'];
-
-  if (imageExts.includes(extension)) return Image;
-  if (videoExts.includes(extension)) return Video;
-  if (audioExts.includes(extension)) return Music;
-  if (archiveExts.includes(extension)) return Archive;
-  if (docExts.includes(extension)) return FileText;
-  
-  return File;
 }

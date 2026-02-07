@@ -1,90 +1,32 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Professional resizable fullscreen file viewer + Manage version single source of truth",
+  "title": "Fix File Manager search matching (case-insensitive substring)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Redesign the file preview modal into a larger, player-style, mobile-friendly viewer while preserving all existing preview types.",
+      "summary": "Update File Manager search to execute backend subtree search using a normalized term and show matching files/folders via case-insensitive substring behavior, restoring normal folder view when cleared.",
       "acceptanceCriteria": [
-        "Opening a supported file type shows a large, player-style viewer layout (not a small dialog) on desktop and a mobile-appropriate layout on small screens.",
-        "The viewer continues to support previews for images, video, audio, documents (iframe/blob URL), and text exactly as before (no regression in supported formats)."
+        "When the user enters a non-empty search term, the UI shows at least one result when there are files/folders whose names contain the term as a case-insensitive substring (e.g., \"cs\" matches \"cs.json\").",
+        "When the search term is cleared, the UI returns to showing the normal folder contents list.",
+        "Search works while inside a subfolder (i.e., uses the current folder as the start point for the search).",
+        "No console errors are emitted during searching, and the search request is actually executed (i.e., a backend call is made via the existing search query hook)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/FilePreviewModal.tsx",
-          "operation": "modify",
-          "description": "Redesign the preview container into a viewer-style layout with a larger default size (desktop) and a full-viewport/near-full-viewport presentation on small screens, while keeping the existing preview rendering paths for images/video/audio (direct URL), documents (iframe via blob URL), and text/JSON (decoded text)."
-        },
-        {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Add any minimal global CSS needed to support a viewer-style modal presentation (e.g., viewport-safe sizing with mobile safe-area considerations) without changing shadcn ui components under frontend/src/components/ui."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Add a clear fullscreen toggle to the viewer header that works well on desktop and mobile.",
-      "acceptanceCriteria": [
-        "A fullscreen toggle is visible in the viewer header.",
-        "Entering fullscreen expands the preview to use the maximum available viewport space and exiting returns to the prior viewer size/state."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FilePreviewModal.tsx",
-          "operation": "modify",
-          "description": "Add a viewer header control to enter/exit fullscreen using the browser Fullscreen API when available; track fullscreen state via fullscreenchange and restore the prior viewer size/state on exit."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Make the viewer resizable on desktop and easy to use on mobile via responsive sizing and maximize/restore behavior.",
-      "acceptanceCriteria": [
-        "On desktop, the viewer can be resized (or offers a clear maximize/restore control in addition to fullscreen) and the preview content reflows correctly.",
-        "On mobile, the viewer uses a layout that is easy to use without requiring precise drag handles (e.g., full-viewport or near-full-viewport)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FilePreviewModal.tsx",
-          "operation": "modify",
-          "description": "Implement desktop-friendly resizing (e.g., resizable container and/or maximize/restore toggle distinct from fullscreen) and ensure all preview renderers reflow safely (object-contain images/video, scrollable text, iframe fill) across size changes; default to a mobile-optimized full/near-full viewport layout that avoids precise drag interactions."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Remove duplicate close controls and keep a single consistent close action aligned with other header actions, including Escape-to-close on desktop.",
-      "acceptanceCriteria": [
-        "Only a single close (X) control is visible in the viewer UI.",
-        "Closing the viewer works via the close button and via Escape key (desktop) without UI duplication."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FilePreviewModal.tsx",
-          "operation": "modify",
-          "description": "Eliminate the duplicate close (X) by avoiding the default shadcn DialogContent close button (compose the modal using Radix dialog primitives or an alternative structure) so only the custom header close control remains; keep Escape-to-close behavior and ensure consistent header alignment of actions."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Bump the Manage section app version to 0.1.61 and read it from a single shared constant rather than hardcoding in JSX.",
-      "acceptanceCriteria": [
-        "Manage section displays exactly: \"0.1.61\".",
-        "The displayed version is not hardcoded directly in the ManagePanel JSX; it is imported from a central constant/module used for version display."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/appVersion.ts",
+          "path": "frontend/src/lib/search.ts",
           "operation": "create",
-          "description": "Create a single source-of-truth exported constant for the app version (set to 0.1.61) to be used by UI surfaces that display the version."
+          "description": "Add small shared helpers to normalize search input (trim + lowercase) and perform case-insensitive substring checks for names; used by the File Manager search UI and the existing subtree-search query hook."
         },
         {
-          "path": "frontend/src/components/ManagePanel.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Replace the hardcoded version label in the App Version card with an import from the central version module so the Manage UI displays 0.1.61 and avoids future drift."
+          "description": "Adjust the existing useSearchSubtree hook to normalize the incoming search term (via frontend/src/lib/search.ts) before computing the React Query key/enabled state and before calling the backend search capability, ensuring the search request is executed consistently and supports case-insensitive substring expectations."
+        },
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Update the File Manager search flow to use a normalized non-empty term for toggling between normal folder contents and search results, preserve searching from the current folder (start point), and ensure clearing the input returns to the standard folder contents without console errors."
         }
       ]
     }

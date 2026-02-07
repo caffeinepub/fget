@@ -1,83 +1,45 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-04T21:04:35.197Z",
+  "generatedAt": "2026-02-07T13:02:05.220Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 5,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Redesign the in-app file preview UI (the modal opened from clicking a filename) into a more professional, player-style viewer that is mobile-friendly and supports all currently previewable file types (images, text, JSON, audio, video, and documents). The viewer must open at a noticeably larger default size than the current modal and adapt responsively to screen size (including small mobile screens).",
+        "summary": "Fix the file search feature so typing into the File Manager search bar returns matching files/folders using case-insensitive substring matching, instead of returning no results.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx",
-          "frontend/src/index.css"
+          "frontend/src/lib/search.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/FileList.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Add fullscreen capability to the file preview viewer. Fullscreen behavior must work well on both desktop and mobile (choose the best approach), and provide an obvious UI control in the viewer header for entering/exiting fullscreen.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Make the file preview viewer resizable in a user-friendly way that works across desktop and mobile. The implementation choice is up to the developer, but resizing must be possible (or effectively achieved via maximize/fullscreen and responsive sizing) without breaking preview rendering for any supported file type.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Remove the duplicate close (X) controls in the file preview viewer so only one close control is shown, and ensure the close control is consistently placed and visually aligned with the rest of the viewer header actions.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Update the app version shown in the Manage section from 0.1.60 to 0.1.61, and ensure the Manage UI reads the version from a single source of truth (not a hardcoded string in the JSX) to prevent future out-of-sync version labels.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/appVersion.ts",
-          "frontend/src/components/ManagePanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/appVersion.ts",
-          "frontend/src/components/ManagePanel.tsx"
+          "frontend/src/lib/search.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/FileList.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/FilePreviewModal.tsx",
-    "frontend/src/components/ManagePanel.tsx",
-    "frontend/src/lib/appVersion.ts",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/FileList.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/search.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

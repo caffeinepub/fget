@@ -1,13 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Upgrade the in-app file preview modal into a professional, mobile-friendly, resizable/fullscreen viewer while keeping support for all currently previewable file types, and bump the Manage version label to 0.1.61 using a single source of truth.
+**Goal:** Fix the File Manager search so it returns matching files/folders using case-insensitive substring matching.
 
 **Planned changes:**
-- Redesign the file preview UI (opened by clicking a filename) into a larger, player-style viewer that adapts responsively to desktop and small mobile screens while preserving existing preview behavior for images, text, JSON, audio, video, and documents.
-- Add an obvious fullscreen toggle in the viewer header that works on both desktop and mobile and restores the prior size/state when exited.
-- Implement user-friendly resizing behavior (e.g., resizable/maximize on desktop and near-full-viewport behavior on mobile) ensuring content reflows correctly for every supported preview type.
-- Remove duplicate close (X) controls so only one consistently placed close action remains; keep Escape-to-close on desktop.
-- Update Manage section version display from 0.1.60 to 0.1.61 and source it from a central constant/module rather than a hardcoded JSX string.
+- Update frontend search logic to call the existing search query hook when the search term is non-empty.
+- Ensure matching is performed as a case-insensitive substring check (e.g., `cs` matches `cs.json`) and results render in the UI.
+- Ensure clearing the search term restores the normal current-folder contents view.
+- Ensure search operates from the currently open folder (works within subfolders) and produces no console errors.
 
-**User-visible outcome:** File previews open in a noticeably larger, more professional viewer with a single close button, support fullscreen, and behave well on mobile; the Manage section shows version 0.1.61.
+**User-visible outcome:** Typing into the File Manager search bar shows matching files/folders (case-insensitive substring), and clearing the search returns to the normal folder contents list.

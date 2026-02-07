@@ -107,6 +107,7 @@ export const idlService = IDL.Service({
   'getAllFolders' : IDL.Func([], [IDL.Vec(FolderMetadata)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getFile' : IDL.Func([IDL.Text], [IDL.Opt(FileMetadata)], ['query']),
+  'getFileMetadata' : IDL.Func([IDL.Text], [IDL.Opt(FileMetadata)], ['query']),
   'getFiles' : IDL.Func([], [IDL.Vec(FileMetadata)], ['query']),
   'getFolder' : IDL.Func([IDL.Text], [IDL.Opt(FolderMetadata)], ['query']),
   'getFolderContents' : IDL.Func(
@@ -133,6 +134,12 @@ export const idlService = IDL.Service({
   'requestApproval' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'searchFiles' : IDL.Func([IDL.Text], [IDL.Vec(FileMetadata)], ['query']),
+  'searchFolders' : IDL.Func([IDL.Text], [IDL.Vec(FolderMetadata)], ['query']),
+  'searchSubtree' : IDL.Func(
+      [IDL.Text, IDL.Opt(IDL.Text)],
+      [IDL.Vec(FileSystemItem)],
+      ['query'],
+    ),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'setBackendCanisterId' : IDL.Func([IDL.Text], [], []),
   'setFrontendCanisterId' : IDL.Func([IDL.Text], [], []),
@@ -240,6 +247,11 @@ export const idlFactory = ({ IDL }) => {
     'getAllFolders' : IDL.Func([], [IDL.Vec(FolderMetadata)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getFile' : IDL.Func([IDL.Text], [IDL.Opt(FileMetadata)], ['query']),
+    'getFileMetadata' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(FileMetadata)],
+        ['query'],
+      ),
     'getFiles' : IDL.Func([], [IDL.Vec(FileMetadata)], ['query']),
     'getFolder' : IDL.Func([IDL.Text], [IDL.Opt(FolderMetadata)], ['query']),
     'getFolderContents' : IDL.Func(
@@ -266,6 +278,16 @@ export const idlFactory = ({ IDL }) => {
     'requestApproval' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'searchFiles' : IDL.Func([IDL.Text], [IDL.Vec(FileMetadata)], ['query']),
+    'searchFolders' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(FolderMetadata)],
+        ['query'],
+      ),
+    'searchSubtree' : IDL.Func(
+        [IDL.Text, IDL.Opt(IDL.Text)],
+        [IDL.Vec(FileSystemItem)],
+        ['query'],
+      ),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'setBackendCanisterId' : IDL.Func([IDL.Text], [], []),
     'setFrontendCanisterId' : IDL.Func([IDL.Text], [], []),

@@ -1,111 +1,37 @@
 {
   "kind": "build_request",
-  "title": "Upgrade file preview modal into professional resizable fullscreen viewer + bump Manage version to 0.1.61",
+  "title": "Fix file search to return results using case-insensitive substring matching",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Redesign the in-app file preview UI (the modal opened from clicking a filename) into a more professional, player-style viewer that is mobile-friendly and supports all currently previewable file types (images, text, JSON, audio, video, and documents). The viewer must open at a noticeably larger default size than the current modal and adapt responsively to screen size (including small mobile screens).",
-      "target": "frontend",
+      "text": "Fix the file search feature so typing into the File Manager search bar returns matching files/folders using case-insensitive substring matching, instead of returning no results.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-4",
-          "msg-5",
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "the file viewer works but offers only a small and not resizable window ... make in more professional 'player', resizable, possibility for full screen etc",
-          "it should be mobile friendly so decide for me",
-          "all supported file types"
+          "Fix the search logic only - currently no files are found (searching is by text)",
+          "case‑insensitive substring"
         ]
       },
       "acceptanceCriteria": [
-        "Opening a supported file type shows a large, player-style viewer layout (not a small dialog) on desktop and a mobile-appropriate layout on small screens.",
-        "The viewer continues to support previews for images, video, audio, documents (iframe/blob URL), and text exactly as before (no regression in supported formats)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add fullscreen capability to the file preview viewer. Fullscreen behavior must work well on both desktop and mobile (choose the best approach), and provide an obvious UI control in the viewer header for entering/exiting fullscreen.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4",
-          "msg-6"
-        ],
-        "quotes": [
-          "possibility for full screen etc",
-          "decide for me what is better - also for mobile mode"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A fullscreen toggle is visible in the viewer header.",
-        "Entering fullscreen expands the preview to use the maximum available viewport space and exiting returns to the prior viewer size/state."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Make the file preview viewer resizable in a user-friendly way that works across desktop and mobile. The implementation choice is up to the developer, but resizing must be possible (or effectively achieved via maximize/fullscreen and responsive sizing) without breaking preview rendering for any supported file type.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4",
-          "msg-5",
-          "msg-6"
-        ],
-        "quotes": [
-          "not resizable window ... resizable",
-          "it should be mobile friendly so decide for me",
-          "decide for me what is better - also for mobile mode"
-        ]
-      },
-      "acceptanceCriteria": [
-        "On desktop, the viewer can be resized (or offers a clear maximize/restore control in addition to fullscreen) and the preview content reflows correctly.",
-        "On mobile, the viewer uses a layout that is easy to use without requiring precise drag handles (e.g., full-viewport or near-full-viewport)."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Remove the duplicate close (X) controls in the file preview viewer so only one close control is shown, and ensure the close control is consistently placed and visually aligned with the rest of the viewer header actions.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "two 'close' crosses in top right corner"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Only a single close (X) control is visible in the viewer UI.",
-        "Closing the viewer works via the close button and via Escape key (desktop) without UI duplication."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Update the app version shown in the Manage section from 0.1.60 to 0.1.61, and ensure the Manage UI reads the version from a single source of truth (not a hardcoded string in the JSX) to prevent future out-of-sync version labels.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Also app version in Manage section update to 0.1.61"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Manage section displays exactly: \"0.1.61\".",
-        "The displayed version is not hardcoded directly in the ManagePanel JSX; it is imported from a central constant/module used for version display."
+        "When the user enters a non-empty search term, the UI shows at least one result when there are files/folders whose names contain the term as a case-insensitive substring (e.g., \"cs\" matches \"cs.json\").",
+        "When the search term is cleared, the UI returns to showing the normal folder contents list.",
+        "Search works while inside a subfolder (i.e., uses the current folder as the start point for the search).",
+        "No console errors are emitted during searching, and the search request is actually executed (i.e., a backend call is made via the existing search query hook)."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (compose existing shadcn components instead).",
-    "Do not edit immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not modify files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "No backend schema or Motoko API changes are required for this request.",
-    "Do not add support for new file types beyond the currently supported preview types."
+    "Do not implement admin/member visibility changes.",
+    "Do not change UI layout by removing/moving the selected DOM elements.",
+    "Do not bump the app version."
   ],
   "imageRequirements": {
     "required": [],
