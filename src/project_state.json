@@ -1,45 +1,55 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "File browser UI/UX and search improvements: restore file preview-on-click, enable recursive search for files (not just folders), and reposition the current path display above the filesystem list (target div 5yv2go).",
+  "summary": "Restore the previously working file explorer and click-to-open file preview (as in v0.3.86), ensuring current search remains working; target release v0.3.88.",
   "architectural_notes": [
-    "User request constraint: apply minimal changes and avoid altering other functionality to prevent breakage; restore previously working behavior where possible."
+    "Do not regress currently working search while restoring file explorer/preview.",
+    "Preview behavior should match older versions (up to v0.3.86): large preview, fullscreen, close button, and in-folder next/prev navigation.",
+    "For unsupported/unsafe file types, offer direct download instead of attempting preview.",
+    "Text-based previews must support both horizontal and vertical scrolling (native scrollbars if possible; otherwise custom scroll container)."
   ],
   "known_issues": [
-    "Known regression: clicking a file does not open preview.",
-    "Known limitation/bug: recursive search currently applies to folders only, not files."
+    "Build/deploy attempts are currently blocked by repeated platform-level \"Internal AI error encountered\" during build phase (not caused by app code)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-move-the-current-path-breadcrumb-div-the-one-containing-the-currently-selected-breadcrumb-button-user-referred-to-it-as-div-5yv2go-so-it-renders-directly-above-the-filesystem-list-files-folders-area-and-not-above-the-search-bar",
-      "title": "Move the current-path breadcrumb div (the one containing the currently selected breadcrumb button; user referred to it as div \"5yv2go\") so it renders directly above the filesystem list (files/folders area) and not above the search bar.",
+      "id": "feature-restore-the-file-click-behavior-in-the-file-browser-so-that-clicking-a-file-row-reliably-opens-the-existing-filepreviewmodal-for-that-file-as-it-worked-in-v0-3-86-without-changing-or-breaking-the-currently-working-search-behavior",
+      "title": "Restore the file click behavior in the file browser so that clicking a file row reliably opens the existing FilePreviewModal for that file (as it worked in v0.3.86), without changing or breaking the currently working search behavior.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-restore-file-preview-on-click-behavior-so-that-clicking-a-file-row-reliably-opens-the-preview-modal-filepreviewmodal-for-that-file-as-it-did-in-the-previous-version-without-changing-unrelated-file-browser-functionality",
-      "title": "Restore file preview-on-click behavior so that clicking a file row reliably opens the preview modal (FilePreviewModal) for that file, as it did in the previous version, without changing unrelated file browser functionality.",
+      "id": "feature-update-preview-navigation-to-match-the-prior-gallery-style-behavior-when-a-preview-is-open-users-can-move-to-previous-next-files-within-the-current-context-current-folder-or-current-search-results-list-when-search-is-active-using-ui-controls-and-keyboard-arrows",
+      "title": "Update preview navigation to match the prior “gallery-style” behavior: when a preview is open, users can move to previous/next files within the current context (current folder, or current search results list when search is active) using UI controls and keyboard arrows.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-subtree-search-so-recursive-searching-includes-files-in-descendant-folders-not-just-folders-including-when-searching-from-the-root-context-while-preserving-existing-search-behavior-case-diacritics-insensitive-name-matching",
-      "title": "Fix subtree search so recursive searching includes files in descendant folders (not just folders), including when searching from the root context, while preserving existing search behavior (case/diacritics-insensitive name matching).",
+      "id": "feature-ensure-the-preview-modal-can-handle-all-file-types-provide-in-browser-viewers-for-images-videos-audio-pdfs-documents-and-text-for-any-unsupported-unsafe-file-type-show-a-clear-preview-not-available-state-with-a-direct-download-action-no-infinite-loading",
+      "title": "Ensure the preview modal can handle all file types: provide in-browser viewers for images, videos, audio, PDFs/documents, and text; for any unsupported/unsafe file type, show a clear “Preview not available” state with a direct download action (no infinite loading).",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-bump-the-app-version-to-0-3-87-anywhere-the-version-is-surfaced-in-code-config-at-minimum-the-frontend-appversion-constant-and-the-backend-version-value-if-present",
-      "title": "Bump the app version to 0.3.87 anywhere the version is surfaced in code/config (at minimum the frontend appVersion constant and the backend version value if present).",
+      "id": "feature-for-text-based-file-previews-ensure-users-can-scroll-both-vertically-and-horizontally-to-view-the-entire-content-using-browser-native-scrolling-where-possible",
+      "title": "For text-based file previews, ensure users can scroll both vertically and horizontally to view the entire content, using browser-native scrolling where possible.",
       "reqIds": [
         "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-bump-the-app-version-to-0-3-88-everywhere-it-is-surfaced-in-code-config-at-minimum-frontend-src-lib-appversion-ts-and-backend-main-mo-appversion",
+      "title": "Bump the app version to 0.3.88 everywhere it is surfaced in code/config (at minimum: frontend/src/lib/appVersion.ts and backend/main.mo appVersion).",
+      "reqIds": [
+        "REQ-5"
       ],
       "version": 1
     }
@@ -47,24 +57,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix regression: file preview does not open when clicking a file (restore previous behavior)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Enable recursive search for files as well as folders (currently only folders)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Move the current-path div (div 5yv2go / containing currently selected button) to sit just above the filesystem list, not above search",
+      "summary": "Restore file explorer + click-to-open preview: large preview w/ fullscreen and close, next/prev navigation within folder (gallery-style), viewers for images/videos/PDF, scrollable text preview (horizontal+vertical), and safe download fallback for unsupported/unsafe types; must not break existing search; match older UI behavior (pre-v0.3.87), for v0.3.88.",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Fix file preview click regression, enable recursive file search, and move current-path breadcrumb above filesystem list (v0.3.87)",
+  "projectName": "v0.3.88: Restore click-to-open file preview with robust viewers and download fallback (without breaking search)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

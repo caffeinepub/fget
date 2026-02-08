@@ -107,31 +107,31 @@ export function FileList() {
 
   const displayItems = isSearchActive ? searchResults : items;
 
-  // Get all previewable files for navigation
-  const previewableFiles = useMemo(() => {
+  // Get ALL files in current context for navigation (not just previewable)
+  const allFilesInContext = useMemo(() => {
     if (!displayItems) return [];
     return displayItems
       .filter((item): item is { __kind__: 'file'; file: FileMetadata } => 
-        item.__kind__ === 'file' && isPreviewable(item.file.name)
+        item.__kind__ === 'file'
       )
       .map(item => item.file);
   }, [displayItems]);
 
   const handleFileClick = useCallback((file: FileMetadata) => {
-    const fileIndex = previewableFiles.findIndex(f => f.id === file.id);
+    const fileIndex = allFilesInContext.findIndex(f => f.id === file.id);
     if (fileIndex !== -1) {
       setCurrentFileIndex(fileIndex);
       setPreviewFile(file);
       setShowPreview(true);
     }
-  }, [previewableFiles]);
+  }, [allFilesInContext]);
 
   const handleNavigateFile = useCallback((index: number) => {
-    if (previewableFiles.length === 0 || index < 0 || index >= previewableFiles.length) return;
+    if (allFilesInContext.length === 0 || index < 0 || index >= allFilesInContext.length) return;
     
     setCurrentFileIndex(index);
-    setPreviewFile(previewableFiles[index]);
-  }, [previewableFiles]);
+    setPreviewFile(allFilesInContext[index]);
+  }, [allFilesInContext]);
 
   const handleFolderClick = (folder: FolderMetadata) => {
     setCurrentFolderId(folder.id);
@@ -529,9 +529,11 @@ export function FileList() {
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-3 p-3">
-                  <Skeleton className="h-5 w-5" />
-                  <Skeleton className="h-4 flex-1" />
-                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -540,40 +542,38 @@ export function FileList() {
               {displayItems.map((item) => {
                 if (item.__kind__ === 'folder') {
                   const folder = item.folder;
-                  const folderFullPath = folderPathMap.get(folder.id);
+                  const folderFullPath = folderPathMap.get(folder.id) || folder.name;
                   
                   return (
                     <div
                       key={folder.id}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
                     >
-                      <Folder className="h-5 w-5 text-violet-500 flex-shrink-0" />
                       <button
                         onClick={() => handleFolderClick(folder)}
-                        className="flex-1 text-left font-medium hover:text-primary transition-colors"
+                        className="flex items-center gap-3 flex-1 min-w-0"
                       >
-                        {folder.name}
+                        <Folder className="h-10 w-10 text-violet-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="font-medium truncate">{folder.name}</p>
+                          {isSearchActive && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {folderFullPath}
+                            </p>
+                          )}
+                        </div>
                       </button>
-                      {isSearchActive && folderFullPath && (
-                        <span className="text-xs text-muted-foreground mr-2">
-                          {folderFullPath}
-                        </span>
-                      )}
-                      <Badge variant="secondary" className="text-xs">
-                        Folder
-                      </Badge>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setItemToMove({ id: folder.id, name: folder.name, isFolder: true });
-                                  setMoveDestination(null);
                                 }}
+                                size="sm"
+                                variant="ghost"
                               >
                                 <MoveRight className="h-4 w-4" />
                               </Button>
@@ -585,14 +585,15 @@ export function FileList() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setItemToDelete({ id: folder.id, name: folder.name, isFolder: true });
                                 }}
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Delete folder</TooltipContent>
@@ -601,130 +602,103 @@ export function FileList() {
                       </div>
                     </div>
                   );
+                } else {
+                  const file = item.file;
+                  const fileFullPath = file.parentId 
+                    ? `${folderPathMap.get(file.parentId) || ''}/${file.name}`
+                    : file.name;
+                  
+                  return (
+                    <div
+                      key={file.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group cursor-pointer"
+                      onClick={() => handleFileClick(file)}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {getFileIcon(file.name)}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{file.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{formatFileSize(file.size)}</span>
+                            {isSearchActive && file.parentId && (
+                              <>
+                                <span>•</span>
+                                <span className="truncate">{folderPathMap.get(file.parentId) || 'Drive'}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyFileLink(file);
+                                }}
+                                size="sm"
+                                variant="ghost"
+                              >
+                                <Link2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Copy link</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setItemToMove({ id: file.id, name: file.name, isFolder: false });
+                                }}
+                                size="sm"
+                                variant="ghost"
+                              >
+                                <MoveRight className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Move file</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setItemToDelete({ id: file.id, name: file.name, isFolder: false });
+                                }}
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete file</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  );
                 }
-
-                const file = item.file;
-                const fileParentPath = file.parentId ? folderPathMap.get(file.parentId) : null;
-                const canPreview = isPreviewable(file.name);
-
-                return (
-                  <div
-                    key={file.id}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer"
-                    onClick={() => {
-                      if (canPreview) {
-                        handleFileClick(file);
-                      }
-                    }}
-                  >
-                    {getFileIcon(file.name)}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(file.size)}
-                      </p>
-                    </div>
-                    {isSearchActive && fileParentPath && (
-                      <span className="text-xs text-muted-foreground mr-2">
-                        {fileParentPath}
-                      </span>
-                    )}
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyFileLink(file);
-                              }}
-                            >
-                              <Link2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Copy link</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const url = file.blob.getDirectURL();
-                                const link = document.createElement('a');
-                                link.href = url;
-                                link.download = file.name;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                              }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Download</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setItemToMove({ id: file.id, name: file.name, isFolder: false });
-                                setMoveDestination(null);
-                              }}
-                            >
-                              <MoveRight className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Move file</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setItemToDelete({ id: file.id, name: file.name, isFolder: false });
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Delete file</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-                );
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              {isSearchActive ? (
-                <>
-                  <Search className="h-12 w-12 mb-4 opacity-50" />
-                  <p className="text-lg font-medium">No results found</p>
-                  <p className="text-sm">Try a different search term</p>
-                </>
-              ) : (
-                <>
-                  <Folder className="h-12 w-12 mb-4 opacity-50" />
-                  <p className="text-lg font-medium">This folder is empty</p>
-                  <p className="text-sm">Upload files or create a new folder to get started</p>
-                </>
-              )}
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Folder className="h-16 w-16 text-muted-foreground/50 mb-4" />
+              <p className="text-lg font-medium text-muted-foreground">
+                {isSearchActive ? 'No results found' : 'This folder is empty'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isSearchActive 
+                  ? 'Try a different search term' 
+                  : 'Upload files or create folders to get started'}
+              </p>
             </div>
           )}
         </CardContent>
@@ -758,9 +732,9 @@ export function FileList() {
             </DialogDescription>
           </DialogHeader>
           <Input
-            placeholder="Folder name"
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
+            placeholder="Folder name"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 handleCreateFolder();
@@ -823,7 +797,10 @@ export function FileList() {
               Select a destination folder for "{itemToMove?.name}"
             </DialogDescription>
           </DialogHeader>
-          <Select value={moveDestination || 'root'} onValueChange={(value) => setMoveDestination(value === 'root' ? null : value)}>
+          <Select
+            value={moveDestination || 'root'}
+            onValueChange={(value) => setMoveDestination(value === 'root' ? null : value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select destination" />
             </SelectTrigger>
@@ -855,19 +832,14 @@ export function FileList() {
       </Dialog>
 
       {/* File Preview Modal */}
-      {previewFile && (
-        <FilePreviewModal
-          file={previewFile}
-          isOpen={showPreview}
-          onClose={() => {
-            setShowPreview(false);
-            setPreviewFile(null);
-          }}
-          allFiles={previewableFiles}
-          currentFileIndex={currentFileIndex}
-          onNavigateFile={handleNavigateFile}
-        />
-      )}
+      <FilePreviewModal
+        file={previewFile}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        allFiles={allFilesInContext}
+        currentFileIndex={currentFileIndex}
+        onNavigateFile={handleNavigateFile}
+      />
     </>
   );
 }

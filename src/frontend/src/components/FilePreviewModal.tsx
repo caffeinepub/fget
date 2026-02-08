@@ -38,6 +38,7 @@ export function FilePreviewModal({
   const isAudioFile = isAudio(extension);
   const isDocumentFile = isDocument(extension);
   const isTextFile = isText(extension);
+  const isSupported = isImageFile || isVideoFile || isAudioFile || isDocumentFile || isTextFile;
 
   const canNavigate = allFiles.length > 1;
   const hasPrevious = canNavigate && currentFileIndex > 0;
@@ -57,6 +58,13 @@ export function FilePreviewModal({
       setError(null);
 
       try {
+        // Check if file type is supported
+        if (!isSupported) {
+          setError('Preview not available for this file type');
+          setIsLoading(false);
+          return;
+        }
+
         // For images and videos, use direct URL for better performance
         if (isImageFile || isVideoFile || isAudioFile) {
           const directUrl = file.blob.getDirectURL();
@@ -331,11 +339,11 @@ export function FilePreviewModal({
 
                 {error && (
                   <div className="flex flex-col items-center justify-center gap-3 p-4 sm:p-8">
-                    <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-destructive" />
+                    <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                     <p className="text-xs sm:text-sm text-muted-foreground text-center">{error}</p>
                     <Button onClick={handleDownload} variant="outline" className="gap-2" size="sm">
                       <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                      Download file instead
+                      Download file
                     </Button>
                   </div>
                 )}
@@ -396,7 +404,7 @@ export function FilePreviewModal({
                       </div>
                     )}
 
-                    {/* Text Preview - Fixed for horizontal and vertical scrolling */}
+                    {/* Text Preview - with horizontal and vertical scrolling */}
                     {isTextFile && textContent !== null && (
                       <div className="w-full h-full overflow-auto p-3 sm:p-6">
                         <pre className="text-xs sm:text-sm font-mono whitespace-pre bg-background/50 p-3 sm:p-4 rounded-lg border overflow-x-auto">

@@ -1,18 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T15:17:47.913Z",
+  "generatedAt": "2026-02-08T16:10:49.764Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 5,
+    "implemented": 5,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Move the current-path breadcrumb div (the one containing the currently selected breadcrumb button; user referred to it as div \"5yv2go\") so it renders directly above the filesystem list (files/folders area) and not above the search bar.",
+        "summary": "Restore the file click behavior in the file browser so that clicking a file row reliably opens the existing FilePreviewModal for that file (as it worked in v0.3.86), without changing or breaking the currently working search behavior.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/FileList.tsx"
@@ -23,31 +23,42 @@
       },
       {
         "id": "REQ-2",
-        "summary": "Restore file preview-on-click behavior so that clicking a file row reliably opens the preview modal (FilePreviewModal) for that file, as it did in the previous version, without changing unrelated file browser functionality.",
+        "summary": "Update preview navigation to match the prior “gallery-style” behavior: when a preview is open, users can move to previous/next files within the current context (current folder, or current search results list when search is active) using UI controls and keyboard arrows.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/FileList.tsx",
           "frontend/src/components/FilePreviewModal.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/FileList.tsx"
+          "frontend/src/components/FileList.tsx",
+          "frontend/src/components/FilePreviewModal.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Fix subtree search so recursive searching includes files in descendant folders (not just folders), including when searching from the root context, while preserving existing search behavior (case/diacritics-insensitive name matching).",
+        "summary": "Ensure the preview modal can handle all file types: provide in-browser viewers for images, videos, audio, PDFs/documents, and text; for any unsupported/unsafe file type, show a clear “Preview not available” state with a direct download action (no infinite loading).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/lib/subtreeIndex.ts"
+          "frontend/src/components/FilePreviewModal.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/FilePreviewModal.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Bump the app version to 0.3.87 anywhere the version is surfaced in code/config (at minimum the frontend appVersion constant and the backend version value if present).",
+        "summary": "For text-based file previews, ensure users can scroll both vertically and horizontally to view the entire content, using browser-native scrolling where possible.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/FilePreviewModal.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/FilePreviewModal.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Bump the app version to 0.3.88 everywhere it is surfaced in code/config (at minimum: frontend/src/lib/appVersion.ts and backend/main.mo appVersion).",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/lib/appVersion.ts"
@@ -60,12 +71,13 @@
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/FileList.tsx",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/components/FilePreviewModal.tsx",
     "frontend/src/lib/appVersion.ts",
     "project_state.json",
     "scratch/component-selection.json",

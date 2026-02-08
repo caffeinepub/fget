@@ -1,77 +1,91 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "File browser UI fixes: breadcrumb placement, preview-on-click regression, recursive subtree search for files, and version bump to v0.3.87",
+  "title": "v0.3.88: Restore click-to-open file preview with robust viewers and download fallback (without breaking search)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Render the current-path breadcrumb directly above the files/folders list area (below the search/actions row).",
+      "summary": "Make file rows (in normal listing and search results) reliably open FilePreviewModal on click while preserving folder navigation and existing search behavior.",
       "acceptanceCriteria": [
-        "Breadcrumb/current-path display appears immediately above the files/folders list area and below the search/actions row.",
-        "The breadcrumb continues to function (clicking a breadcrumb navigates to that folder) with no other UI behavior changes."
+        "In the main file list (non-search mode), clicking anywhere on a file row (not just a small sub-control) opens FilePreviewModal for that file.",
+        "In search mode, clicking a file result row also opens FilePreviewModal for that file, and does not disrupt/clear the current search term unless the previous behavior already did so.",
+        "Folder clicks still navigate into folders; file clicks do not navigate and instead open preview.",
+        "No regressions to current recursive search behavior and results display (search remains functional and responsive)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Reorder the FileList layout so the breadcrumb/current-path row is moved from the CardHeader section to the top of the CardContent, positioned immediately above the filesystem list area and below the search/actions row; keep existing breadcrumb click behavior intact and avoid changing other interactions."
+          "description": "Restore row-click behavior by wiring the file-row container click to open the existing FilePreviewModal for any file (including previously non-previewable ones), while keeping folder rows navigating into folders. Ensure action buttons (copy link, delete, move, etc.) stop propagation so row clicks remain reliable. Preserve current search state behavior (do not clear searchTerm on file click; keep existing folder/breadcrumb behavior unless already clearing)."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Restore reliable preview-on-click for file rows while keeping folder navigation and other file browser behaviors unchanged.",
+      "summary": "Restore gallery-style previous/next navigation in FilePreviewModal for files in the current context (current folder listing or active search results), via UI controls and keyboard arrows.",
       "acceptanceCriteria": [
-        "Clicking any previewable file in the file list opens the preview modal and displays the selected file.",
-        "Preview navigation (next/previous within the modal) continues to work based on the current visible list context (normal listing vs. search results).",
-        "Folder clicks still navigate into folders and do not trigger the file preview modal."
+        "When FilePreviewModal is open and there are multiple files in the current context, previous/next navigation works via on-screen controls and left/right arrow keys.",
+        "The navigation list/index only includes files from the current context (folder listing when not searching; search result list when searching).",
+        "Navigating does not close the modal, does not change the current folder, and does not clear the search term."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Ensure file rows (for items with __kind__ === 'file') consistently call handleFileClick on row click for previewable files, while folder rows only navigate into folders. Add/adjust event handling so action buttons inside a row (download/copy/move/delete) do not block row click when appropriate and do not accidentally trigger preview; use stopPropagation only for the action controls as needed."
+          "description": "Adjust the modal navigation source list from 'previewable files only' to 'all files in current context' so previous/next navigation matches the folder listing or the active search result list. Keep currentFileIndex consistent with the context list, and pass the correct allFiles/currentFileIndex/onNavigateFile props to FilePreviewModal without mutating folder/search state."
         },
         {
           "path": "frontend/src/components/FilePreviewModal.tsx",
           "operation": "modify",
-          "description": "Validate and, if necessary, adjust modal navigation inputs (allFiles/currentFileIndex/onNavigateFile) so next/previous navigation remains derived from the currently visible list context (normal listing vs. search results) after the click-handling fix. Keep the existing blob loading approach (uses ExternalBlob from the blob-storage component via getDirectURL/getBytes). Verify the component's usage instructions before implementing."
+          "description": "Ensure keyboard left/right navigation and on-screen previous/next controls operate over the full provided context file list (including unsupported types) without closing the modal or affecting search/folder state. Confirm the sidebar list selection and arrow availability reflect the passed currentFileIndex/allFiles accurately."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Fix recursive subtree search to include matching files in descendant folders (including from root) while preserving existing normalized name matching and search UI behavior.",
+      "summary": "Ensure FilePreviewModal supports robust in-browser previews for common types and shows a clear preview-unavailable state with download fallback for unsupported/unsafe types (no infinite loading).",
       "acceptanceCriteria": [
-        "When a search term is entered, results include matching files located in any descendant folder under the current folder.",
-        "When searching from the root (no current folder selected), results include matching files from the entire drive (not only root-level files).",
-        "Existing folder matching and search UI (including the clear-search cross) continues to work as before."
+        "Opening a file with an unsupported extension does not remain stuck in a loading state; the modal displays a preview-unavailable message and a Download button.",
+        "Supported types continue to preview using the existing implementations (image/video/audio direct URL, document iframe/blob URL, text decode).",
+        "Download action works from both the header download button and the preview-unavailable state."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/FilePreviewModal.tsx",
           "operation": "modify",
-          "description": "Update useSearchSubtree client-side filtering so that when startFolderId is null (root context), matchingFiles includes files in any folder across the drive (i.e., files whose parentId is null OR whose parentId is any folder in the computed subtree/all-folders set), not just root-level files. Preserve containsNormalized() behavior for case/diacritics-insensitive matching and keep query keys/enablement and clear-search UI semantics unchanged."
-        },
-        {
-          "path": "frontend/src/lib/subtreeIndex.ts",
-          "operation": "modify",
-          "description": "Review and, if needed, adjust buildSubtreeFolderIds usage assumptions to support full-drive file inclusion for root searches (e.g., ensure the produced set covers all folder IDs under the root so file parentId membership checks work reliably). Keep deterministic traversal and existing behavior for non-root startFolderId unchanged."
+          "description": "Fix unsupported-type handling so the loader always resolves: when the file extension is not image/video/audio/document/text, set a 'Preview not available' error/state and stop loading, while still allowing download. Keep existing preview implementations for supported types. Continue using the blob-storage ExternalBlob capabilities (getDirectURL for streaming media, getBytes for blob/text) as currently implemented; verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Bump frontend surfaced app version to 0.3.87.",
+      "summary": "Improve text previews to support both vertical and horizontal scrolling using browser-native scrolling, including in fullscreen/maximized states.",
       "acceptanceCriteria": [
-        "Frontend reports APP_VERSION as 0.3.87.",
-        "Backend version (if defined in backend code) is updated to 0.3.87."
+        "Large text files can be scrolled vertically to view all lines.",
+        "Long lines can be scrolled horizontally without wrapping truncation.",
+        "Scrolling works in both normal and fullscreen/maximized modal states."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FilePreviewModal.tsx",
+          "operation": "modify",
+          "description": "Ensure the text preview container uses native overflow scrolling in both axes (outer container for vertical, inner/pre for horizontal without line wrapping) and that these overflow rules remain effective when the modal is maximized or fullscreen."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Bump the surfaced frontend app version to 0.3.88.",
+      "acceptanceCriteria": [
+        "frontend/src/lib/appVersion.ts exports APP_VERSION as '0.3.88'.",
+        "backend/main.mo appVersion constant is '0.3.88'.",
+        "Any UI surfaces that read these values show 0.3.88 after build."
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/appVersion.ts",
           "operation": "modify",
-          "description": "Update the exported APP_VERSION constant from 0.3.86 to 0.3.87 so the frontend reports version 0.3.87 anywhere it is surfaced."
+          "description": "Update APP_VERSION export to '0.3.88' so any UI surfaces reading it display the new version."
         }
       ]
     }

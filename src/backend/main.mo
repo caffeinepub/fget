@@ -9,7 +9,9 @@ import Runtime "mo:core/Runtime";
 import Text "mo:core/Text";
 import Nat "mo:core/Nat";
 import Char "mo:core/Char";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let storage = Storage.new();
   include MixinStorage(storage);
@@ -21,8 +23,7 @@ actor {
   var frontendCanisterId : Text = "";
   var backendCanisterId : Text = "";
   var firstAdmin : ?Principal = null;
-
-  let appVersion = "0.3.87";
+  let appVersion = "0.3.88";
 
   type FileMetadata = {
     id : Text;
@@ -75,7 +76,6 @@ actor {
   };
 
   var nextFolderId = 1;
-
   let files = Map.empty<Text, FileMetadata>();
   let folders = Map.empty<Text, FolderMetadata>();
 
