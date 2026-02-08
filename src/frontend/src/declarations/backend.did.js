@@ -67,6 +67,10 @@ export const FileMove = IDL.Record({
   'isFolder' : IDL.Bool,
   'newParentId' : IDL.Opt(IDL.Text),
 });
+export const FolderSearchResults = IDL.Record({
+  'files' : IDL.Vec(FileMetadata),
+  'folders' : IDL.Vec(FolderMetadata),
+});
 
 export const idlService = IDL.Service({
   '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -133,6 +137,16 @@ export const idlService = IDL.Service({
   'requestApproval' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'searchFiles' : IDL.Func([IDL.Text], [IDL.Vec(FileMetadata)], ['query']),
+  'searchFoldersInSubtree' : IDL.Func(
+      [IDL.Text, IDL.Opt(IDL.Text)],
+      [FolderSearchResults],
+      ['query'],
+    ),
+  'searchSubtree' : IDL.Func(
+      [IDL.Text, IDL.Opt(IDL.Text)],
+      [IDL.Vec(FileSystemItem)],
+      ['query'],
+    ),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'setBackendCanisterId' : IDL.Func([IDL.Text], [], []),
   'setFrontendCanisterId' : IDL.Func([IDL.Text], [], []),
@@ -200,6 +214,10 @@ export const idlFactory = ({ IDL }) => {
     'isFolder' : IDL.Bool,
     'newParentId' : IDL.Opt(IDL.Text),
   });
+  const FolderSearchResults = IDL.Record({
+    'files' : IDL.Vec(FileMetadata),
+    'folders' : IDL.Vec(FolderMetadata),
+  });
   
   return IDL.Service({
     '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -266,6 +284,16 @@ export const idlFactory = ({ IDL }) => {
     'requestApproval' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'searchFiles' : IDL.Func([IDL.Text], [IDL.Vec(FileMetadata)], ['query']),
+    'searchFoldersInSubtree' : IDL.Func(
+        [IDL.Text, IDL.Opt(IDL.Text)],
+        [FolderSearchResults],
+        ['query'],
+      ),
+    'searchSubtree' : IDL.Func(
+        [IDL.Text, IDL.Opt(IDL.Text)],
+        [IDL.Vec(FileSystemItem)],
+        ['query'],
+      ),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'setBackendCanisterId' : IDL.Func([IDL.Text], [], []),
     'setFrontendCanisterId' : IDL.Func([IDL.Text], [], []),

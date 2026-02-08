@@ -1,111 +1,90 @@
 {
   "kind": "build_request",
-  "title": "Upgrade file preview modal into professional resizable fullscreen viewer + bump Manage version to 0.1.61",
+  "title": "Fix file preview click regression, enable recursive file search, and move current-path breadcrumb above filesystem list (v0.3.87)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Redesign the in-app file preview UI (the modal opened from clicking a filename) into a more professional, player-style viewer that is mobile-friendly and supports all currently previewable file types (images, text, JSON, audio, video, and documents). The viewer must open at a noticeably larger default size than the current modal and adapt responsively to screen size (including small mobile screens).",
+      "text": "Move the current-path breadcrumb div (the one containing the currently selected breadcrumb button; user referred to it as div \"5yv2go\") so it renders directly above the filesystem list (files/folders area) and not above the search bar.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4",
-          "msg-5",
           "msg-6"
         ],
         "quotes": [
-          "the file viewer works but offers only a small and not resizable window ... make in more professional 'player', resizable, possibility for full screen etc",
-          "it should be mobile friendly so decide for me",
-          "all supported file types"
+          "the one to move is the one containing the currently selected button - so the div 5yv2go, clear? goal is to display the path just above the filesystem and not above the search"
         ]
       },
       "acceptanceCriteria": [
-        "Opening a supported file type shows a large, player-style viewer layout (not a small dialog) on desktop and a mobile-appropriate layout on small screens.",
-        "The viewer continues to support previews for images, video, audio, documents (iframe/blob URL), and text exactly as before (no regression in supported formats)."
+        "Breadcrumb/current-path display appears immediately above the files/folders list area and below the search/actions row.",
+        "The breadcrumb continues to function (clicking a breadcrumb navigates to that folder) with no other UI behavior changes."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add fullscreen capability to the file preview viewer. Fullscreen behavior must work well on both desktop and mobile (choose the best approach), and provide an obvious UI control in the viewer header for entering/exiting fullscreen.",
+      "text": "Restore file preview-on-click behavior so that clicking a file row reliably opens the preview modal (FilePreviewModal) for that file, as it did in the previous version, without changing unrelated file browser functionality.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4",
+          "msg-3",
           "msg-6"
         ],
         "quotes": [
-          "possibility for full screen etc",
-          "decide for me what is better - also for mobile mode"
+          "why is preview not working when clicking on file?",
+          "the preview-on-click was even in previous version, not idea why did you change it"
         ]
       },
       "acceptanceCriteria": [
-        "A fullscreen toggle is visible in the viewer header.",
-        "Entering fullscreen expands the preview to use the maximum available viewport space and exiting returns to the prior viewer size/state."
+        "Clicking any previewable file in the file list opens the preview modal and displays the selected file.",
+        "Preview navigation (next/previous within the modal) continues to work based on the current visible list context (normal listing vs. search results).",
+        "Folder clicks still navigate into folders and do not trigger the file preview modal."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Make the file preview viewer resizable in a user-friendly way that works across desktop and mobile. The implementation choice is up to the developer, but resizing must be possible (or effectively achieved via maximize/fullscreen and responsive sizing) without breaking preview rendering for any supported file type.",
+      "text": "Fix subtree search so recursive searching includes files in descendant folders (not just folders), including when searching from the root context, while preserving existing search behavior (case/diacritics-insensitive name matching).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4",
-          "msg-5",
+          "msg-3",
           "msg-6"
         ],
         "quotes": [
-          "not resizable window ... resizable",
-          "it should be mobile friendly so decide for me",
-          "decide for me what is better - also for mobile mode"
+          "still the recursive search for files doesn't work",
+          "simply add possibility of recursive search for files as well - currectly it works on folders only"
         ]
       },
       "acceptanceCriteria": [
-        "On desktop, the viewer can be resized (or offers a clear maximize/restore control in addition to fullscreen) and the preview content reflows correctly.",
-        "On mobile, the viewer uses a layout that is easy to use without requiring precise drag handles (e.g., full-viewport or near-full-viewport)."
+        "When a search term is entered, results include matching files located in any descendant folder under the current folder.",
+        "When searching from the root (no current folder selected), results include matching files from the entire drive (not only root-level files).",
+        "Existing folder matching and search UI (including the clear-search cross) continues to work as before."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Remove the duplicate close (X) controls in the file preview viewer so only one close control is shown, and ensure the close control is consistently placed and visually aligned with the rest of the viewer header actions.",
-      "target": "frontend",
+      "text": "Bump the app version to 0.3.87 anywhere the version is surfaced in code/config (at minimum the frontend appVersion constant and the backend version value if present).",
+      "target": "both",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "two 'close' crosses in top right corner"
+          "Version to 0.3.87"
         ]
       },
       "acceptanceCriteria": [
-        "Only a single close (X) control is visible in the viewer UI.",
-        "Closing the viewer works via the close button and via Escape key (desktop) without UI duplication."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Update the app version shown in the Manage section from 0.1.60 to 0.1.61, and ensure the Manage UI reads the version from a single source of truth (not a hardcoded string in the JSX) to prevent future out-of-sync version labels.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Also app version in Manage section update to 0.1.61"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Manage section displays exactly: \"0.1.61\".",
-        "The displayed version is not hardcoded directly in the ManagePanel JSX; it is imported from a central constant/module used for version display."
+        "Frontend reports APP_VERSION as 0.3.87.",
+        "Backend version (if defined in backend code) is updated to 0.3.87."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (compose existing shadcn components instead).",
-    "Do not edit immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx."
+    "Do not change unrelated functionality; keep existing working behaviors intact to avoid regressions."
   ],
   "nonGoals": [
-    "No backend schema or Motoko API changes are required for this request.",
-    "Do not add support for new file types beyond the currently supported preview types."
+    "Adding new search filters beyond recursive name search for files/folders (e.g., content search, mime-type filters).",
+    "Changing upload behavior (including folder upload semantics) beyond what is necessary for the requested fixes.",
+    "Introducing new authentication or access-control behavior changes."
   ],
   "imageRequirements": {
     "required": [],

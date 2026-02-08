@@ -1,90 +1,77 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Professional resizable fullscreen file viewer + Manage version single source of truth",
+  "title": "File browser UI fixes: breadcrumb placement, preview-on-click regression, recursive subtree search for files, and version bump to v0.3.87",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Redesign the file preview modal into a larger, player-style, mobile-friendly viewer while preserving all existing preview types.",
+      "summary": "Render the current-path breadcrumb directly above the files/folders list area (below the search/actions row).",
       "acceptanceCriteria": [
-        "Opening a supported file type shows a large, player-style viewer layout (not a small dialog) on desktop and a mobile-appropriate layout on small screens.",
-        "The viewer continues to support previews for images, video, audio, documents (iframe/blob URL), and text exactly as before (no regression in supported formats)."
+        "Breadcrumb/current-path display appears immediately above the files/folders list area and below the search/actions row.",
+        "The breadcrumb continues to function (clicking a breadcrumb navigates to that folder) with no other UI behavior changes."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/FilePreviewModal.tsx",
+          "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Redesign the preview container into a viewer-style layout with a larger default size (desktop) and a full-viewport/near-full-viewport presentation on small screens, while keeping the existing preview rendering paths for images/video/audio (direct URL), documents (iframe via blob URL), and text/JSON (decoded text)."
-        },
-        {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Add any minimal global CSS needed to support a viewer-style modal presentation (e.g., viewport-safe sizing with mobile safe-area considerations) without changing shadcn ui components under frontend/src/components/ui."
+          "description": "Reorder the FileList layout so the breadcrumb/current-path row is moved from the CardHeader section to the top of the CardContent, positioned immediately above the filesystem list area and below the search/actions row; keep existing breadcrumb click behavior intact and avoid changing other interactions."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add a clear fullscreen toggle to the viewer header that works well on desktop and mobile.",
+      "summary": "Restore reliable preview-on-click for file rows while keeping folder navigation and other file browser behaviors unchanged.",
       "acceptanceCriteria": [
-        "A fullscreen toggle is visible in the viewer header.",
-        "Entering fullscreen expands the preview to use the maximum available viewport space and exiting returns to the prior viewer size/state."
+        "Clicking any previewable file in the file list opens the preview modal and displays the selected file.",
+        "Preview navigation (next/previous within the modal) continues to work based on the current visible list context (normal listing vs. search results).",
+        "Folder clicks still navigate into folders and do not trigger the file preview modal."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Ensure file rows (for items with __kind__ === 'file') consistently call handleFileClick on row click for previewable files, while folder rows only navigate into folders. Add/adjust event handling so action buttons inside a row (download/copy/move/delete) do not block row click when appropriate and do not accidentally trigger preview; use stopPropagation only for the action controls as needed."
+        },
+        {
           "path": "frontend/src/components/FilePreviewModal.tsx",
           "operation": "modify",
-          "description": "Add a viewer header control to enter/exit fullscreen using the browser Fullscreen API when available; track fullscreen state via fullscreenchange and restore the prior viewer size/state on exit."
+          "description": "Validate and, if necessary, adjust modal navigation inputs (allFiles/currentFileIndex/onNavigateFile) so next/previous navigation remains derived from the currently visible list context (normal listing vs. search results) after the click-handling fix. Keep the existing blob loading approach (uses ExternalBlob from the blob-storage component via getDirectURL/getBytes). Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Make the viewer resizable on desktop and easy to use on mobile via responsive sizing and maximize/restore behavior.",
+      "summary": "Fix recursive subtree search to include matching files in descendant folders (including from root) while preserving existing normalized name matching and search UI behavior.",
       "acceptanceCriteria": [
-        "On desktop, the viewer can be resized (or offers a clear maximize/restore control in addition to fullscreen) and the preview content reflows correctly.",
-        "On mobile, the viewer uses a layout that is easy to use without requiring precise drag handles (e.g., full-viewport or near-full-viewport)."
+        "When a search term is entered, results include matching files located in any descendant folder under the current folder.",
+        "When searching from the root (no current folder selected), results include matching files from the entire drive (not only root-level files).",
+        "Existing folder matching and search UI (including the clear-search cross) continues to work as before."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/FilePreviewModal.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Implement desktop-friendly resizing (e.g., resizable container and/or maximize/restore toggle distinct from fullscreen) and ensure all preview renderers reflow safely (object-contain images/video, scrollable text, iframe fill) across size changes; default to a mobile-optimized full/near-full viewport layout that avoids precise drag interactions."
+          "description": "Update useSearchSubtree client-side filtering so that when startFolderId is null (root context), matchingFiles includes files in any folder across the drive (i.e., files whose parentId is null OR whose parentId is any folder in the computed subtree/all-folders set), not just root-level files. Preserve containsNormalized() behavior for case/diacritics-insensitive matching and keep query keys/enablement and clear-search UI semantics unchanged."
+        },
+        {
+          "path": "frontend/src/lib/subtreeIndex.ts",
+          "operation": "modify",
+          "description": "Review and, if needed, adjust buildSubtreeFolderIds usage assumptions to support full-drive file inclusion for root searches (e.g., ensure the produced set covers all folder IDs under the root so file parentId membership checks work reliably). Keep deterministic traversal and existing behavior for non-root startFolderId unchanged."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Remove duplicate close controls and keep a single consistent close action aligned with other header actions, including Escape-to-close on desktop.",
+      "summary": "Bump frontend surfaced app version to 0.3.87.",
       "acceptanceCriteria": [
-        "Only a single close (X) control is visible in the viewer UI.",
-        "Closing the viewer works via the close button and via Escape key (desktop) without UI duplication."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FilePreviewModal.tsx",
-          "operation": "modify",
-          "description": "Eliminate the duplicate close (X) by avoiding the default shadcn DialogContent close button (compose the modal using Radix dialog primitives or an alternative structure) so only the custom header close control remains; keep Escape-to-close behavior and ensure consistent header alignment of actions."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Bump the Manage section app version to 0.1.61 and read it from a single shared constant rather than hardcoding in JSX.",
-      "acceptanceCriteria": [
-        "Manage section displays exactly: \"0.1.61\".",
-        "The displayed version is not hardcoded directly in the ManagePanel JSX; it is imported from a central constant/module used for version display."
+        "Frontend reports APP_VERSION as 0.3.87.",
+        "Backend version (if defined in backend code) is updated to 0.3.87."
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/appVersion.ts",
-          "operation": "create",
-          "description": "Create a single source-of-truth exported constant for the app version (set to 0.1.61) to be used by UI surfaces that display the version."
-        },
-        {
-          "path": "frontend/src/components/ManagePanel.tsx",
           "operation": "modify",
-          "description": "Replace the hardcoded version label in the App Version card with an import from the central version module so the Manage UI displays 0.1.61 and avoids future drift."
+          "description": "Update the exported APP_VERSION constant from 0.3.86 to 0.3.87 so the frontend reports version 0.3.87 anywhere it is surfaced."
         }
       ]
     }

@@ -1,82 +1,71 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-04T21:04:35.197Z",
+  "generatedAt": "2026-02-08T15:17:47.913Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 5,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Redesign the in-app file preview UI (the modal opened from clicking a filename) into a more professional, player-style viewer that is mobile-friendly and supports all currently previewable file types (images, text, JSON, audio, video, and documents). The viewer must open at a noticeably larger default size than the current modal and adapt responsively to screen size (including small mobile screens).",
+        "summary": "Move the current-path breadcrumb div (the one containing the currently selected breadcrumb button; user referred to it as div \"5yv2go\") so it renders directly above the filesystem list (files/folders area) and not above the search bar.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx",
-          "frontend/src/index.css"
+          "frontend/src/components/FileList.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/components/FileList.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add fullscreen capability to the file preview viewer. Fullscreen behavior must work well on both desktop and mobile (choose the best approach), and provide an obvious UI control in the viewer header for entering/exiting fullscreen.",
+        "summary": "Restore file preview-on-click behavior so that clicking a file row reliably opens the preview modal (FilePreviewModal) for that file, as it did in the previous version, without changing unrelated file browser functionality.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/components/FileList.tsx",
           "frontend/src/components/FilePreviewModal.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/components/FileList.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Make the file preview viewer resizable in a user-friendly way that works across desktop and mobile. The implementation choice is up to the developer, but resizing must be possible (or effectively achieved via maximize/fullscreen and responsive sizing) without breaking preview rendering for any supported file type.",
+        "summary": "Fix subtree search so recursive searching includes files in descendant folders (not just folders), including when searching from the root context, while preserving existing search behavior (case/diacritics-insensitive name matching).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/lib/subtreeIndex.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Remove the duplicate close (X) controls in the file preview viewer so only one close control is shown, and ensure the close control is consistently placed and visually aligned with the rest of the viewer header actions.",
+        "summary": "Bump the app version to 0.3.87 anywhere the version is surfaced in code/config (at minimum the frontend appVersion constant and the backend version value if present).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/lib/appVersion.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Update the app version shown in the Manage section from 0.1.60 to 0.1.61, and ensure the Manage UI reads the version from a single source of truth (not a hardcoded string in the JSX) to prevent future out-of-sync version labels.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/appVersion.ts",
-          "frontend/src/components/ManagePanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/appVersion.ts",
-          "frontend/src/components/ManagePanel.tsx"
+          "frontend/src/lib/appVersion.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/FilePreviewModal.tsx",
-    "frontend/src/components/ManagePanel.tsx",
+    "frontend/src/components/FileList.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "frontend/src/lib/appVersion.ts",
     "project_state.json",
     "scratch/component-selection.json",

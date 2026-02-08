@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useEffectiveAccess, useSetFrontendCanisterId } from './hooks/useQueries';
+import { useAccessBootstrap } from './hooks/useAccessBootstrap';
 import { Loader2 } from 'lucide-react';
 import { getFrontendCanisterId } from './lib/canisterIds';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,6 +16,10 @@ import { useQueryClient } from '@tanstack/react-query';
 export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
   const queryClient = useQueryClient();
+  
+  // Bootstrap access control automatically after login
+  useAccessBootstrap();
+  
   const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
   
   // Only fetch profile if user has access

@@ -38,6 +38,10 @@ export interface FolderMetadata {
   'name' : string,
   'parentId' : [] | [string],
 }
+export interface FolderSearchResults {
+  'files' : Array<FileMetadata>,
+  'folders' : Array<FolderMetadata>,
+}
 export interface StorageStats {
   'frontendCanisterId' : string,
   'appVersion' : string,
@@ -108,6 +112,11 @@ export interface _SERVICE {
   'requestApproval' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'searchFiles' : ActorMethod<[string], Array<FileMetadata>>,
+  'searchFoldersInSubtree' : ActorMethod<
+    [string, [] | [string]],
+    FolderSearchResults
+  >,
+  'searchSubtree' : ActorMethod<[string, [] | [string]], Array<FileSystemItem>>,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
   'setBackendCanisterId' : ActorMethod<[string], undefined>,
   'setFrontendCanisterId' : ActorMethod<[string], undefined>,

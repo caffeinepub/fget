@@ -27,11 +27,6 @@ export interface FileMetadata {
     size: bigint;
     parentId?: string;
 }
-export interface AdminInfo {
-    principal: Principal;
-    username: string;
-    role: UserRole;
-}
 export type FileSystemItem = {
     __kind__: "file";
     file: FileMetadata;
@@ -39,10 +34,19 @@ export type FileSystemItem = {
     __kind__: "folder";
     folder: FolderMetadata;
 };
+export interface FolderSearchResults {
+    files: Array<FileMetadata>;
+    folders: Array<FolderMetadata>;
+}
 export interface FolderMetadata {
     id: string;
     name: string;
     parentId?: string;
+}
+export interface AdminInfo {
+    principal: Principal;
+    username: string;
+    role: UserRole;
 }
 export interface UserApprovalInfo {
     status: ApprovalStatus;
@@ -93,6 +97,8 @@ export interface backendInterface {
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchFiles(searchTerm: string): Promise<Array<FileMetadata>>;
+    searchFoldersInSubtree(searchTerm: string, startFolderId: string | null): Promise<FolderSearchResults>;
+    searchSubtree(searchTerm: string, startFolderId: string | null): Promise<Array<FileSystemItem>>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setBackendCanisterId(canisterId: string): Promise<void>;
     setFrontendCanisterId(canisterId: string): Promise<void>;

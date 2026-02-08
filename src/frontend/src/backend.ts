@@ -105,11 +105,6 @@ export interface FileMetadata {
 export interface _CaffeineStorageRefillInformation {
     proposed_top_up_amount?: bigint;
 }
-export interface AdminInfo {
-    principal: Principal;
-    username: string;
-    role: UserRole;
-}
 export interface _CaffeineStorageCreateCertificateResult {
     method: string;
     blob_hash: string;
@@ -121,10 +116,19 @@ export type FileSystemItem = {
     __kind__: "folder";
     folder: FolderMetadata;
 };
+export interface FolderSearchResults {
+    files: Array<FileMetadata>;
+    folders: Array<FolderMetadata>;
+}
 export interface FolderMetadata {
     id: string;
     name: string;
     parentId?: string;
+}
+export interface AdminInfo {
+    principal: Principal;
+    username: string;
+    role: UserRole;
 }
 export interface UserApprovalInfo {
     status: ApprovalStatus;
@@ -185,11 +189,13 @@ export interface backendInterface {
     requestApproval(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchFiles(searchTerm: string): Promise<Array<FileMetadata>>;
+    searchFoldersInSubtree(searchTerm: string, startFolderId: string | null): Promise<FolderSearchResults>;
+    searchSubtree(searchTerm: string, startFolderId: string | null): Promise<Array<FileSystemItem>>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     setBackendCanisterId(canisterId: string): Promise<void>;
     setFrontendCanisterId(canisterId: string): Promise<void>;
 }
-import type { AdminInfo as _AdminInfo, ApprovalStatus as _ApprovalStatus, ExternalBlob as _ExternalBlob, FileMetadata as _FileMetadata, FileMove as _FileMove, FileSystemItem as _FileSystemItem, FolderMetadata as _FolderMetadata, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
+import type { AdminInfo as _AdminInfo, ApprovalStatus as _ApprovalStatus, ExternalBlob as _ExternalBlob, FileMetadata as _FileMetadata, FileMove as _FileMove, FileSystemItem as _FileSystemItem, FolderMetadata as _FolderMetadata, FolderSearchResults as _FolderSearchResults, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _caffeineStorageBlobIsLive(arg0: Uint8Array): Promise<boolean> {
@@ -640,17 +646,45 @@ export class Backend implements backendInterface {
             return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
         }
     }
+    async searchFoldersInSubtree(arg0: string, arg1: string | null): Promise<FolderSearchResults> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.searchFoldersInSubtree(arg0, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg1));
+                return from_candid_FolderSearchResults_n39(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.searchFoldersInSubtree(arg0, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg1));
+            return from_candid_FolderSearchResults_n39(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async searchSubtree(arg0: string, arg1: string | null): Promise<Array<FileSystemItem>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.searchSubtree(arg0, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg1));
+                return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.searchSubtree(arg0, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg1));
+            return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async setApproval(arg0: Principal, arg1: ApprovalStatus): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n39(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n41(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n39(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.setApproval(arg0, to_candid_ApprovalStatus_n41(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
@@ -700,6 +734,9 @@ async function from_candid_FileSystemItem_n24(_uploadFile: (file: ExternalBlob) 
 }
 function from_candid_FolderMetadata_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _FolderMetadata): FolderMetadata {
     return from_candid_record_n14(_uploadFile, _downloadFile, value);
+}
+async function from_candid_FolderSearchResults_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _FolderSearchResults): Promise<FolderSearchResults> {
+    return await from_candid_record_n40(_uploadFile, _downloadFile, value);
 }
 function from_candid_UserApprovalInfo_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserApprovalInfo): UserApprovalInfo {
     return from_candid_record_n33(_uploadFile, _downloadFile, value);
@@ -791,6 +828,18 @@ function from_candid_record_n33(_uploadFile: (file: ExternalBlob) => Promise<Uin
         principal: value.principal
     };
 }
+async function from_candid_record_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    files: Array<_FileMetadata>;
+    folders: Array<_FolderMetadata>;
+}): Promise<{
+    files: Array<FileMetadata>;
+    folders: Array<FolderMetadata>;
+}> {
+    return {
+        files: await from_candid_vec_n21(_uploadFile, _downloadFile, value.files),
+        folders: from_candid_vec_n12(_uploadFile, _downloadFile, value.folders)
+    };
+}
 function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     success: [] | [boolean];
     topped_up_amount: [] | [bigint];
@@ -855,8 +904,8 @@ function from_candid_vec_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_vec_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_UserApprovalInfo>): Array<UserApprovalInfo> {
     return value.map((x)=>from_candid_UserApprovalInfo_n32(_uploadFile, _downloadFile, x));
 }
-function to_candid_ApprovalStatus_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): _ApprovalStatus {
-    return to_candid_variant_n40(_uploadFile, _downloadFile, value);
+function to_candid_ApprovalStatus_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): _ApprovalStatus {
+    return to_candid_variant_n42(_uploadFile, _downloadFile, value);
 }
 async function to_candid_ExternalBlob_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ExternalBlob): Promise<_ExternalBlob> {
     return await _uploadFile(value);
@@ -915,7 +964,7 @@ function to_candid_variant_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint
         guest: null
     } : value;
 }
-function to_candid_variant_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): {
+function to_candid_variant_n42(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ApprovalStatus): {
     pending: null;
 } | {
     approved: null;

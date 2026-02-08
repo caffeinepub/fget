@@ -8,8 +8,7 @@ import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Text "mo:core/Text";
 import Nat "mo:core/Nat";
-
-
+import Char "mo:core/Char";
 
 actor {
   let storage = Storage.new();
@@ -23,7 +22,7 @@ actor {
   var backendCanisterId : Text = "";
   var firstAdmin : ?Principal = null;
 
-  let appVersion = "0.1.60";
+  let appVersion = "0.3.87";
 
   type FileMetadata = {
     id : Text;
@@ -55,6 +54,18 @@ actor {
   public type FileSystemItem = {
     #file : FileMetadata;
     #folder : FolderMetadata;
+  };
+
+  public type SearchResult = {
+    name : Text;
+    fullPath : Text;
+    isFolder : Bool;
+    id : Text;
+  };
+
+  public type FolderSearchResults = {
+    folders : [FolderMetadata];
+    files : [FileMetadata];
   };
 
   public type FileMove = {
@@ -138,6 +149,9 @@ actor {
   };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (getEffectiveRole(caller) == #guest) {
+      Runtime.trap("Unauthorized: Only existing users can view profiles");
+    };
     userProfiles.get(caller);
   };
 
@@ -149,6 +163,10 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (getEffectiveRole(caller) == #guest) {
+      Runtime.trap("Unauthorized: Only existing users can save profiles");
+    };
+
     let trimmedName = profile.name.trim(#text " ");
     if (trimmedName == "") {
       Runtime.trap("Username cannot be empty");
@@ -164,6 +182,10 @@ actor {
   };
 
   public query ({ caller }) func isUsernameUnique(username : Text) : async Bool {
+    if (getEffectiveRole(caller) == #guest) {
+      Runtime.trap("Unauthorized: Only existing users can check username availability");
+    };
+
     let trimmedName = username.trim(#text " ");
     if (trimmedName == "") { return false };
 
@@ -319,21 +341,21 @@ actor {
 
   public query ({ caller }) func getFiles() : async [FileMetadata] {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can view files");
+      Runtime.trap("Unauthorized: Only existing users can view files");
     };
     files.values().toArray();
   };
 
   public query ({ caller }) func getFile(id : Text) : async ?FileMetadata {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can view files");
+      Runtime.trap("Unauthorized: Only existing users can view files");
     };
     files.get(id);
   };
 
   public shared ({ caller }) func deleteFile(id : Text) : async Bool {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can delete files");
+      Runtime.trap("Unauthorized: Only existing users can delete files");
     };
 
     switch (files.get(id)) {
@@ -345,9 +367,155 @@ actor {
     };
   };
 
+  func toLowerASCIIFold(input : Text) : Text {
+    input.map(
+      func(c) {
+        switch (c) {
+          case ('Á') { 'a' };
+          case ('À') { 'a' };
+          case ('Â') { 'a' };
+          case ('Ä') { 'a' };
+          case ('É') { 'e' };
+          case ('È') { 'e' };
+          case ('Ê') { 'e' };
+          case ('Ë') { 'e' };
+          case ('Í') { 'i' };
+          case ('Ì') { 'i' };
+          case ('Î') { 'i' };
+          case ('Ï') { 'i' };
+          case ('Ó') { 'o' };
+          case ('Ò') { 'o' };
+          case ('Ô') { 'o' };
+          case ('Ö') { 'o' };
+          case ('Ú') { 'u' };
+          case ('Ù') { 'u' };
+          case ('Û') { 'u' };
+          case ('Ü') { 'u' };
+          case ('Ç') { 'c' };
+          case ('á') { 'a' };
+          case ('à') { 'a' };
+          case ('â') { 'a' };
+          case ('ä') { 'a' };
+          case ('é') { 'e' };
+          case ('è') { 'e' };
+          case ('ê') { 'e' };
+          case ('ë') { 'e' };
+          case ('í') { 'i' };
+          case ('ì') { 'i' };
+          case ('î') { 'i' };
+          case ('ï') { 'i' };
+          case ('ó') { 'o' };
+          case ('ò') { 'o' };
+          case ('ô') { 'o' };
+          case ('ö') { 'o' };
+          case ('ú') { 'u' };
+          case ('ù') { 'u' };
+          case ('û') { 'u' };
+          case ('ü') { 'u' };
+          case ('ç') { 'c' };
+          case (_other) { c };
+        };
+      }
+    );
+  };
+
+  func recursiveFolderSearch(
+    searchTerm : Text,
+    currentFolderId : ?Text,
+    folderResults : List.List<FolderMetadata>,
+    fileResults : List.List<FileMetadata>,
+  ) : () {
+    let lowercaseTerm = textFoldASCII(searchTerm);
+    for ((_, file) in files.entries()) {
+      if (file.parentId == currentFolderId and containsFoldedTerm(file.name, lowercaseTerm)) {
+        fileResults.add(file);
+      };
+    };
+    for ((_, folder) in folders.entries()) {
+      if (folder.parentId == currentFolderId and containsFoldedTerm(folder.name, lowercaseTerm)) {
+        folderResults.add(folder);
+      };
+    };
+    for ((_, subfolder) in folders.entries()) {
+      if (subfolder.parentId == currentFolderId) {
+        recursiveFolderSearch(searchTerm, ?subfolder.id, folderResults, fileResults);
+      };
+    };
+  };
+
+  func containsFoldedTerm(text : Text, term : Text) : Bool {
+    textFoldASCII(text).contains(#text term);
+  };
+
+  func textFoldASCII(input : Text) : Text {
+    input.map(
+      func(c) {
+        switch (c) {
+          case ('Á') { 'a' };
+          case ('À') { 'a' };
+          case ('Â') { 'a' };
+          case ('Ä') { 'a' };
+          case ('É') { 'e' };
+          case ('È') { 'e' };
+          case ('Ê') { 'e' };
+          case ('Ë') { 'e' };
+          case ('Í') { 'i' };
+          case ('Ì') { 'i' };
+          case ('Î') { 'i' };
+          case ('Ï') { 'i' };
+          case ('Ó') { 'o' };
+          case ('Ò') { 'o' };
+          case ('Ô') { 'o' };
+          case ('Ö') { 'o' };
+          case ('Ú') { 'u' };
+          case ('Ù') { 'u' };
+          case ('Û') { 'u' };
+          case ('Ü') { 'u' };
+          case ('Ç') { 'c' };
+          case ('á') { 'a' };
+          case ('à') { 'a' };
+          case ('â') { 'a' };
+          case ('ä') { 'a' };
+          case ('é') { 'e' };
+          case ('è') { 'e' };
+          case ('ê') { 'e' };
+          case ('ë') { 'e' };
+          case ('í') { 'i' };
+          case ('ì') { 'i' };
+          case ('î') { 'i' };
+          case ('ï') { 'i' };
+          case ('ó') { 'o' };
+          case ('ò') { 'o' };
+          case ('ô') { 'o' };
+          case ('ö') { 'o' };
+          case ('ú') { 'u' };
+          case ('ù') { 'u' };
+          case ('û') { 'u' };
+          case ('ü') { 'u' };
+          case ('ç') { 'c' };
+          case (_other) { c };
+        };
+      }
+    );
+  };
+
+  public query ({ caller }) func searchFoldersInSubtree(searchTerm : Text, startFolderId : ?Text) : async FolderSearchResults {
+    if (getEffectiveRole(caller) == #guest) {
+      Runtime.trap("Unauthorized: Only existing users can search folders");
+    };
+
+    let folderResults = List.empty<FolderMetadata>();
+    let fileResults = List.empty<FileMetadata>();
+    recursiveFolderSearch(searchTerm, startFolderId, folderResults, fileResults);
+    {
+      folders = folderResults.toArray();
+      files = fileResults.toArray();
+    };
+  };
+
   public query ({ caller }) func searchFiles(searchTerm : Text) : async [FileMetadata] {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can search files");
+      Runtime.trap("Unauthorized: Only existing users can search files");
     };
 
     let lowercaseTerm = searchTerm.toLower();
@@ -358,10 +526,58 @@ actor {
     );
   };
 
-  // Folder Management
+  public query ({ caller }) func searchSubtree(searchTerm : Text, startFolderId : ?Text) : async [FileSystemItem] {
+    if (getEffectiveRole(caller) == #guest) {
+      Runtime.trap("Unauthorized: Only existing users can search folders");
+    };
+
+    let lowercaseTerm = searchTerm.toLower();
+    let matches = List.empty<FileSystemItem>();
+
+    func searchFolder(folderId : ?Text) {
+      for ((_, folder) in folders.entries()) {
+        switch (folder.parentId) {
+          case (?parent) {
+            if (?parent == folderId) {
+              if (folder.name.toLower().contains(#text lowercaseTerm)) {
+                matches.add(#folder(folder));
+              };
+              // Always search subfolders recursively if parent matches
+              searchFolder(?folder.id);
+            };
+          };
+          case (null) {
+            if (folderId == null and folder.name.toLower().contains(#text lowercaseTerm)) {
+              matches.add(#folder(folder));
+              searchFolder(?folder.id);
+            };
+          };
+        };
+      };
+
+      for ((_, file) in files.entries()) {
+        switch (file.parentId) {
+          case (?parent) {
+            if (?parent == folderId and file.name.toLower().contains(#text lowercaseTerm)) {
+              matches.add(#file(file));
+            };
+          };
+          case (null) {
+            if (folderId == null and file.name.toLower().contains(#text lowercaseTerm)) {
+              matches.add(#file(file));
+            };
+          };
+        };
+      };
+    };
+
+    searchFolder(startFolderId);
+    matches.toArray();
+  };
+
   public shared ({ caller }) func createFolder(name : Text, parentId : ?Text) : async Text {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can create folders");
+      Runtime.trap("Unauthorized: Only existing users can create folders");
     };
 
     let folderId = nextFolderId.toText();
@@ -379,7 +595,7 @@ actor {
 
   public shared ({ caller }) func deleteFolder(id : Text) : async Bool {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can delete folders");
+      Runtime.trap("Unauthorized: Only existing users can delete folders");
     };
 
     if (hasChildItems(id)) {
@@ -415,7 +631,7 @@ actor {
 
   public query ({ caller }) func getFolderContents(folderId : ?Text) : async [FileSystemItem] {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can view folder contents");
+      Runtime.trap("Unauthorized: Only existing users can view folder contents");
     };
 
     let items = List.empty<FileSystemItem>();
@@ -437,7 +653,7 @@ actor {
 
   public shared ({ caller }) func moveItem(itemId : Text, newParentId : ?Text, isFolder : Bool) : async () {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can move items");
+      Runtime.trap("Unauthorized: Only existing users can move items");
     };
 
     if (isFolder) {
@@ -465,7 +681,7 @@ actor {
 
   public shared ({ caller }) func moveItems(moves : [FileMove]) : async () {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can move items");
+      Runtime.trap("Unauthorized: Only existing users can move items");
     };
 
     for (move in moves.values()) {
@@ -495,14 +711,14 @@ actor {
 
   public query ({ caller }) func getFolder(id : Text) : async ?FolderMetadata {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can view folders");
+      Runtime.trap("Unauthorized: Only existing users can view folders");
     };
     folders.get(id);
   };
 
   public query ({ caller }) func getAllFolders() : async [FolderMetadata] {
     if (getEffectiveRole(caller) == #guest) {
-      Runtime.trap("Unauthorized: Only admins and approved users can view folders");
+      Runtime.trap("Unauthorized: Only existing users can view folders");
     };
     folders.values().toArray();
   };
@@ -516,4 +732,3 @@ actor {
     };
   };
 };
-

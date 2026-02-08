@@ -3,6 +3,8 @@ import { useActor } from './useActor';
 import { ExternalBlob } from '../backend';
 import type { UserProfile, FileMetadata, AdminInfo, StorageStats, FileSystemItem, FolderMetadata, FileMove, UserRole } from '../backend';
 import { Principal } from '@icp-sdk/core/principal';
+import { containsNormalized } from '../lib/searchNormalize';
+import { buildSubtreeFolderIds } from '../lib/subtreeIndex';
 
 export function useGetCallerUserRole() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -136,6 +138,81 @@ export function useSearchFiles(searchTerm: string) {
   });
 }
 
+/**
+ * Client-side recursive subtree search with Unicode-aware, case-insensitive, diacritics-insensitive matching.
+ * Searches folder and file names only (not content) within the current folder subtree.
+ * Now includes files in descendant subfolders.
+ */
+export function useSearchSubtree(searchTerm: string, startFolderId: string | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
+
+  const trimmedTerm = searchTerm.trim();
+
+  return useQuery<FileSystemItem[]>({
+    queryKey: ['subtreeSearch', startFolderId, trimmedTerm],
+    queryFn: async () => {
+      if (!actor || !trimmedTerm) return [];
+
+      // Fetch all folders and files
+      const [allFolders, allFiles] = await Promise.all([
+        actor.getAllFolders(),
+        actor.getFiles(),
+      ]);
+
+      // Build a set of folder IDs that are in the current subtree
+      const subtreeFolderIds = buildSubtreeFolderIds(allFolders, startFolderId);
+
+      // Filter folders: must be in subtree and match search term
+      const matchingFolders = allFolders.filter(folder => {
+        // Check if folder is in the correct subtree
+        let isInSubtree: boolean;
+        if (startFolderId === null) {
+          // If searching from root, include all folders
+          isInSubtree = true;
+        } else {
+          // Folder must be the start folder itself, or in its subtree, or a direct child
+          isInSubtree = folder.id === startFolderId || subtreeFolderIds.has(folder.id) || folder.parentId === startFolderId;
+        }
+        
+        if (!isInSubtree) return false;
+
+        // Check if name matches search term (Unicode-aware, case-insensitive, diacritics-insensitive)
+        return containsNormalized(folder.name, trimmedTerm);
+      });
+
+      // Filter files: must be in current folder OR any descendant folder, and match search term
+      const matchingFiles = allFiles.filter(file => {
+        // Check if file is in the correct subtree
+        let isInSubtree: boolean;
+        if (startFolderId === null) {
+          // When searching from root, include files from ALL folders (not just root-level files)
+          // A file is in the subtree if it has no parent (root-level) OR its parent is any folder
+          isInSubtree = file.parentId === null || file.parentId === undefined || subtreeFolderIds.has(file.parentId);
+        } else {
+          // File must be in the current folder OR in any descendant folder
+          isInSubtree = file.parentId === startFolderId || (!!file.parentId && subtreeFolderIds.has(file.parentId));
+        }
+        
+        if (!isInSubtree) return false;
+
+        // Check if name matches search term (Unicode-aware, case-insensitive, diacritics-insensitive)
+        return containsNormalized(file.name, trimmedTerm);
+      });
+
+      // Combine results
+      const results: FileSystemItem[] = [
+        ...matchingFolders.map(folder => ({ __kind__: 'folder' as const, folder })),
+        ...matchingFiles.map(file => ({ __kind__: 'file' as const, file })),
+      ];
+
+      return results;
+    },
+    enabled: !!actor && !actorFetching && !accessLoading && hasAccess && !!trimmedTerm,
+    retry: false,
+  });
+}
+
 export function useAddFile() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -160,6 +237,7 @@ export function useAddFile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
       queryClient.invalidateQueries({ queryKey: ['storageStats'] });
     },
   });
@@ -177,6 +255,7 @@ export function useDeleteFile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
       queryClient.invalidateQueries({ queryKey: ['storageStats'] });
     },
   });
@@ -281,6 +360,7 @@ export function useCreateFolder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
     },
   });
 }
@@ -297,6 +377,7 @@ export function useDeleteFolder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
     },
   });
 }
@@ -344,6 +425,7 @@ export function useMoveItem() {
       queryClient.invalidateQueries({ queryKey: ['folderContents'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
       queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
     },
   });
 }
