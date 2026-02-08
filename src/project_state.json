@@ -1,55 +1,54 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Restore the previously working file explorer and click-to-open file preview (as in v0.3.86), ensuring current search remains working; target release v0.3.88.",
+  "summary": "Web file manager improvements for v0.3.91: fix folder upload backend error, correct navigation from search results, restore text-file preview navigation, and adjust upload button ordering and file list metadata.",
   "architectural_notes": [
-    "Do not regress currently working search while restoring file explorer/preview.",
-    "Preview behavior should match older versions (up to v0.3.86): large preview, fullscreen, close button, and in-folder next/prev navigation.",
-    "For unsupported/unsafe file types, offer direct download instead of attempting preview.",
-    "Text-based previews must support both horizontal and vertical scrolling (native scrollbars if possible; otherwise custom scroll container)."
+    "Target release version: 0.3.91"
   ],
   "known_issues": [
-    "Build/deploy attempts are currently blocked by repeated platform-level \"Internal AI error encountered\" during build phase (not caused by app code)."
+    "Folder upload currently errors (YHash must be exactly 32 bytes…) indicating backend hashing issue",
+    "Clicking a searched file path can navigate from an incorrect root/drive causing an error",
+    "Text-based file preview navigation controls are missing"
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-restore-the-file-click-behavior-in-the-file-browser-so-that-clicking-a-file-row-reliably-opens-the-existing-filepreviewmodal-for-that-file-as-it-worked-in-v0-3-86-without-changing-or-breaking-the-currently-working-search-behavior",
-      "title": "Restore the file click behavior in the file browser so that clicking a file row reliably opens the existing FilePreviewModal for that file (as it worked in v0.3.86), without changing or breaking the currently working search behavior.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-preview-navigation-to-match-the-prior-gallery-style-behavior-when-a-preview-is-open-users-can-move-to-previous-next-files-within-the-current-context-current-folder-or-current-search-results-list-when-search-is-active-using-ui-controls-and-keyboard-arrows",
-      "title": "Update preview navigation to match the prior “gallery-style” behavior: when a preview is open, users can move to previous/next files within the current context (current folder, or current search results list when search is active) using UI controls and keyboard arrows.",
+      "id": "feature-when-clicking-a-searched-file-s-displayed-path-breadcrumb-segments-navigate-to-the-correct-reachable-folder-so-the-resulting-path-is-valid-and-does-not-use-an-incorrect-root-drive-context",
+      "title": "When clicking a searched file's displayed path/breadcrumb segments, navigate to the correct reachable folder so the resulting path is valid and does not use an incorrect root/drive context.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-preview-modal-can-handle-all-file-types-provide-in-browser-viewers-for-images-videos-audio-pdfs-documents-and-text-for-any-unsupported-unsafe-file-type-show-a-clear-preview-not-available-state-with-a-direct-download-action-no-infinite-loading",
-      "title": "Ensure the preview modal can handle all file types: provide in-browser viewers for images, videos, audio, PDFs/documents, and text; for any unsupported/unsafe file type, show a clear “Preview not available” state with a direct download action (no infinite loading).",
+      "id": "feature-reorder-the-action-buttons-in-the-filelist-header-so-they-appear-in-this-order-1-upload-files-2-new-folder-3-upload-folder-apply-this-change-to-the-currently-selected-element-group-containing-the-button-at-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-1-div-1-div-1-div-2-button-2",
+      "title": "Reorder the action buttons in the FileList header so they appear in this order: (1) Upload Files, (2) New Folder, (3) Upload Folder. Apply this change to the currently selected element group containing the button at XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2].",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-for-text-based-file-previews-ensure-users-can-scroll-both-vertically-and-horizontally-to-view-the-entire-content-using-browser-native-scrolling-where-possible",
-      "title": "For text-based file previews, ensure users can scroll both vertically and horizontally to view the entire content, using browser-native scrolling where possible.",
+      "id": "feature-show-file-type-next-to-file-size-in-the-file-list-row-metadata-as-it-was-in-the-live-version-using-english-formatting-e-g-pdf-145-19-kb-or-json-145-19-kb",
+      "title": "Show file type next to file size in the file list row metadata (as it was in the live version), using English formatting (e.g., \"PDF • 145.19 KB\" or \"JSON • 145.19 KB\").",
       "reqIds": [
         "REQ-4"
       ],
       "version": 1
     },
     {
-      "id": "feature-bump-the-app-version-to-0-3-88-everywhere-it-is-surfaced-in-code-config-at-minimum-frontend-src-lib-appversion-ts-and-backend-main-mo-appversion",
-      "title": "Bump the app version to 0.3.88 everywhere it is surfaced in code/config (at minimum: frontend/src/lib/appVersion.ts and backend/main.mo appVersion).",
+      "id": "feature-restore-ensure-working-navigation-controls-in-text-based-file-preview-so-users-can-navigate-to-previous-next-files-while-previewing-a-text-file-same-behavior-as-for-other-previewable-files-including-clickable-ui-controls-and-keyboard-arrow-navigation",
+      "title": "Restore/ensure working navigation controls in text-based file preview so users can navigate to previous/next files while previewing a text file (same behavior as for other previewable files), including clickable UI controls and keyboard arrow navigation.",
       "reqIds": [
         "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-bump-the-application-version-to-0-3-91-everywhere-it-is-displayed-returned-including-frontend-version-display-and-backend-reported-version-and-add-adjust-migration-logic-as-required-by-the-existing-state-upgrade-policy",
+      "title": "Bump the application version to 0.3.91 everywhere it is displayed/returned, including frontend version display and backend-reported version, and add/adjust migration logic as required by the existing state upgrade policy.",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
@@ -57,12 +56,44 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Restore file explorer + click-to-open preview: large preview w/ fullscreen and close, next/prev navigation within folder (gallery-style), viewers for images/videos/PDF, scrollable text preview (horizontal+vertical), and safe download fallback for unsupported/unsafe types; must not break existing search; match older UI behavior (pre-v0.3.87), for v0.3.88.",
+      "summary": "Fix backend folder upload failure (hashing/YHash 32 bytes error) so folder upload works",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Fix navigation when clicking a searched file path so it routes to a valid, reachable folder/root",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Restore/implement navigation controls in text-based file preview (missing)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Reorder upload controls: Upload Files first, then New Folder, then Upload Folder",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Show file type next to file size in file list/row metadata (as in live version)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Fix the folder upload failure by resolving the backend hashing/YHash length error (\"YHash must be exactly 32 bytes, got 64\") so recursive folder uploads complete successfully and all uploaded files/folders are persisted and visible after refresh.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "v0.3.88: Restore click-to-open file preview with robust viewers and download fallback (without breaking search)",
+  "projectName": "v0.3.91: Fix folder upload backend hash error, correct search-path navigation, restore text preview navigation, reorder upload controls, show file type next to size",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

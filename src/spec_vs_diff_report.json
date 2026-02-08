@@ -1,59 +1,46 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T16:10:49.762Z",
-  "summary": "Diff implements version bump to 0.3.88 and includes frontend changes around file list/preview modal. Some acceptance criteria (keyboard navigation, text horizontal scrolling, and explicit download fallback UI in the unsupported-preview state) are not clearly evidenced in the provided truncated diffs. There are also changes that appear to go beyond the request (a backend migration module and apparent search behavior changes).",
+  "generatedAt": "2026-02-08T17:14:28.691Z",
+  "summary": "Diff implements parts of the requested v0.3.91 changes on the frontend (button reorder, file-type label helper, search-path navigation helper) and bumps the version constant in several places, but evidence is insufficient for the backend YHash fix and the text-preview navigation controls/keyboard behavior; version display also appears inconsistent (ManagePanel still reports 0.3.80).",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "When FilePreviewModal is open, previous/next navigation works via on-screen controls and left/right arrow keys within the current context.",
-      "reason": "On-screen navigation props/icons are suggested, but no clear evidence of keyboard left/right arrow handling is shown in the truncated FilePreviewModal code.",
+      "id": "REQ-1",
+      "requirement": "Fix the folder upload failure by resolving the backend hashing/YHash length error (\"YHash must be exactly 32 bytes, got 64\") so recursive folder uploads complete successfully and all uploaded files/folders are persisted and visible after refresh.",
+      "reason": "The shown backend diff only evidences a version string update; no change related to hashing/YHash, folder upload persistence, or path-parent creation is visible in the truncated snippet.",
       "evidence": [
-        "frontend/src/components/FilePreviewModal.tsx"
+        "backend/main.mo (truncated)"
       ]
     },
     {
-      "id": "REQ-3",
-      "requirement": "For unsupported/unsafe file types, show a clear “Preview not available” state with a direct download action (no infinite loading).",
-      "reason": "The modal sets an error message for unsupported types, but the truncated diff does not show rendering of a preview-unavailable UI that includes a direct Download button/action in that state.",
+      "id": "REQ-5",
+      "requirement": "Restore/ensure working navigation controls in text-based file preview (Previous/Next buttons and left/right arrow keyboard navigation).",
+      "reason": "FilePreviewModal has state for navigation availability (canNavigate/hasPrevious/hasNext), but the diff excerpt does not show any rendered Previous/Next controls or keyboard arrow handlers for text preview; due to truncation, implementation cannot be confirmed.",
       "evidence": [
-        "frontend/src/components/FilePreviewModal.tsx"
+        "frontend/src/components/FilePreviewModal.tsx (truncated)"
       ]
     },
     {
-      "id": "REQ-4",
-      "requirement": "For text-based previews, users can scroll both vertically and horizontally (no wrapping/truncation), in normal and fullscreen/maximized states.",
-      "reason": "The diff shows text is decoded into `textContent`, but does not show CSS/layout ensuring horizontal scrolling (e.g., `white-space: pre`/`pre` tag + `overflow-x: auto`) and behavior across fullscreen/maximized states due to truncation.",
+      "id": "REQ-6",
+      "requirement": "Bump the application version to 0.3.91 everywhere it is displayed/returned (frontend display and backend-reported version) and add/adjust migration logic as required.",
+      "reason": "Frontend version constant and backend appVersion were updated, but the diff summary indicates ManagePanel still displays app version 0.3.80, so the version is not bumped everywhere it is displayed. Also, no explicit upgrade/migration logic change is evidenced in the provided backend snippet (cannot confirm whether required migrations were added).",
       "evidence": [
-        "frontend/src/components/FilePreviewModal.tsx"
+        "frontend/src/lib/appVersion.ts",
+        "backend/main.mo (truncated)",
+        "frontend-file-summaries.txt (ManagePanel line: \"app version 0.3.80\")"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "Introduced a backend migration module that updates appVersion via a migration runner.",
-      "reason": "The BuildRequest does not request adding a migration module/file; it only requests bumping version constants. This adds a state migration mechanism/file beyond the stated minimum.",
-      "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Search behavior/implementation appears to have been changed/enhanced (client-side recursive subtree search adjustments).",
-      "reason": "Constraints explicitly say not to break or change currently working search functionality; the diff summary indicates modifications to the search logic rather than leaving it untouched.",
-      "evidence": [
-        "frontend-file-summaries.txt (entry for frontend/src/hooks/useQueries.ts)"
-      ]
-    }
-  ],
+  "hallucinated_features": [],
   "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/components/FileList.tsx",
     "frontend/src/components/FilePreviewModal.tsx",
     "frontend/src/lib/appVersion.ts",
+    "frontend/src/lib/fileTypes.ts",
+    "frontend/src/lib/folderNavigation.ts",
     "project_state.json"
   ]
 }

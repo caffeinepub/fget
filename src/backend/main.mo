@@ -4,14 +4,16 @@ import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import List "mo:core/List";
 import Map "mo:core/Map";
+
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Text "mo:core/Text";
 import Nat "mo:core/Nat";
 import Char "mo:core/Char";
-import Migration "migration";
+import Iter "mo:core/Iter";
 
-(with migration = Migration.run)
+// specifies the data migration function in with-clause
+
 actor {
   let storage = Storage.new();
   include MixinStorage(storage);
@@ -23,7 +25,7 @@ actor {
   var frontendCanisterId : Text = "";
   var backendCanisterId : Text = "";
   var firstAdmin : ?Principal = null;
-  let appVersion = "0.3.88";
+  let appVersion = "0.3.91"; // Updated version
 
   type FileMetadata = {
     id : Text;
@@ -732,3 +734,4 @@ actor {
     };
   };
 };
+

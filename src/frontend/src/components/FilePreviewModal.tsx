@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { getFileExtension, getMimeType, isImage, isVideo, isAudio, isDocument, isText } from '../lib/fileTypes';
 import type { FileMetadata } from '../backend';
+import { ZoomPanViewer } from './ZoomPanViewer';
 
 interface FilePreviewModalProps {
   file: FileMetadata | null;
@@ -221,6 +222,19 @@ export function FilePreviewModal({
     return <File className="h-4 w-4" />;
   };
 
+  const formatFileSize = (size: number): string => {
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let fileSize = size;
+    let unitIndex = 0;
+
+    while (fileSize >= 1024 && unitIndex < units.length - 1) {
+      fileSize /= 1024;
+      unitIndex++;
+    }
+
+    return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
+  };
+
   if (!file) return null;
 
   const viewerSizeClass = isMaximized 
@@ -245,6 +259,32 @@ export function FilePreviewModal({
                 </p>
               </div>
               <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                {canNavigate && (
+                  <>
+                    <Button
+                      onClick={handlePrevious}
+                      disabled={!hasPrevious}
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 sm:gap-2 h-8 sm:h-9"
+                      title="Previous (←)"
+                    >
+                      <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline text-xs sm:text-sm">Previous</span>
+                    </Button>
+                    <Button
+                      onClick={handleNext}
+                      disabled={!hasNext}
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 sm:gap-2 h-8 sm:h-9"
+                      title="Next (→)"
+                    >
+                      <span className="hidden sm:inline text-xs sm:text-sm">Next</span>
+                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </Button>
+                  </>
+                )}
                 <Button
                   onClick={handleDownload}
                   size="sm"
@@ -330,6 +370,28 @@ export function FilePreviewModal({
 
               {/* Preview Content */}
               <div className="relative flex-1 flex items-center justify-center bg-muted/30 overflow-hidden min-h-0">
+                {/* Navigation Arrows - Always visible when navigation is available */}
+                {canNavigate && (
+                  <>
+                    <button
+                      onClick={handlePrevious}
+                      disabled={!hasPrevious}
+                      className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 bg-background/90 hover:bg-background border rounded-full p-2 sm:p-3 shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Previous (←)"
+                    >
+                      <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      disabled={!hasNext}
+                      className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 bg-background/90 hover:bg-background border rounded-full p-2 sm:p-3 shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Next (→)"
+                    >
+                      <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </button>
+                  </>
+                )}
+
                 {isLoading && (
                   <div className="flex flex-col items-center justify-center gap-3 p-4 sm:p-8">
                     <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
@@ -350,16 +412,16 @@ export function FilePreviewModal({
 
                 {!isLoading && !error && (
                   <div className="w-full h-full flex flex-col min-h-0">
-                    {/* Image Preview */}
+                    {/* Image Preview with Zoom/Pan */}
                     {isImageFile && blobUrl && (
-                      <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4 overflow-auto">
+                      <ZoomPanViewer className="p-2 sm:p-4">
                         <img
                           src={blobUrl}
                           alt={file.name}
                           className="max-w-full max-h-full object-contain"
                           onError={() => setError('Failed to load image')}
                         />
-                      </div>
+                      </ZoomPanViewer>
                     )}
 
                     {/* Video Preview */}
@@ -382,7 +444,7 @@ export function FilePreviewModal({
                         <audio
                           src={blobUrl}
                           controls
-                          className="w-full max-w-2xl"
+                          className="w-full max-w-md"
                           onError={() => setError('Failed to load audio')}
                         >
                           Your browser does not support audio playback.
@@ -397,73 +459,26 @@ export function FilePreviewModal({
                           src={blobUrl}
                           className="w-full h-full border-0"
                           title={file.name}
-                          onError={() => {
-                            setError('Document preview not supported in your browser');
-                          }}
+                          onError={() => setError('Failed to load document')}
                         />
                       </div>
                     )}
 
-                    {/* Text Preview - with horizontal and vertical scrolling */}
+                    {/* Text Preview */}
                     {isTextFile && textContent !== null && (
-                      <div className="w-full h-full overflow-auto p-3 sm:p-6">
-                        <pre className="text-xs sm:text-sm font-mono whitespace-pre bg-background/50 p-3 sm:p-4 rounded-lg border overflow-x-auto">
+                      <ScrollArea className="w-full h-full">
+                        <pre className="p-4 sm:p-6 text-xs sm:text-sm font-mono whitespace-pre-wrap break-words">
                           {textContent}
                         </pre>
-                      </div>
+                      </ScrollArea>
                     )}
                   </div>
                 )}
-
-                {/* Navigation Arrows */}
-                {canNavigate && !isLoading && !error && (
-                  <>
-                    {hasPrevious && (
-                      <Button
-                        onClick={handlePrevious}
-                        size="icon"
-                        variant="secondary"
-                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg z-10"
-                        title="Previous (←)"
-                      >
-                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    )}
-                    {hasNext && (
-                      <Button
-                        onClick={handleNext}
-                        size="icon"
-                        variant="secondary"
-                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg z-10"
-                        title="Next (→)"
-                      >
-                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    )}
-                  </>
-                )}
               </div>
             </div>
-
-            {/* Footer with navigation info */}
-            {canNavigate && (
-              <div className="flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 border-t bg-background/95 backdrop-blur flex-shrink-0">
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  File {currentFileIndex + 1} of {allFiles.length}
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </DialogPortal>
     </Dialog>
   );
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }

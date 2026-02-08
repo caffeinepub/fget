@@ -1,109 +1,131 @@
 {
   "kind": "build_request",
-  "title": "v0.3.88: Restore click-to-open file preview with robust viewers and download fallback (without breaking search)",
-  "priority": "normal",
+  "title": "v0.3.91: Fix folder upload backend hash error, correct search-path navigation, restore text preview navigation, reorder upload controls, show file type next to size",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Restore the file click behavior in the file browser so that clicking a file row reliably opens the existing FilePreviewModal for that file (as it worked in v0.3.86), without changing or breaking the currently working search behavior.",
-      "target": "frontend",
+      "text": "Fix the folder upload failure by resolving the backend hashing/YHash length error (\"YHash must be exactly 32 bytes, got 64\") so recursive folder uploads complete successfully and all uploaded files/folders are persisted and visible after refresh.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages"
         ],
         "quotes": [
-          "But still the file preview doesn't open when I click on a file - add/restore that functionality - without breaking or changing anything else!"
+          "uploading folder with files now gives error as on the screenshot",
+          "1. I want to fix the backend behavior to get the functionality working!",
+          "YHash must be exactly 32 bytes, got 64"
         ]
       },
       "acceptanceCriteria": [
-        "In the main file list (non-search mode), clicking anywhere on a file row (not just a small sub-control) opens FilePreviewModal for that file.",
-        "In search mode, clicking a file result row also opens FilePreviewModal for that file, and does not disrupt/clear the current search term unless the previous behavior already did so.",
-        "Folder clicks still navigate into folders; file clicks do not navigate and instead open preview.",
-        "No regressions to current recursive search behavior and results display (search remains functional and responsive)."
+        "Uploading a folder via the UI (folder picker) completes without trapping and without the YHash 32/64 bytes error.",
+        "Uploading a folder via drag-and-drop (with nested paths) completes without trapping and without the YHash 32/64 bytes error.",
+        "All nested folders are created and files are placed under the correct parents as implied by relative paths.",
+        "After page refresh, the uploaded folder tree and files remain accessible."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update preview navigation to match the prior “gallery-style” behavior: when a preview is open, users can move to previous/next files within the current context (current folder, or current search results list when search is active) using UI controls and keyboard arrows.",
+      "text": "When clicking a searched file's displayed path/breadcrumb segments, navigate to the correct reachable folder so the resulting path is valid and does not use an incorrect root/drive context.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages"
         ],
         "quotes": [
-          "allowing switching files in in current folder (to have like photo gallery)"
+          "Clicking on the path of searched file give error as on the second screenshot - looks like it's going from wrong root (drive)",
+          "clicking on it should navigate to the right folder, so the path must be valid and reachable"
         ]
       },
       "acceptanceCriteria": [
-        "When FilePreviewModal is open and there are multiple files in the current context, previous/next navigation works via on-screen controls and left/right arrow keys.",
-        "The navigation list/index only includes files from the current context (folder listing when not searching; search result list when searching).",
-        "Navigating does not close the modal, does not change the current folder, and does not clear the search term."
+        "In search results, clicking a path segment navigates to the intended folder containing the result (or the segment's folder) without errors.",
+        "Navigation from search results does not depend on an incorrect root/drive; it always resolves to an existing folder in the current dataset.",
+        "After navigation from a search path click, the folder breadcrumb reflects the actual folder path and search mode is exited/cleared (or otherwise results do not remain inconsistent with the new folder context)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Ensure the preview modal can handle all file types: provide in-browser viewers for images, videos, audio, PDFs/documents, and text; for any unsupported/unsafe file type, show a clear “Preview not available” state with a direct download action (no infinite loading).",
+      "text": "Reorder the action buttons in the FileList header so they appear in this order: (1) Upload Files, (2) New Folder, (3) Upload Folder. Apply this change to the currently selected element group containing the button at XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2].",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages"
         ],
         "quotes": [
-          "2. all file types which you can open/view open (images/videos/text-files etc), what can't be safely opened offer directly for download"
+          "Also move the Upload Files button (selected element) to be on the first place, then the New Folder and last Upload Folder"
         ]
       },
       "acceptanceCriteria": [
-        "Opening a file with an unsupported extension does not remain stuck in a loading state; the modal displays a preview-unavailable message and a Download button.",
-        "Supported types continue to preview using the existing implementations (image/video/audio direct URL, document iframe/blob URL, text decode).",
-        "Download action works from both the header download button and the preview-unavailable state."
+        "The visual order of the three buttons is exactly: Upload Files, New Folder, Upload Folder.",
+        "Button behavior remains unchanged (each still opens the correct dialog/picker).",
+        "No other buttons outside this selected button group are reordered."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "For text-based file previews, ensure users can scroll both vertically and horizontally to view the entire content, using browser-native scrolling where possible.",
+      "text": "Show file type next to file size in the file list row metadata (as it was in the live version), using English formatting (e.g., \"PDF • 145.19 KB\" or \"JSON • 145.19 KB\").",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages"
         ],
         "quotes": [
-          "Note for text based files the preview should allow horizontal and vertical moving in the file to be able to see the whole content."
+          "Also include file type next to the file size as it was - third screenshot from current live version"
         ]
       },
       "acceptanceCriteria": [
-        "Large text files can be scrolled vertically to view all lines.",
-        "Long lines can be scrolled horizontally without wrapping truncation.",
-        "Scrolling works in both normal and fullscreen/maximized modal states."
+        "Each file row in the main file list displays a file type label alongside the formatted size.",
+        "The type label is derived from the file extension (fallback to a reasonable default such as \"FILE\" when no extension exists).",
+        "Folder rows are not incorrectly given a file type label."
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Bump the app version to 0.3.88 everywhere it is surfaced in code/config (at minimum: frontend/src/lib/appVersion.ts and backend/main.mo appVersion).",
-      "target": "both",
+      "text": "Restore/ensure working navigation controls in text-based file preview so users can navigate to previous/next files while previewing a text file (same behavior as for other previewable files), including clickable UI controls and keyboard arrow navigation.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages"
         ],
         "quotes": [
-          "Version to 0.3.88"
+          "Also the preview navigation in text base files is still missing - last screenshot",
+          "THERE IS STILL NO NAVIGATION IN THE TEXT BASED FILES - YOU'RE FAILING TO ADD ANY"
         ]
       },
       "acceptanceCriteria": [
-        "frontend/src/lib/appVersion.ts exports APP_VERSION as '0.3.88'.",
-        "backend/main.mo appVersion constant is '0.3.88'.",
-        "Any UI surfaces that read these values show 0.3.88 after build."
+        "When previewing a text-based file, visible Previous/Next navigation controls are available when there is more than one file in the current context.",
+        "Clicking Previous/Next navigates to the adjacent file without closing the modal.",
+        "Left/Right arrow keys navigate Previous/Next while previewing a text-based file (when navigation is available)."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Bump the application version to 0.3.91 everywhere it is displayed/returned, including frontend version display and backend-reported version, and add/adjust migration logic as required by the existing state upgrade policy.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "Version to 0.3.91"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Frontend displays version 0.3.91 (e.g., in the footer/version label).",
+        "Backend storage stats/version reporting returns appVersion = \"0.3.91\".",
+        "Upgrade does not break existing deployed state; migration is present/updated only if required for the existing stored state."
       ]
     }
   ],
   "constraints": [
-    "Do not break or change the currently working search functionality.",
-    "Keep the file explorer/preview UI behavior aligned with older versions (pre-0.3.87), only fixing the regression and adding the requested text scrolling behavior.",
-    "Do not edit any files under frontend/src/components/ui or other frontend immutablePaths listed in SYSTEM_CONTEXT; compose existing UI components instead."
+    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
+    "Do not modify files under frontend/src/components/ui or other immutablePaths listed in SYSTEM_CONTEXT; compose them as-is.",
+    "Use English for any user-facing text introduced/changed by this request."
   ],
   "nonGoals": [
-    "Do not introduce new backend services, databases, or external integrations.",
-    "Do not redesign unrelated parts of the app UI or change access control/approval flows.",
-    "Do not change file storage formats or perform state migrations unless strictly required for the preview fix."
+    "Adding new authentication providers (only Internet Identity is supported).",
+    "Introducing external databases or non-IC storage systems.",
+    "Redesigning unrelated parts of the UI beyond the specified button order and metadata display changes."
   ],
   "imageRequirements": {
     "required": [],

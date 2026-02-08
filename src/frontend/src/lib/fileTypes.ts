@@ -88,3 +88,52 @@ export function isText(extension: string): boolean {
   const textExts = ['txt', 'md', 'csv', 'json', 'xml', 'html', 'css', 'js'];
   return textExts.includes(extension.toLowerCase());
 }
+
+/**
+ * Gets a human-readable file type label from a filename
+ */
+export function getFileTypeLabel(filename: string): string {
+  const ext = getFileExtension(filename).toUpperCase();
+  
+  if (!ext) return 'FILE';
+  
+  // Map common extensions to friendly names
+  const typeLabels: Record<string, string> = {
+    'JPG': 'JPEG',
+    'JPEG': 'JPEG',
+    'PNG': 'PNG',
+    'GIF': 'GIF',
+    'SVG': 'SVG',
+    'WEBP': 'WEBP',
+    'BMP': 'BMP',
+    'MP4': 'MP4',
+    'AVI': 'AVI',
+    'MOV': 'MOV',
+    'WEBM': 'WEBM',
+    'MKV': 'MKV',
+    'MP3': 'MP3',
+    'WAV': 'WAV',
+    'OGG': 'OGG',
+    'FLAC': 'FLAC',
+    'PDF': 'PDF',
+    'DOC': 'DOC',
+    'DOCX': 'DOCX',
+    'TXT': 'TXT',
+    'MD': 'Markdown',
+    'JSON': 'JSON',
+    'XML': 'XML',
+    'HTML': 'HTML',
+    'CSS': 'CSS',
+    'JS': 'JavaScript',
+    'ZIP': 'ZIP',
+    'RAR': 'RAR',
+    '7Z': '7Z',
+    'XLS': 'Excel',
+    'XLSX': 'Excel',
+    'PPT': 'PowerPoint',
+    'PPTX': 'PowerPoint',
+    'CSV': 'CSV',
+  };
+  
+  return typeLabels[ext] || ext;
+}

@@ -1,67 +1,79 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T16:10:49.764Z",
+  "generatedAt": "2026-02-08T17:14:28.693Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
+    "total": 6,
     "implemented": 5,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Restore the file click behavior in the file browser so that clicking a file row reliably opens the existing FilePreviewModal for that file (as it worked in v0.3.86), without changing or breaking the currently working search behavior.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ]
+        "summary": "Fix the folder upload failure by resolving the backend hashing/YHash length error (\"YHash must be exactly 32 bytes, got 64\") so recursive folder uploads complete successfully and all uploaded files/folders are persisted and visible after refresh.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Update preview navigation to match the prior “gallery-style” behavior: when a preview is open, users can move to previous/next files within the current context (current folder, or current search results list when search is active) using UI controls and keyboard arrows.",
+        "summary": "When clicking a searched file's displayed path/breadcrumb segments, navigate to the correct reachable folder so the resulting path is valid and does not use an incorrect root/drive context.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FileList.tsx",
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/lib/folderNavigation.ts",
+          "frontend/src/components/FileList.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/FileList.tsx",
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/lib/folderNavigation.ts",
+          "frontend/src/components/FileList.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Ensure the preview modal can handle all file types: provide in-browser viewers for images, videos, audio, PDFs/documents, and text; for any unsupported/unsafe file type, show a clear “Preview not available” state with a direct download action (no infinite loading).",
+        "summary": "Reorder the action buttons in the FileList header so they appear in this order: (1) Upload Files, (2) New Folder, (3) Upload Folder. Apply this change to the currently selected element group containing the button at XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2].",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/components/FileList.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/components/FileList.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "For text-based file previews, ensure users can scroll both vertically and horizontally to view the entire content, using browser-native scrolling where possible.",
+        "summary": "Show file type next to file size in the file list row metadata (as it was in the live version), using English formatting (e.g., \"PDF • 145.19 KB\" or \"JSON • 145.19 KB\").",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/lib/fileTypes.ts",
+          "frontend/src/components/FileList.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/FilePreviewModal.tsx"
+          "frontend/src/lib/fileTypes.ts",
+          "frontend/src/components/FileList.tsx"
         ]
       },
       {
         "id": "REQ-5",
-        "summary": "Bump the app version to 0.3.88 everywhere it is surfaced in code/config (at minimum: frontend/src/lib/appVersion.ts and backend/main.mo appVersion).",
+        "summary": "Restore/ensure working navigation controls in text-based file preview so users can navigate to previous/next files while previewing a text file (same behavior as for other previewable files), including clickable UI controls and keyboard arrow navigation.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/appVersion.ts"
+          "frontend/src/components/FileList.tsx",
+          "frontend/src/components/FilePreviewModal.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/FileList.tsx",
+          "frontend/src/components/FilePreviewModal.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Bump the application version to 0.3.91 everywhere it is displayed/returned, including frontend version display and backend-reported version, and add/adjust migration logic as required by the existing state upgrade policy.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/appVersion.ts",
+          "frontend/src/components/Footer.tsx"
         ],
         "matchedFiles": [
           "frontend/src/lib/appVersion.ts"
@@ -71,7 +83,6 @@
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
@@ -79,6 +90,8 @@
     "frontend/src/components/FileList.tsx",
     "frontend/src/components/FilePreviewModal.tsx",
     "frontend/src/lib/appVersion.ts",
+    "frontend/src/lib/fileTypes.ts",
+    "frontend/src/lib/folderNavigation.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

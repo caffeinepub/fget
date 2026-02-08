@@ -2,32 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-restore-the-file-click-behavior-in-the-file-browser-so-that-clicking-a-file-row-reliably-opens-the-existing-filepreviewmodal-for-that-file-as-it-worked-in-v0-3-86-without-changing-or-breaking-the-currently-working-search-behavior",
-      "featureTitle": "Restore the file click behavior in the file browser so that clicking a file row reliably opens the existing FilePreviewModal for that file (as it worked in v0.3.86), without changing or breaking the currently working search behavior.",
-      "files": [
-        "frontend/src/components/FileList.tsx"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-preview-navigation-to-match-the-prior-gallery-style-behavior-when-a-preview-is-open-users-can-move-to-previous-next-files-within-the-current-context-current-folder-or-current-search-results-list-when-search-is-active-using-ui-controls-and-keyboard-arrows",
-      "featureTitle": "Update preview navigation to match the prior “gallery-style” behavior: when a preview is open, users can move to previous/next files within the current context (current folder, or current search results list when search is active) using UI controls and keyboard arrows.",
+      "featureId": "feature-when-clicking-a-searched-file-s-displayed-path-breadcrumb-segments-navigate-to-the-correct-reachable-folder-so-the-resulting-path-is-valid-and-does-not-use-an-incorrect-root-drive-context",
+      "featureTitle": "When clicking a searched file's displayed path/breadcrumb segments, navigate to the correct reachable folder so the resulting path is valid and does not use an incorrect root/drive context.",
       "files": [
         "frontend/src/components/FileList.tsx",
-        "frontend/src/components/FilePreviewModal.tsx"
+        "frontend/src/lib/folderNavigation.ts"
       ],
       "components": [
         "blob-storage@3.0.0",
@@ -45,10 +24,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-preview-modal-can-handle-all-file-types-provide-in-browser-viewers-for-images-videos-audio-pdfs-documents-and-text-for-any-unsupported-unsafe-file-type-show-a-clear-preview-not-available-state-with-a-direct-download-action-no-infinite-loading",
-      "featureTitle": "Ensure the preview modal can handle all file types: provide in-browser viewers for images, videos, audio, PDFs/documents, and text; for any unsupported/unsafe file type, show a clear “Preview not available” state with a direct download action (no infinite loading).",
+      "featureId": "feature-reorder-the-action-buttons-in-the-filelist-header-so-they-appear-in-this-order-1-upload-files-2-new-folder-3-upload-folder-apply-this-change-to-the-currently-selected-element-group-containing-the-button-at-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-1-div-1-div-1-div-2-button-2",
+      "featureTitle": "Reorder the action buttons in the FileList header so they appear in this order: (1) Upload Files, (2) New Folder, (3) Upload Folder. Apply this change to the currently selected element group containing the button at XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2].",
       "files": [
-        "frontend/src/components/FilePreviewModal.tsx"
+        "frontend/src/components/FileList.tsx"
       ],
       "components": [
         "blob-storage@3.0.0",
@@ -66,10 +45,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-for-text-based-file-previews-ensure-users-can-scroll-both-vertically-and-horizontally-to-view-the-entire-content-using-browser-native-scrolling-where-possible",
-      "featureTitle": "For text-based file previews, ensure users can scroll both vertically and horizontally to view the entire content, using browser-native scrolling where possible.",
+      "featureId": "feature-show-file-type-next-to-file-size-in-the-file-list-row-metadata-as-it-was-in-the-live-version-using-english-formatting-e-g-pdf-145-19-kb-or-json-145-19-kb",
+      "featureTitle": "Show file type next to file size in the file list row metadata (as it was in the live version), using English formatting (e.g., \"PDF • 145.19 KB\" or \"JSON • 145.19 KB\").",
       "files": [
-        "frontend/src/components/FilePreviewModal.tsx"
+        "frontend/src/components/FileList.tsx",
+        "frontend/src/lib/fileTypes.ts"
       ],
       "components": [
         "blob-storage@3.0.0",
@@ -87,8 +67,30 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-bump-the-app-version-to-0-3-88-everywhere-it-is-surfaced-in-code-config-at-minimum-frontend-src-lib-appversion-ts-and-backend-main-mo-appversion",
-      "featureTitle": "Bump the app version to 0.3.88 everywhere it is surfaced in code/config (at minimum: frontend/src/lib/appVersion.ts and backend/main.mo appVersion).",
+      "featureId": "feature-restore-ensure-working-navigation-controls-in-text-based-file-preview-so-users-can-navigate-to-previous-next-files-while-previewing-a-text-file-same-behavior-as-for-other-previewable-files-including-clickable-ui-controls-and-keyboard-arrow-navigation",
+      "featureTitle": "Restore/ensure working navigation controls in text-based file preview so users can navigate to previous/next files while previewing a text file (same behavior as for other previewable files), including clickable UI controls and keyboard arrow navigation.",
+      "files": [
+        "frontend/src/components/FileList.tsx",
+        "frontend/src/components/FilePreviewModal.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-bump-the-application-version-to-0-3-91-everywhere-it-is-displayed-returned-including-frontend-version-display-and-backend-reported-version-and-add-adjust-migration-logic-as-required-by-the-existing-state-upgrade-policy",
+      "featureTitle": "Bump the application version to 0.3.91 everywhere it is displayed/returned, including frontend version display and backend-reported version, and add/adjust migration logic as required by the existing state upgrade policy.",
       "files": [
         "frontend/src/lib/appVersion.ts"
       ],
@@ -103,7 +105,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-5"
+        "REQ-6"
       ],
       "confidence": "high"
     }
