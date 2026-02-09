@@ -1,144 +1,72 @@
 {
   "kind": "build_request",
-  "title": "v0.3.91: Fix folder upload backend hash error, correct search-path navigation, restore text preview navigation, reorder upload controls, show file type next to size",
-  "priority": "high",
+  "title": "Restore search result clickable folder path and filename preview; bump version to 0.3.101",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the folder upload failure by resolving the backend hashing/YHash length error (\"YHash must be exactly 32 bytes, got 64\") so recursive folder uploads complete successfully and all uploaded files/folders are persisted and visible after refresh.",
-      "target": "backend",
+      "text": "In the search results UI, render the containing-folder path as a clickable element (not a plain full file path including the filename) and when clicked, navigate to/open that containing folder (i.e., update currentFolderId and breadcrumb path to the folder that contains the search result item).",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-4"
         ],
         "quotes": [
-          "uploading folder with files now gives error as on the screenshot",
-          "1. I want to fix the backend behavior to get the functionality working!",
-          "YHash must be exactly 32 bytes, got 64"
+          "in search results was a path (containing folder) which was clickable - but currently there is just full path to the files (including it's name) - visible on screenshot - switch that one back to working clickable path - which will open the containing folder."
         ]
       },
       "acceptanceCriteria": [
-        "Uploading a folder via the UI (folder picker) completes without trapping and without the YHash 32/64 bytes error.",
-        "Uploading a folder via drag-and-drop (with nested paths) completes without trapping and without the YHash 32/64 bytes error.",
-        "All nested folders are created and files are placed under the correct parents as implied by relative paths.",
-        "After page refresh, the uploaded folder tree and files remain accessible."
+        "When search is active, each result shows a path representing the containing folder only (no filename appended).",
+        "Clicking the displayed path navigates to that folder (currentFolderId and breadcrumb update accordingly) and clears search mode (searchTerm resets).",
+        "No other UI behaviors are changed outside of the search results path element behavior."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "When clicking a searched file's displayed path/breadcrumb segments, navigate to the correct reachable folder so the resulting path is valid and does not use an incorrect root/drive context.",
+      "text": "In the search results UI, make clicking a file’s filename open that file in the existing preview modal (same behavior as before the regression), without changing any preview/player functionality beyond restoring the click action.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-4"
         ],
         "quotes": [
-          "Clicking on the path of searched file give error as on the second screenshot - looks like it's going from wrong root (drive)",
-          "clicking on it should navigate to the right folder, so the path must be valid and reachable"
+          "Also when I clicked filename in the search results it opened the file in preview - currently it does nothing, fix that to open in preview again - don't change anything in the preview/player or anything else I didn't ask!"
         ]
       },
       "acceptanceCriteria": [
-        "In search results, clicking a path segment navigates to the intended folder containing the result (or the segment's folder) without errors.",
-        "Navigation from search results does not depend on an incorrect root/drive; it always resolves to an existing folder in the current dataset.",
-        "After navigation from a search path click, the folder breadcrumb reflects the actual folder path and search mode is exited/cleared (or otherwise results do not remain inconsistent with the new folder context)."
+        "When search is active and a result item is a file, clicking the filename opens the existing FilePreviewModal for that file.",
+        "Preview navigation continues to work using the existing context behavior (no changes to preview/player features or UI besides restoring the click).",
+        "Folder search results (if present) still navigate as before (no regression to folder click behavior)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Reorder the action buttons in the FileList header so they appear in this order: (1) Upload Files, (2) New Folder, (3) Upload Folder. Apply this change to the currently selected element group containing the button at XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2].",
+      "text": "Bump the application version constant to 0.3.101 so the UI displays version 0.3.101 wherever the centralized version is used.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-4"
         ],
         "quotes": [
-          "Also move the Upload Files button (selected element) to be on the first place, then the New Folder and last Upload Folder"
+          "Version to 0.3.101"
         ]
       },
       "acceptanceCriteria": [
-        "The visual order of the three buttons is exactly: Upload Files, New Folder, Upload Folder.",
-        "Button behavior remains unchanged (each still opens the correct dialog/picker).",
-        "No other buttons outside this selected button group are reordered."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Show file type next to file size in the file list row metadata (as it was in the live version), using English formatting (e.g., \"PDF • 145.19 KB\" or \"JSON • 145.19 KB\").",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "recent-messages"
-        ],
-        "quotes": [
-          "Also include file type next to the file size as it was - third screenshot from current live version"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Each file row in the main file list displays a file type label alongside the formatted size.",
-        "The type label is derived from the file extension (fallback to a reasonable default such as \"FILE\" when no extension exists).",
-        "Folder rows are not incorrectly given a file type label."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Restore/ensure working navigation controls in text-based file preview so users can navigate to previous/next files while previewing a text file (same behavior as for other previewable files), including clickable UI controls and keyboard arrow navigation.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "recent-messages"
-        ],
-        "quotes": [
-          "Also the preview navigation in text base files is still missing - last screenshot",
-          "THERE IS STILL NO NAVIGATION IN THE TEXT BASED FILES - YOU'RE FAILING TO ADD ANY"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When previewing a text-based file, visible Previous/Next navigation controls are available when there is more than one file in the current context.",
-        "Clicking Previous/Next navigates to the adjacent file without closing the modal.",
-        "Left/Right arrow keys navigate Previous/Next while previewing a text-based file (when navigation is available)."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Bump the application version to 0.3.91 everywhere it is displayed/returned, including frontend version display and backend-reported version, and add/adjust migration logic as required by the existing state upgrade policy.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "recent-messages"
-        ],
-        "quotes": [
-          "Version to 0.3.91"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Frontend displays version 0.3.91 (e.g., in the footer/version label).",
-        "Backend storage stats/version reporting returns appVersion = \"0.3.91\".",
-        "Upgrade does not break existing deployed state; migration is present/updated only if required for the existing stored state."
+        "APP_VERSION is updated to 0.3.101 and the displayed version in the app reflects 0.3.101."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
-    "Do not modify files under frontend/src/components/ui or other immutablePaths listed in SYSTEM_CONTEXT; compose them as-is.",
-    "Use English for any user-facing text introduced/changed by this request."
+    "Do not implement or modify the file upload/folder upload behavior; the user explicitly chose to leave the failing upload issue for now.",
+    "Do not change any preview/player behavior or UI beyond restoring filename click-to-preview from search results.",
+    "Do not edit files under frontend/src/components/ui or any other immutable paths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Adding new authentication providers (only Internet Identity is supported).",
-    "Introducing external databases or non-IC storage systems.",
-    "Redesigning unrelated parts of the UI beyond the specified button order and metadata display changes."
+    "Fixing the known folder upload error that occurs after creating the folder.",
+    "Any redesign of the search UI beyond restoring the two regressed interactions (clickable containing-folder path and filename click-to-preview)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

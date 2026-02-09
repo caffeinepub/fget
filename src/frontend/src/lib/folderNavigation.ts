@@ -109,3 +109,31 @@ export function resolveFileParentPath(
 
   return parentFolder.id;
 }
+
+/**
+ * Gets the containing folder path string for a file (excludes the filename)
+ */
+export function getContainingFolderPath(
+  file: FileMetadata,
+  allFolders: FolderMetadata[]
+): string {
+  if (!file.parentId) {
+    return 'Drive';
+  }
+
+  return getFolderPath(file.parentId, allFolders) || 'Drive';
+}
+
+/**
+ * Gets the containing folder path string for a folder (path to its parent)
+ */
+export function getFolderContainingPath(
+  folder: FolderMetadata,
+  allFolders: FolderMetadata[]
+): string {
+  if (!folder.parentId) {
+    return 'Drive';
+  }
+
+  return getFolderPath(folder.parentId, allFolders) || 'Drive';
+}

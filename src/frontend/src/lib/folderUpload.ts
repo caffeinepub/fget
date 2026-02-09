@@ -1,12 +1,12 @@
 import { ExternalBlob } from '../backend';
-import { toast } from 'sonner';
+import { generateSecure32ByteId } from './id';
 
-export interface FolderUploadFile {
+export interface FolderFile {
   file: File;
   relativePath: string;
 }
 
-export interface FolderUploadCallbacks {
+export interface UploadCallbacks {
   createFolder: (name: string, parentId: string | null) => Promise<string>;
   addFile: (params: {
     id: string;
@@ -19,118 +19,121 @@ export interface FolderUploadCallbacks {
 }
 
 /**
- * Validates that all files have relative paths (webkitRelativePath)
+ * Extracts folder structure from FileList with webkitRelativePath
  */
-export function validateFolderFiles(files: File[]): boolean {
-  for (const file of files) {
-    const webkitPath = (file as { webkitRelativePath?: string }).webkitRelativePath;
-    if (!webkitPath) {
-      return false;
-    }
+export function extractFolderFiles(files: FileList): FolderFile[] {
+  const result: FolderFile[] = [];
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const relativePath = (file as any).webkitRelativePath || file.name;
+    
+    // Normalize path: remove leading slash, use forward slashes
+    const normalizedPath = relativePath.replace(/^\/+/, '').replace(/\\/g, '/');
+    
+    result.push({
+      file,
+      relativePath: normalizedPath,
+    });
   }
-  return true;
+  
+  return result;
 }
 
 /**
- * Recursively uploads a folder structure with all nested files
+ * Validates that files have relative paths (folder structure)
+ */
+export function validateFolderFiles(files: File[]): boolean {
+  if (files.length === 0) return false;
+  
+  // Check if at least one file has a webkitRelativePath
+  return files.some(file => {
+    const path = (file as any).webkitRelativePath;
+    return path && path.includes('/');
+  });
+}
+
+/**
+ * Two-step folder upload:
+ * 1. Create all required folders (deduped, depth-sorted)
+ * 2. Upload all files using the resolved destination folder IDs
  */
 export async function uploadFolderRecursively(
-  files: FolderUploadFile[],
-  currentFolderId: string | null,
-  callbacks: FolderUploadCallbacks
+  folderFiles: FolderFile[],
+  rootParentId: string | null,
+  callbacks: UploadCallbacks
 ): Promise<void> {
-  if (files.length === 0) {
-    toast.info('No files found in the selected folder');
-    return;
+  if (folderFiles.length === 0) return;
+
+  // Step 1: Build folder structure map
+  const folderMap = new Map<string, string>(); // path -> folderId
+  const foldersToCreate: Array<{ path: string; name: string; parentPath: string | null }> = [];
+
+  // Extract unique folder paths
+  const folderPaths = new Set<string>();
+  for (const { relativePath } of folderFiles) {
+    const parts = relativePath.split('/');
+    // Build all ancestor paths
+    for (let i = 0; i < parts.length - 1; i++) {
+      const folderPath = parts.slice(0, i + 1).join('/');
+      folderPaths.add(folderPath);
+    }
   }
 
-  // Build a map of folder paths to their IDs
-  const folderMap = new Map<string, string>();
-  folderMap.set('', currentFolderId || ''); // Root is the current folder
-
-  // Sort files by path depth to ensure parent folders are created first
-  const sortedFiles = [...files].sort((a, b) => {
-    const depthA = a.relativePath.split('/').length;
-    const depthB = b.relativePath.split('/').length;
+  // Sort by depth (shallow first) to ensure parents are created before children
+  const sortedPaths = Array.from(folderPaths).sort((a, b) => {
+    const depthA = a.split('/').length;
+    const depthB = b.split('/').length;
     return depthA - depthB;
   });
 
-  // Process each file
-  for (let i = 0; i < sortedFiles.length; i++) {
-    const { file, relativePath } = sortedFiles[i];
-    const pathParts = relativePath.split('/');
-    const fileName = pathParts[pathParts.length - 1];
+  // Prepare folder creation list
+  for (const path of sortedPaths) {
+    const parts = path.split('/');
+    const name = parts[parts.length - 1];
+    const parentPath = parts.length > 1 ? parts.slice(0, -1).join('/') : null;
     
-    // Create all parent folders if needed
-    let currentPath = '';
-    let parentFolderId = currentFolderId;
+    foldersToCreate.push({ path, name, parentPath });
+  }
 
-    for (let j = 0; j < pathParts.length - 1; j++) {
-      const folderName = pathParts[j];
-      const folderPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+  // Create all folders
+  for (const { path, name, parentPath } of foldersToCreate) {
+    const parentId = parentPath ? folderMap.get(parentPath) || null : rootParentId;
+    const folderId = await callbacks.createFolder(name, parentId);
+    folderMap.set(path, folderId);
+  }
 
-      if (!folderMap.has(folderPath)) {
-        try {
-          const newFolderId = await callbacks.createFolder(folderName, parentFolderId);
-          folderMap.set(folderPath, newFolderId);
-          parentFolderId = newFolderId;
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to create folder';
-          toast.error(`Failed to create folder "${folderName}": ${errorMessage}`);
-          throw error;
-        }
-      } else {
-        parentFolderId = folderMap.get(folderPath) || null;
-      }
+  // Step 2: Upload all files
+  for (let i = 0; i < folderFiles.length; i++) {
+    const { file, relativePath } = folderFiles[i];
+    
+    // Determine parent folder
+    const parts = relativePath.split('/');
+    const fileName = parts[parts.length - 1];
+    const folderPath = parts.length > 1 ? parts.slice(0, -1).join('/') : null;
+    const parentId = folderPath ? folderMap.get(folderPath) || rootParentId : rootParentId;
 
-      currentPath = folderPath;
-    }
-
-    // Upload the file
-    try {
+    // Read file and create blob
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
       if (callbacks.onProgress) {
-        callbacks.onProgress(i + 1, sortedFiles.length, fileName);
+        callbacks.onProgress(i + 1, folderFiles.length, fileName);
       }
+    });
 
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      
-      const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
-        // Individual file upload progress can be tracked here if needed
-      });
+    // Upload file with shared ID generator
+    await callbacks.addFile({
+      id: generateSecure32ByteId(),
+      name: fileName,
+      size: BigInt(file.size),
+      blob,
+      parentId,
+    });
 
-      await callbacks.addFile({
-        id: `${Date.now()}-${i}-${Math.random()}`,
-        name: fileName,
-        size: BigInt(file.size),
-        blob,
-        parentId: parentFolderId,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-      toast.error(`Failed to upload ${fileName}: ${errorMessage}`);
-      throw error;
+    if (callbacks.onProgress) {
+      callbacks.onProgress(i + 1, folderFiles.length, fileName);
     }
   }
-}
-
-/**
- * Extracts files with relative paths from a FileList
- */
-export function extractFolderFiles(fileList: FileList): FolderUploadFile[] {
-  const files: FolderUploadFile[] = [];
-  
-  for (let i = 0; i < fileList.length; i++) {
-    const file = fileList[i];
-    const webkitPath = (file as { webkitRelativePath?: string }).webkitRelativePath;
-    
-    if (webkitPath) {
-      files.push({
-        file,
-        relativePath: webkitPath,
-      });
-    }
-  }
-  
-  return files;
 }

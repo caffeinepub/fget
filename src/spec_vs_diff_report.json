@@ -1,45 +1,32 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T17:14:28.691Z",
-  "summary": "Diff implements parts of the requested v0.3.91 changes on the frontend (button reorder, file-type label helper, search-path navigation helper) and bumps the version constant in several places, but evidence is insufficient for the backend YHash fix and the text-preview navigation controls/keyboard behavior; version display also appears inconsistent (ManagePanel still reports 0.3.80).",
-  "missing_requirements": [
+  "generatedAt": "2026-02-09T20:19:24.038Z",
+  "summary": "The diff updates the centralized APP_VERSION to 0.3.101 and updates Footer to display it. It also adds/uses folder-navigation helpers intended to render a containing-folder-only path for search results and enable navigation from that path, and indicates restoring filename click-to-preview in search results. However, additional unrequested behavior changes appear in the search implementation (useQueries) and potentially other FileList UI/behavior beyond the two specified regressions.",
+  "missing_requirements": [],
+  "hallucinated_features": [
     {
-      "id": "REQ-1",
-      "requirement": "Fix the folder upload failure by resolving the backend hashing/YHash length error (\"YHash must be exactly 32 bytes, got 64\") so recursive folder uploads complete successfully and all uploaded files/folders are persisted and visible after refresh.",
-      "reason": "The shown backend diff only evidences a version string update; no change related to hashing/YHash, folder upload persistence, or path-parent creation is visible in the truncated snippet.",
+      "description": "Enhanced/changed subtree search behavior (client-side recursive subtree search with Unicode-aware, case-insensitive, diacritics-insensitive matching; fixes matching descendants; full-drive search when startFolderId is null).",
+      "reason": "BuildRequest only asked to restore two regressed search-result interactions (clickable containing-folder path and filename click-to-preview) and did not request any search algorithm/behavior changes.",
       "evidence": [
-        "backend/main.mo (truncated)"
+        "frontend-file-summaries.txt (entry for \"frontend/src/hooks/useQueries.ts\")"
       ]
     },
     {
-      "id": "REQ-5",
-      "requirement": "Restore/ensure working navigation controls in text-based file preview (Previous/Next buttons and left/right arrow keyboard navigation).",
-      "reason": "FilePreviewModal has state for navigation availability (canNavigate/hasPrevious/hasNext), but the diff excerpt does not show any rendered Previous/Next controls or keyboard arrow handlers for text preview; due to truncation, implementation cannot be confirmed.",
+      "description": "Additional FileList UI/behavior changes beyond restoring the two regressed interactions (e.g., sortable listings via header row clicks, fixed-width column layout, breadcrumb path styled as interactive pill, shared ID generator for all uploads).",
+      "reason": "Constraints explicitly say not to change UI/behavior beyond restoring the clickable containing-folder path and filename click-to-preview from search results.",
       "evidence": [
-        "frontend/src/components/FilePreviewModal.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "requirement": "Bump the application version to 0.3.91 everywhere it is displayed/returned (frontend display and backend-reported version) and add/adjust migration logic as required.",
-      "reason": "Frontend version constant and backend appVersion were updated, but the diff summary indicates ManagePanel still displays app version 0.3.80, so the version is not bumped everywhere it is displayed. Also, no explicit upgrade/migration logic change is evidenced in the provided backend snippet (cannot confirm whether required migrations were added).",
-      "evidence": [
-        "frontend/src/lib/appVersion.ts",
-        "backend/main.mo (truncated)",
-        "frontend-file-summaries.txt (ManagePanel line: \"app version 0.3.80\")"
+        "frontend-file-summaries.txt (entry for \"frontend/src/components/FileList.tsx\")",
+        "frontend/src/components/FileList.tsx (truncated; shows new/extra imports like sortFileSystemItems, FileListHeaderRow, generateSecure32ByteId)"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.62,
+  "confidence": 0.68,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/src/components/FileList.tsx",
-    "frontend/src/components/FilePreviewModal.tsx",
+    "frontend/src/components/Footer.tsx",
     "frontend/src/lib/appVersion.ts",
-    "frontend/src/lib/fileTypes.ts",
     "frontend/src/lib/folderNavigation.ts",
     "project_state.json"
   ]

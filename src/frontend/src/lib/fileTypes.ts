@@ -89,6 +89,16 @@ export function isText(extension: string): boolean {
   return textExts.includes(extension.toLowerCase());
 }
 
+export function isArchive(extension: string): boolean {
+  const archiveExts = ['zip', 'rar', '7z', 'tar', 'gz', 'bz2'];
+  return archiveExts.includes(extension.toLowerCase());
+}
+
+export function isCode(extension: string): boolean {
+  const codeExts = ['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb', 'swift', 'kt', 'html', 'css', 'json', 'xml', 'yaml', 'yml', 'sh', 'bash'];
+  return codeExts.includes(extension.toLowerCase());
+}
+
 /**
  * Gets a human-readable file type label from a filename
  */
@@ -136,4 +146,23 @@ export function getFileTypeLabel(filename: string): string {
   };
   
   return typeLabels[ext] || ext;
+}
+
+/**
+ * Categorizes a file by its extension into a general type category
+ */
+export type FileCategory = 'image' | 'video' | 'audio' | 'archive' | 'code' | 'document' | 'text' | 'generic';
+
+export function getFileCategory(filename: string): FileCategory {
+  const ext = getFileExtension(filename);
+  
+  if (isImage(ext)) return 'image';
+  if (isVideo(ext)) return 'video';
+  if (isAudio(ext)) return 'audio';
+  if (isArchive(ext)) return 'archive';
+  if (isCode(ext)) return 'code';
+  if (isDocument(ext)) return 'document';
+  if (isText(ext)) return 'text';
+  
+  return 'generic';
 }

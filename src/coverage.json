@@ -1,96 +1,62 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T17:14:28.693Z",
+  "generatedAt": "2026-02-09T20:19:24.041Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 5,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the folder upload failure by resolving the backend hashing/YHash length error (\"YHash must be exactly 32 bytes, got 64\") so recursive folder uploads complete successfully and all uploaded files/folders are persisted and visible after refresh.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "In the search results UI, render the containing-folder path as a clickable element (not a plain full file path including the filename) and when clicked, navigate to/open that containing folder (i.e., update currentFolderId and breadcrumb path to the folder that contains the search result item).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/FileList.tsx",
+          "frontend/src/lib/folderNavigation.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/FileList.tsx",
+          "frontend/src/lib/folderNavigation.ts"
+        ]
       },
       {
         "id": "REQ-2",
-        "summary": "When clicking a searched file's displayed path/breadcrumb segments, navigate to the correct reachable folder so the resulting path is valid and does not use an incorrect root/drive context.",
+        "summary": "In the search results UI, make clicking a file’s filename open that file in the existing preview modal (same behavior as before the regression), without changing any preview/player functionality beyond restoring the click action.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/folderNavigation.ts",
           "frontend/src/components/FileList.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/folderNavigation.ts",
           "frontend/src/components/FileList.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Reorder the action buttons in the FileList header so they appear in this order: (1) Upload Files, (2) New Folder, (3) Upload Folder. Apply this change to the currently selected element group containing the button at XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2].",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Show file type next to file size in the file list row metadata (as it was in the live version), using English formatting (e.g., \"PDF • 145.19 KB\" or \"JSON • 145.19 KB\").",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/fileTypes.ts",
-          "frontend/src/components/FileList.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/fileTypes.ts",
-          "frontend/src/components/FileList.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Restore/ensure working navigation controls in text-based file preview so users can navigate to previous/next files while previewing a text file (same behavior as for other previewable files), including clickable UI controls and keyboard arrow navigation.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FileList.tsx",
-          "frontend/src/components/FilePreviewModal.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FileList.tsx",
-          "frontend/src/components/FilePreviewModal.tsx"
-        ]
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Bump the application version to 0.3.91 everywhere it is displayed/returned, including frontend version display and backend-reported version, and add/adjust migration logic as required by the existing state upgrade policy.",
+        "summary": "Bump the application version constant to 0.3.101 so the UI displays version 0.3.101 wherever the centralized version is used.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/lib/appVersion.ts",
           "frontend/src/components/Footer.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/appVersion.ts"
+          "frontend/src/lib/appVersion.ts",
+          "frontend/src/components/Footer.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/FileList.tsx",
-    "frontend/src/components/FilePreviewModal.tsx",
+    "frontend/src/components/Footer.tsx",
     "frontend/src/lib/appVersion.ts",
-    "frontend/src/lib/fileTypes.ts",
     "frontend/src/lib/folderNavigation.ts",
     "project_state.json",
     "scratch/component-selection.json",

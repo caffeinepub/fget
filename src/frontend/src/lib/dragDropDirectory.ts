@@ -44,10 +44,10 @@ async function traverseDirectory(
       readEntries();
     });
     
-    // Recursively process each entry
+    // Recursively process each entry with correct path propagation
+    const newBasePath = basePath ? `${basePath}/${entry.name}` : entry.name;
     for (const childEntry of entries) {
-      const childPath = basePath ? `${basePath}/${entry.name}` : entry.name;
-      const childFiles = await traverseDirectory(childEntry, childPath);
+      const childFiles = await traverseDirectory(childEntry, newBasePath);
       files.push(...childFiles);
     }
   }

@@ -23,7 +23,9 @@ export interface FileMetadata {
   'id' : string,
   'blob' : ExternalBlob,
   'name' : string,
+  'createdAt' : Time,
   'size' : bigint,
+  'updatedAt' : Time,
   'parentId' : [] | [string],
 }
 export interface FileMove {
@@ -36,6 +38,8 @@ export type FileSystemItem = { 'file' : FileMetadata } |
 export interface FolderMetadata {
   'id' : string,
   'name' : string,
+  'createdAt' : Time,
+  'updatedAt' : Time,
   'parentId' : [] | [string],
 }
 export interface FolderSearchResults {
@@ -48,6 +52,7 @@ export interface StorageStats {
   'totalStorageBytes' : bigint,
   'backendCanisterId' : string,
 }
+export type Time = bigint;
 export interface UserApprovalInfo {
   'status' : ApprovalStatus,
   'principal' : Principal,

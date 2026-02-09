@@ -14,17 +14,14 @@ export class ExternalBlob {
     static fromBytes(blob: Uint8Array<ArrayBuffer>): ExternalBlob;
     withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
 }
-export interface StorageStats {
-    frontendCanisterId: string;
-    appVersion: string;
-    totalStorageBytes: bigint;
-    backendCanisterId: string;
-}
+export type Time = bigint;
 export interface FileMetadata {
     id: string;
     blob: ExternalBlob;
     name: string;
+    createdAt: Time;
     size: bigint;
+    updatedAt: Time;
     parentId?: string;
 }
 export type FileSystemItem = {
@@ -41,6 +38,8 @@ export interface FolderSearchResults {
 export interface FolderMetadata {
     id: string;
     name: string;
+    createdAt: Time;
+    updatedAt: Time;
     parentId?: string;
 }
 export interface AdminInfo {
@@ -59,6 +58,12 @@ export interface FileMove {
 }
 export interface UserProfile {
     name: string;
+}
+export interface StorageStats {
+    frontendCanisterId: string;
+    appVersion: string;
+    totalStorageBytes: bigint;
+    backendCanisterId: string;
 }
 export enum ApprovalStatus {
     pending = "pending",

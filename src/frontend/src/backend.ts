@@ -89,17 +89,18 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface StorageStats {
-    frontendCanisterId: string;
-    appVersion: string;
-    totalStorageBytes: bigint;
-    backendCanisterId: string;
+export interface _CaffeineStorageRefillResult {
+    success?: boolean;
+    topped_up_amount?: bigint;
 }
+export type Time = bigint;
 export interface FileMetadata {
     id: string;
     blob: ExternalBlob;
     name: string;
+    createdAt: Time;
     size: bigint;
+    updatedAt: Time;
     parentId?: string;
 }
 export interface _CaffeineStorageRefillInformation {
@@ -123,6 +124,8 @@ export interface FolderSearchResults {
 export interface FolderMetadata {
     id: string;
     name: string;
+    createdAt: Time;
+    updatedAt: Time;
     parentId?: string;
 }
 export interface AdminInfo {
@@ -139,12 +142,14 @@ export interface FileMove {
     isFolder: boolean;
     newParentId?: string;
 }
-export interface _CaffeineStorageRefillResult {
-    success?: boolean;
-    topped_up_amount?: bigint;
-}
 export interface UserProfile {
     name: string;
+}
+export interface StorageStats {
+    frontendCanisterId: string;
+    appVersion: string;
+    totalStorageBytes: bigint;
+    backendCanisterId: string;
 }
 export enum ApprovalStatus {
     pending = "pending",
@@ -195,7 +200,7 @@ export interface backendInterface {
     setBackendCanisterId(canisterId: string): Promise<void>;
     setFrontendCanisterId(canisterId: string): Promise<void>;
 }
-import type { AdminInfo as _AdminInfo, ApprovalStatus as _ApprovalStatus, ExternalBlob as _ExternalBlob, FileMetadata as _FileMetadata, FileMove as _FileMove, FileSystemItem as _FileSystemItem, FolderMetadata as _FolderMetadata, FolderSearchResults as _FolderSearchResults, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
+import type { AdminInfo as _AdminInfo, ApprovalStatus as _ApprovalStatus, ExternalBlob as _ExternalBlob, FileMetadata as _FileMetadata, FileMove as _FileMove, FileSystemItem as _FileSystemItem, FolderMetadata as _FolderMetadata, FolderSearchResults as _FolderSearchResults, Time as _Time, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _caffeineStorageBlobIsLive(arg0: Uint8Array): Promise<boolean> {
@@ -768,15 +773,21 @@ function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Ar
 function from_candid_record_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: string;
     name: string;
+    createdAt: _Time;
+    updatedAt: _Time;
     parentId: [] | [string];
 }): {
     id: string;
     name: string;
+    createdAt: Time;
+    updatedAt: Time;
     parentId?: string;
 } {
     return {
         id: value.id,
         name: value.name,
+        createdAt: value.createdAt,
+        updatedAt: value.updatedAt,
         parentId: record_opt_to_undefined(from_candid_opt_n15(_uploadFile, _downloadFile, value.parentId))
     };
 }
@@ -784,20 +795,26 @@ async function from_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promi
     id: string;
     blob: _ExternalBlob;
     name: string;
+    createdAt: _Time;
     size: bigint;
+    updatedAt: _Time;
     parentId: [] | [string];
 }): Promise<{
     id: string;
     blob: ExternalBlob;
     name: string;
+    createdAt: Time;
     size: bigint;
+    updatedAt: Time;
     parentId?: string;
 }> {
     return {
         id: value.id,
         blob: await from_candid_ExternalBlob_n20(_uploadFile, _downloadFile, value.blob),
         name: value.name,
+        createdAt: value.createdAt,
         size: value.size,
+        updatedAt: value.updatedAt,
         parentId: record_opt_to_undefined(from_candid_opt_n15(_uploadFile, _downloadFile, value.parentId))
     };
 }

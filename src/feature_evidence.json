@@ -2,11 +2,32 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-when-clicking-a-searched-file-s-displayed-path-breadcrumb-segments-navigate-to-the-correct-reachable-folder-so-the-resulting-path-is-valid-and-does-not-use-an-incorrect-root-drive-context",
-      "featureTitle": "When clicking a searched file's displayed path/breadcrumb segments, navigate to the correct reachable folder so the resulting path is valid and does not use an incorrect root/drive context.",
+      "featureId": "feature-in-the-search-results-ui-render-the-containing-folder-path-as-a-clickable-element-not-a-plain-full-file-path-including-the-filename-and-when-clicked-navigate-to-open-that-containing-folder-i-e-update-currentfolderid-and-breadcrumb-path-to-the-folder-that-contains-the-search-result-item",
+      "featureTitle": "In the search results UI, render the containing-folder path as a clickable element (not a plain full file path including the filename) and when clicked, navigate to/open that containing folder (i.e., update currentFolderId and breadcrumb path to the folder that contains the search result item).",
       "files": [
         "frontend/src/components/FileList.tsx",
         "frontend/src/lib/folderNavigation.ts"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-the-search-results-ui-make-clicking-a-file-s-filename-open-that-file-in-the-existing-preview-modal-same-behavior-as-before-the-regression-without-changing-any-preview-player-functionality-beyond-restoring-the-click-action",
+      "featureTitle": "In the search results UI, make clicking a file’s filename open that file in the existing preview modal (same behavior as before the regression), without changing any preview/player functionality beyond restoring the click action.",
+      "files": [
+        "frontend/src/components/FileList.tsx"
       ],
       "components": [
         "blob-storage@3.0.0",
@@ -24,74 +45,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-reorder-the-action-buttons-in-the-filelist-header-so-they-appear-in-this-order-1-upload-files-2-new-folder-3-upload-folder-apply-this-change-to-the-currently-selected-element-group-containing-the-button-at-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-1-div-1-div-1-div-2-button-2",
-      "featureTitle": "Reorder the action buttons in the FileList header so they appear in this order: (1) Upload Files, (2) New Folder, (3) Upload Folder. Apply this change to the currently selected element group containing the button at XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2].",
+      "featureId": "feature-bump-the-application-version-constant-to-0-3-101-so-the-ui-displays-version-0-3-101-wherever-the-centralized-version-is-used",
+      "featureTitle": "Bump the application version constant to 0.3.101 so the UI displays version 0.3.101 wherever the centralized version is used.",
       "files": [
-        "frontend/src/components/FileList.tsx"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-show-file-type-next-to-file-size-in-the-file-list-row-metadata-as-it-was-in-the-live-version-using-english-formatting-e-g-pdf-145-19-kb-or-json-145-19-kb",
-      "featureTitle": "Show file type next to file size in the file list row metadata (as it was in the live version), using English formatting (e.g., \"PDF • 145.19 KB\" or \"JSON • 145.19 KB\").",
-      "files": [
-        "frontend/src/components/FileList.tsx",
-        "frontend/src/lib/fileTypes.ts"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-restore-ensure-working-navigation-controls-in-text-based-file-preview-so-users-can-navigate-to-previous-next-files-while-previewing-a-text-file-same-behavior-as-for-other-previewable-files-including-clickable-ui-controls-and-keyboard-arrow-navigation",
-      "featureTitle": "Restore/ensure working navigation controls in text-based file preview so users can navigate to previous/next files while previewing a text file (same behavior as for other previewable files), including clickable UI controls and keyboard arrow navigation.",
-      "files": [
-        "frontend/src/components/FileList.tsx",
-        "frontend/src/components/FilePreviewModal.tsx"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-bump-the-application-version-to-0-3-91-everywhere-it-is-displayed-returned-including-frontend-version-display-and-backend-reported-version-and-add-adjust-migration-logic-as-required-by-the-existing-state-upgrade-policy",
-      "featureTitle": "Bump the application version to 0.3.91 everywhere it is displayed/returned, including frontend version display and backend-reported version, and add/adjust migration logic as required by the existing state upgrade policy.",
-      "files": [
+        "frontend/src/components/Footer.tsx",
         "frontend/src/lib/appVersion.ts"
       ],
       "components": [
@@ -105,7 +62,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-6"
+        "REQ-3"
       ],
       "confidence": "high"
     }

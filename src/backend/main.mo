@@ -4,15 +4,13 @@ import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import List "mo:core/List";
 import Map "mo:core/Map";
-
+import Iter "mo:core/Iter";
+import Nat "mo:core/Nat";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Text "mo:core/Text";
-import Nat "mo:core/Nat";
 import Char "mo:core/Char";
-import Iter "mo:core/Iter";
-
-// specifies the data migration function in with-clause
+import Time "mo:core/Time";
 
 actor {
   let storage = Storage.new();
@@ -25,20 +23,31 @@ actor {
   var frontendCanisterId : Text = "";
   var backendCanisterId : Text = "";
   var firstAdmin : ?Principal = null;
-  let appVersion = "0.3.91"; // Updated version
+  let appVersion = "0.3.100";
+  var nextFolderId = 1;
+  let files = Map.empty<Text, FileMetadata>();
+  let folders = Map.empty<Text, FolderMetadata>();
 
-  type FileMetadata = {
+  public type UserProfile = {
+    name : Text;
+  };
+
+  public type FileMetadata = {
     id : Text;
     name : Text;
     size : Nat;
     blob : Storage.ExternalBlob;
     parentId : ?Text;
+    createdAt : Time.Time;
+    updatedAt : Time.Time;
   };
 
-  type FolderMetadata = {
+  public type FolderMetadata = {
     id : Text;
     name : Text;
     parentId : ?Text;
+    createdAt : Time.Time;
+    updatedAt : Time.Time;
   };
 
   public type AdminInfo = {
@@ -77,14 +86,6 @@ actor {
     isFolder : Bool;
   };
 
-  var nextFolderId = 1;
-  let files = Map.empty<Text, FileMetadata>();
-  let folders = Map.empty<Text, FolderMetadata>();
-
-  public type UserProfile = {
-    name : Text;
-  };
-
   public shared ({ caller }) func initializeAccessControl() : async () {
     AccessControl.initialize(accessControlState, caller);
     switch (firstAdmin) {
@@ -95,7 +96,7 @@ actor {
 
   // Approval Functions
   public query ({ caller }) func isCallerApproved() : async Bool {
-    AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
+    getEffectiveRole(caller) != #guest;
   };
 
   public shared ({ caller }) func requestApproval() : async () {
@@ -103,21 +104,21 @@ actor {
   };
 
   public shared ({ caller }) func setApproval(user : Principal, status : UserApproval.ApprovalStatus) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+    if (getEffectiveRole(caller) != #admin) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     UserApproval.setApproval(approvalState, user, status);
   };
 
   public query ({ caller }) func listApprovals() : async [UserApproval.UserApprovalInfo] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+    if (getEffectiveRole(caller) != #admin) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
     UserApproval.listApprovals(approvalState);
   };
 
   public shared ({ caller }) func assignCallerUserRole(user : Principal, role : AccessControl.UserRole) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+    if (getEffectiveRole(caller) != #admin) {
       Runtime.trap("Access denied: Only admins can set roles");
     };
 
@@ -263,7 +264,6 @@ actor {
         };
       };
     };
-
     let membersArray = result.toArray();
     let arraySize = membersArray.size();
 
@@ -331,12 +331,15 @@ actor {
       Runtime.trap("Unauthorized: Only admins and approved users can add files");
     };
 
+    let now = Time.now();
     let metadata : FileMetadata = {
       id;
       name;
       size;
       blob;
       parentId;
+      createdAt = now;
+      updatedAt = now;
     };
     files.add(id, metadata);
   };
@@ -367,58 +370,6 @@ actor {
         true;
       };
     };
-  };
-
-  func toLowerASCIIFold(input : Text) : Text {
-    input.map(
-      func(c) {
-        switch (c) {
-          case ('Á') { 'a' };
-          case ('À') { 'a' };
-          case ('Â') { 'a' };
-          case ('Ä') { 'a' };
-          case ('É') { 'e' };
-          case ('È') { 'e' };
-          case ('Ê') { 'e' };
-          case ('Ë') { 'e' };
-          case ('Í') { 'i' };
-          case ('Ì') { 'i' };
-          case ('Î') { 'i' };
-          case ('Ï') { 'i' };
-          case ('Ó') { 'o' };
-          case ('Ò') { 'o' };
-          case ('Ô') { 'o' };
-          case ('Ö') { 'o' };
-          case ('Ú') { 'u' };
-          case ('Ù') { 'u' };
-          case ('Û') { 'u' };
-          case ('Ü') { 'u' };
-          case ('Ç') { 'c' };
-          case ('á') { 'a' };
-          case ('à') { 'a' };
-          case ('â') { 'a' };
-          case ('ä') { 'a' };
-          case ('é') { 'e' };
-          case ('è') { 'e' };
-          case ('ê') { 'e' };
-          case ('ë') { 'e' };
-          case ('í') { 'i' };
-          case ('ì') { 'i' };
-          case ('î') { 'i' };
-          case ('ï') { 'i' };
-          case ('ó') { 'o' };
-          case ('ò') { 'o' };
-          case ('ô') { 'o' };
-          case ('ö') { 'o' };
-          case ('ú') { 'u' };
-          case ('ù') { 'u' };
-          case ('û') { 'u' };
-          case ('ü') { 'u' };
-          case ('ç') { 'c' };
-          case (_other) { c };
-        };
-      }
-    );
   };
 
   func recursiveFolderSearch(
@@ -585,10 +536,13 @@ actor {
     let folderId = nextFolderId.toText();
     nextFolderId += 1;
 
+    let now = Time.now();
     let folder : FolderMetadata = {
       id = folderId;
       name;
       parentId;
+      createdAt = now;
+      updatedAt = now;
     };
 
     folders.add(folderId, folder);
@@ -658,14 +612,17 @@ actor {
       Runtime.trap("Unauthorized: Only existing users can move items");
     };
 
+    let now = Time.now();
     if (isFolder) {
       switch (folders.get(itemId)) {
         case (null) { Runtime.trap("Folder not found") };
         case (?folder) {
           let updatedFolder : FolderMetadata = {
             folder with parentId = newParentId;
+            updatedAt = now;
           };
           folders.add(itemId, updatedFolder);
+          updateParentTimestamps(newParentId, now, false);
         };
       };
     } else {
@@ -674,7 +631,9 @@ actor {
         case (?file) {
           let updatedFile : FileMetadata = {
             file with parentId = newParentId;
+            updatedAt = now;
           };
+          updateParentTimestamps(newParentId, now, false);
           files.add(itemId, updatedFile);
         };
       };
@@ -686,6 +645,7 @@ actor {
       Runtime.trap("Unauthorized: Only existing users can move items");
     };
 
+    let now = Time.now();
     for (move in moves.values()) {
       if (move.isFolder) {
         switch (folders.get(move.id)) {
@@ -693,21 +653,45 @@ actor {
           case (?folder) {
             let updatedFolder : FolderMetadata = {
               folder with parentId = move.newParentId;
+              updatedAt = now;
             };
             folders.add(move.id, updatedFolder);
+            updateParentTimestamps(move.newParentId, now, false);
           };
         };
       } else {
         switch (files.get(move.id)) {
           case (null) { Runtime.trap("File not found") };
           case (?file) {
+            updateParentTimestamps(move.newParentId, now, false);
             let updatedFile : FileMetadata = {
               file with parentId = move.newParentId;
+              updatedAt = now;
             };
             files.add(move.id, updatedFile);
           };
         };
       };
+    };
+  };
+
+  func updateParentTimestamps(parentId : ?Text, timestamp : Time.Time, updateAllAncestors : Bool) {
+    switch (parentId) {
+      case (?folderId) {
+        switch (folders.get(folderId)) {
+          case (?folder) {
+            let updatedFolder : FolderMetadata = {
+              folder with updatedAt = timestamp;
+            };
+            folders.add(folderId, updatedFolder);
+            if (updateAllAncestors) {
+              updateParentTimestamps(folder.parentId, timestamp, true);
+            };
+          };
+          case (null) {};
+        };
+      };
+      case (null) {};
     };
   };
 

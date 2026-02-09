@@ -1,54 +1,34 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Web file manager improvements for v0.3.91: fix folder upload backend error, correct navigation from search results, restore text-file preview navigation, and adjust upload button ordering and file list metadata.",
-  "architectural_notes": [
-    "Target release version: 0.3.91"
-  ],
+  "summary": "Project involves a file-browser/search UI where search results should include a clickable containing-folder path and clicking filenames should open a preview.",
+  "architectural_notes": [],
   "known_issues": [
-    "Folder upload currently errors (YHash must be exactly 32 bytes…) indicating backend hashing issue",
-    "Clicking a searched file path can navigate from an incorrect root/drive causing an error",
-    "Text-based file preview navigation controls are missing"
+    "File upload still fails after creating the folder (user chose to leave for now)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-when-clicking-a-searched-file-s-displayed-path-breadcrumb-segments-navigate-to-the-correct-reachable-folder-so-the-resulting-path-is-valid-and-does-not-use-an-incorrect-root-drive-context",
-      "title": "When clicking a searched file's displayed path/breadcrumb segments, navigate to the correct reachable folder so the resulting path is valid and does not use an incorrect root/drive context.",
+      "id": "feature-in-the-search-results-ui-render-the-containing-folder-path-as-a-clickable-element-not-a-plain-full-file-path-including-the-filename-and-when-clicked-navigate-to-open-that-containing-folder-i-e-update-currentfolderid-and-breadcrumb-path-to-the-folder-that-contains-the-search-result-item",
+      "title": "In the search results UI, render the containing-folder path as a clickable element (not a plain full file path including the filename) and when clicked, navigate to/open that containing folder (i.e., update currentFolderId and breadcrumb path to the folder that contains the search result item).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-the-search-results-ui-make-clicking-a-file-s-filename-open-that-file-in-the-existing-preview-modal-same-behavior-as-before-the-regression-without-changing-any-preview-player-functionality-beyond-restoring-the-click-action",
+      "title": "In the search results UI, make clicking a file’s filename open that file in the existing preview modal (same behavior as before the regression), without changing any preview/player functionality beyond restoring the click action.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-reorder-the-action-buttons-in-the-filelist-header-so-they-appear-in-this-order-1-upload-files-2-new-folder-3-upload-folder-apply-this-change-to-the-currently-selected-element-group-containing-the-button-at-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-1-div-1-div-1-div-2-button-2",
-      "title": "Reorder the action buttons in the FileList header so they appear in this order: (1) Upload Files, (2) New Folder, (3) Upload Folder. Apply this change to the currently selected element group containing the button at XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2].",
+      "id": "feature-bump-the-application-version-constant-to-0-3-101-so-the-ui-displays-version-0-3-101-wherever-the-centralized-version-is-used",
+      "title": "Bump the application version constant to 0.3.101 so the UI displays version 0.3.101 wherever the centralized version is used.",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-show-file-type-next-to-file-size-in-the-file-list-row-metadata-as-it-was-in-the-live-version-using-english-formatting-e-g-pdf-145-19-kb-or-json-145-19-kb",
-      "title": "Show file type next to file size in the file list row metadata (as it was in the live version), using English formatting (e.g., \"PDF • 145.19 KB\" or \"JSON • 145.19 KB\").",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-restore-ensure-working-navigation-controls-in-text-based-file-preview-so-users-can-navigate-to-previous-next-files-while-previewing-a-text-file-same-behavior-as-for-other-previewable-files-including-clickable-ui-controls-and-keyboard-arrow-navigation",
-      "title": "Restore/ensure working navigation controls in text-based file preview so users can navigate to previous/next files while previewing a text file (same behavior as for other previewable files), including clickable UI controls and keyboard arrow navigation.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-bump-the-application-version-to-0-3-91-everywhere-it-is-displayed-returned-including-frontend-version-display-and-backend-reported-version-and-add-adjust-migration-logic-as-required-by-the-existing-state-upgrade-policy",
-      "title": "Bump the application version to 0.3.91 everywhere it is displayed/returned, including frontend version display and backend-reported version, and add/adjust migration logic as required by the existing state upgrade policy.",
-      "reqIds": [
-        "REQ-6"
       ],
       "version": 1
     }
@@ -56,44 +36,18 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix backend folder upload failure (hashing/YHash 32 bytes error) so folder upload works",
+      "summary": "Restore clickable containing-folder path in search results to open the containing folder (regression from v0.3.95).",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Fix navigation when clicking a searched file path so it routes to a valid, reachable folder/root",
+      "summary": "Restore filename click behavior in search results to open the file in preview (do not change preview/player otherwise).",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Restore/implement navigation controls in text-based file preview (missing)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Reorder upload controls: Upload Files first, then New Folder, then Upload Folder",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Show file type next to file size in file list/row metadata (as in live version)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Fix the folder upload failure by resolving the backend hashing/YHash length error (\"YHash must be exactly 32 bytes, got 64\") so recursive folder uploads complete successfully and all uploaded files/folders are persisted and visible after refresh.",
-      "reqIds": [
-        "REQ-1"
-      ],
       "status": "pending"
     }
   ],
-  "projectName": "v0.3.91: Fix folder upload backend hash error, correct search-path navigation, restore text preview navigation, reorder upload controls, show file type next to size",
+  "projectName": "Restore search result clickable folder path and filename preview; bump version to 0.3.101",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -25,9 +25,12 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const Time = IDL.Int;
 export const FolderMetadata = IDL.Record({
   'id' : IDL.Text,
   'name' : IDL.Text,
+  'createdAt' : Time,
+  'updatedAt' : Time,
   'parentId' : IDL.Opt(IDL.Text),
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
@@ -35,7 +38,9 @@ export const FileMetadata = IDL.Record({
   'id' : IDL.Text,
   'blob' : ExternalBlob,
   'name' : IDL.Text,
+  'createdAt' : Time,
   'size' : IDL.Nat,
+  'updatedAt' : Time,
   'parentId' : IDL.Opt(IDL.Text),
 });
 export const FileSystemItem = IDL.Variant({
@@ -172,9 +177,12 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const Time = IDL.Int;
   const FolderMetadata = IDL.Record({
     'id' : IDL.Text,
     'name' : IDL.Text,
+    'createdAt' : Time,
+    'updatedAt' : Time,
     'parentId' : IDL.Opt(IDL.Text),
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
@@ -182,7 +190,9 @@ export const idlFactory = ({ IDL }) => {
     'id' : IDL.Text,
     'blob' : ExternalBlob,
     'name' : IDL.Text,
+    'createdAt' : Time,
     'size' : IDL.Nat,
+    'updatedAt' : Time,
     'parentId' : IDL.Opt(IDL.Text),
   });
   const FileSystemItem = IDL.Variant({

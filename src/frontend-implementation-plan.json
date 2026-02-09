@@ -1,105 +1,61 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "v0.3.91 frontend fixes: search-path navigation, upload button ordering, file type metadata, text preview navigation, version bump",
+  "title": "Restore search result interactions (clickable containing-folder path + filename preview) and bump version to 0.3.101",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Fix search-result path segment navigation to resolve to valid folders within the current dataset and clear search context after navigating.",
+      "id": "REQ-1",
+      "summary": "Show containing-folder path (not full file path) in search results and make it clickable to navigate to that folder, updating currentFolderId and breadcrumbs and clearing search.",
       "acceptanceCriteria": [
-        "In search results, clicking a path segment navigates to the intended folder containing the result (or the segment's folder) without errors.",
-        "Navigation from search results does not depend on an incorrect root/drive; it always resolves to an existing folder in the current dataset.",
-        "After navigation from a search path click, the folder breadcrumb reflects the actual folder path and search mode is exited/cleared (or otherwise results do not remain inconsistent with the new folder context)."
+        "When search is active, each result shows a path representing the containing folder only (no filename appended).",
+        "Clicking the displayed path navigates to that folder (currentFolderId and breadcrumb update accordingly) and clears search mode (searchTerm resets).",
+        "No other UI behaviors are changed outside of the search results path element behavior."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Adjust search-results rendering so the path text represents the containing folder only (derive containing-folder id from item.parentId for files, and folder.parentId for folder results) and render that path as a clickable element that updates currentFolderId + folderPath (breadcrumbs) to the containing folder and clears searchTerm. Keep all other list interactions unchanged and ensure click handlers stopPropagation where needed to avoid altering row clicks."
+        },
+        {
           "path": "frontend/src/lib/folderNavigation.ts",
           "operation": "modify",
-          "description": "Adjust/extend folder path resolution utilities to support navigating from search-result breadcrumbs using stable folder IDs (e.g., deriving the target folder from the clicked segment + the searched item's parent chain) rather than relying on an incorrect root/drive context."
-        },
+          "description": "Add or adjust a small helper (used by FileList search UI) to compute a search result item's containing folder id and/or human-readable containing-folder path string from allFolders without appending the filename; reuse existing breadcrumb/path helpers. Ensure behavior stays limited to search-result path display/navigation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Restore click-to-preview on file filename in search results using the existing FilePreviewModal behavior without changing the preview/player features.",
+      "acceptanceCriteria": [
+        "When search is active and a result item is a file, clicking the filename opens the existing FilePreviewModal for that file.",
+        "Preview navigation continues to work using the existing context behavior (no changes to preview/player features or UI besides restoring the click).",
+        "Folder search results (if present) still navigate as before (no regression to folder click behavior)."
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Update search-result path/breadcrumb rendering and click handling to call the corrected folderNavigation utility with the searched item's context (e.g., its parent folder) and then update currentFolderId + folderPath consistently while clearing searchTerm to exit search mode."
+          "description": "In the search-results row rendering for files, make the filename element clickable and wire it to the existing handleFileClick(file) so it opens the existing FilePreviewModal; ensure the click does not trigger any row/folder navigation (use stopPropagation as needed). Keep folder result click behavior unchanged."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Reorder FileList header action buttons to: Upload Files, New Folder, Upload Folder (only within the existing button group).",
+      "summary": "Bump centralized app version constant to 0.3.101 so the UI displays the updated version wherever used.",
       "acceptanceCriteria": [
-        "The visual order of the three buttons is exactly: Upload Files, New Folder, Upload Folder.",
-        "Button behavior remains unchanged (each still opens the correct dialog/picker).",
-        "No other buttons outside this selected button group are reordered."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FileList.tsx",
-          "operation": "modify",
-          "description": "Reorder the existing header action button group to match the required order (Upload Files first, then New Folder, then Upload Folder) without changing handlers or affecting other UI controls."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Display an English file-type label next to file size in file list rows (folders excluded).",
-      "acceptanceCriteria": [
-        "Each file row in the main file list displays a file type label alongside the formatted size.",
-        "The type label is derived from the file extension (fallback to a reasonable default such as \"FILE\" when no extension exists).",
-        "Folder rows are not incorrectly given a file type label."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/fileTypes.ts",
-          "operation": "modify",
-          "description": "Add/adjust a helper that derives a displayable file type label from a filename/extension (e.g., PDF, JSON, TXT) with a safe fallback when missing."
-        },
-        {
-          "path": "frontend/src/components/FileList.tsx",
-          "operation": "modify",
-          "description": "Update file row metadata rendering to include the computed file type label followed by a separator and the formatted size (English formatting like \"PDF • 145.19 KB\"), while ensuring folder rows do not show a type label."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Ensure text file preview includes Previous/Next navigation controls and keyboard Left/Right arrow navigation like other previews.",
-      "acceptanceCriteria": [
-        "When previewing a text-based file, visible Previous/Next navigation controls are available when there is more than one file in the current context.",
-        "Clicking Previous/Next navigates to the adjacent file without closing the modal.",
-        "Left/Right arrow keys navigate Previous/Next while previewing a text-based file (when navigation is available)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FileList.tsx",
-          "operation": "modify",
-          "description": "Ensure FilePreviewModal is always provided the full current-context file array and a stable currentFileIndex/onNavigateFile implementation for text files as well as other previewable files, so navigation controls are enabled when multiple files exist."
-        },
-        {
-          "path": "frontend/src/components/FilePreviewModal.tsx",
-          "operation": "modify",
-          "description": "Verify navigation UI and keyboard handling is active for text previews (not gated by text rendering), and adjust modal key handling/visibility logic as needed so text files get the same Previous/Next behavior as other supported previews. Use the blob-storage component’s ExternalBlob direct URL/bytes capabilities as already integrated; verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Bump frontend-displayed application version to 0.3.91 everywhere it is shown.",
-      "acceptanceCriteria": [
-        "Frontend displays version 0.3.91 (e.g., in the footer/version label).",
-        "Backend storage stats/version reporting returns appVersion = \"0.3.91\".",
-        "Upgrade does not break existing deployed state; migration is present/updated only if required for the existing stored state."
+        "APP_VERSION is updated to 0.3.101 and the displayed version in the app reflects 0.3.101."
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/appVersion.ts",
           "operation": "modify",
-          "description": "Update the exported frontend application version string to 0.3.91 so all UI version displays reflect the new version."
+          "description": "Update APP_VERSION constant from 0.3.100 to 0.3.101."
         },
         {
           "path": "frontend/src/components/Footer.tsx",
           "operation": "modify",
-          "description": "Confirm the footer continues to display the version from the centralized APP_VERSION constant and that the rendered text matches 0.3.91."
+          "description": "Confirm the footer (and any other in-app version display) continues to source the version from APP_VERSION so it reflects 0.3.101; make only minimal adjustments if required."
         }
       ]
     }
