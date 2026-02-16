@@ -1,5 +1,6 @@
 import { ExternalBlob } from '../backend';
 import { generateSecure32ByteId } from './id';
+import { toast } from 'sonner';
 
 export interface FolderFile {
   file: File;
@@ -16,6 +17,7 @@ export interface UploadCallbacks {
     parentId: string | null;
   }) => Promise<void>;
   onProgress?: (current: number, total: number, fileName: string) => void;
+  onSkipEmptyFile?: (fileName: string) => void;
 }
 
 /**
@@ -57,6 +59,8 @@ export function validateFolderFiles(files: File[]): boolean {
  * Two-step folder upload:
  * 1. Create all required folders (deduped, depth-sorted)
  * 2. Upload all files using the resolved destination folder IDs
+ * 
+ * Empty files (0 bytes) are skipped with info messages
  */
 export async function uploadFolderRecursively(
   folderFiles: FolderFile[],
@@ -65,13 +69,43 @@ export async function uploadFolderRecursively(
 ): Promise<void> {
   if (folderFiles.length === 0) return;
 
+  // Filter out empty files and notify
+  const nonEmptyFiles: FolderFile[] = [];
+  const skippedFiles: string[] = [];
+  
+  for (const folderFile of folderFiles) {
+    if (folderFile.file.size === 0) {
+      skippedFiles.push(folderFile.file.name);
+      if (callbacks.onSkipEmptyFile) {
+        callbacks.onSkipEmptyFile(folderFile.file.name);
+      }
+    } else {
+      nonEmptyFiles.push(folderFile);
+    }
+  }
+
+  // Show info toast for skipped empty files
+  if (skippedFiles.length > 0) {
+    if (skippedFiles.length === 1) {
+      toast.info(`Skipped empty file: ${skippedFiles[0]}`);
+    } else {
+      toast.info(`Skipped ${skippedFiles.length} empty files`);
+    }
+  }
+
+  // If all files were empty, return early
+  if (nonEmptyFiles.length === 0) {
+    toast.info('No non-empty files to upload');
+    return;
+  }
+
   // Step 1: Build folder structure map
   const folderMap = new Map<string, string>(); // path -> folderId
   const foldersToCreate: Array<{ path: string; name: string; parentPath: string | null }> = [];
 
   // Extract unique folder paths
   const folderPaths = new Set<string>();
-  for (const { relativePath } of folderFiles) {
+  for (const { relativePath } of nonEmptyFiles) {
     const parts = relativePath.split('/');
     // Build all ancestor paths
     for (let i = 0; i < parts.length - 1; i++) {
@@ -103,9 +137,9 @@ export async function uploadFolderRecursively(
     folderMap.set(path, folderId);
   }
 
-  // Step 2: Upload all files
-  for (let i = 0; i < folderFiles.length; i++) {
-    const { file, relativePath } = folderFiles[i];
+  // Step 2: Upload all non-empty files
+  for (let i = 0; i < nonEmptyFiles.length; i++) {
+    const { file, relativePath } = nonEmptyFiles[i];
     
     // Determine parent folder
     const parts = relativePath.split('/');
@@ -119,7 +153,7 @@ export async function uploadFolderRecursively(
     
     const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
       if (callbacks.onProgress) {
-        callbacks.onProgress(i + 1, folderFiles.length, fileName);
+        callbacks.onProgress(i + 1, nonEmptyFiles.length, fileName);
       }
     });
 
@@ -133,7 +167,7 @@ export async function uploadFolderRecursively(
     });
 
     if (callbacks.onProgress) {
-      callbacks.onProgress(i + 1, folderFiles.length, fileName);
+      callbacks.onProgress(i + 1, nonEmptyFiles.length, fileName);
     }
   }
 }

@@ -1,31 +1,29 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T20:19:24.041Z",
+  "generatedAt": "2026-02-16T21:34:26.162Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In the search results UI, render the containing-folder path as a clickable element (not a plain full file path including the filename) and when clicked, navigate to/open that containing folder (i.e., update currentFolderId and breadcrumb path to the folder that contains the search result item).",
+        "summary": "Restore file/folder row action buttons in List view so they are visible at all times (not only on mouse hover), while keeping tooltips on those action buttons.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FileList.tsx",
-          "frontend/src/lib/folderNavigation.ts"
+          "frontend/src/components/FileList.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/FileList.tsx",
-          "frontend/src/lib/folderNavigation.ts"
+          "frontend/src/components/FileList.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "In the search results UI, make clicking a file’s filename open that file in the existing preview modal (same behavior as before the regression), without changing any preview/player functionality beyond restoring the click action.",
+        "summary": "Restore the top action buttons in the File Browser header area to use labeled buttons (not icon-only) with no tooltips, and enforce the button order: Upload Files, then Upload Folder, then Create Folder.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/FileList.tsx"
@@ -36,15 +34,26 @@
       },
       {
         "id": "REQ-3",
-        "summary": "Bump the application version constant to 0.3.101 so the UI displays version 0.3.101 wherever the centralized version is used.",
+        "summary": "Restore the clickable folder path/breadcrumb context when viewing search results so users can click the displayed path to navigate to the containing folder.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/FileList.tsx",
+          "frontend/src/lib/folderNavigation.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/FileList.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Set the application version to 0.4.111 and ensure it is reflected wherever the app version is displayed in the UI.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/lib/appVersion.ts",
           "frontend/src/components/Footer.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/appVersion.ts",
-          "frontend/src/components/Footer.tsx"
+          "frontend/src/lib/appVersion.ts"
         ]
       }
     ]
@@ -55,9 +64,7 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/FileList.tsx",
-    "frontend/src/components/Footer.tsx",
     "frontend/src/lib/appVersion.ts",
-    "frontend/src/lib/folderNavigation.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

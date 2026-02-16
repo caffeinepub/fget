@@ -1,72 +1,104 @@
 {
   "kind": "build_request",
-  "title": "Restore search result clickable folder path and filename preview; bump version to 0.3.101",
+  "title": "Restore always-visible row actions, labeled top buttons order, searchable breadcrumb path, and bump version to 0.4.111",
+  "projectName": "Drive Browser",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the search results UI, render the containing-folder path as a clickable element (not a plain full file path including the filename) and when clicked, navigate to/open that containing folder (i.e., update currentFolderId and breadcrumb path to the folder that contains the search result item).",
+      "text": "Restore file/folder row action buttons in List view so they are visible at all times (not only on mouse hover), while keeping tooltips on those action buttons.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-3"
         ],
         "quotes": [
-          "in search results was a path (containing folder) which was clickable - but currently there is just full path to the files (including it's name) - visible on screenshot - switch that one back to working clickable path - which will open the containing folder."
+          "it's nice! but you again changed the action buttons to appear only on mouse hoover - restore it to be visible all the time (keep the tooltips for them!)."
         ]
       },
       "acceptanceCriteria": [
-        "When search is active, each result shows a path representing the containing folder only (no filename appended).",
-        "Clicking the displayed path navigates to that folder (currentFolderId and breadcrumb update accordingly) and clears search mode (searchTerm resets).",
-        "No other UI behaviors are changed outside of the search results path element behavior."
+        "In List view, each row’s action buttons are visible without hovering (default state).",
+        "Tooltips for the row action buttons still appear on hover/focus.",
+        "No other row layout/behavior changes beyond making the buttons always visible."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "In the search results UI, make clicking a file’s filename open that file in the existing preview modal (same behavior as before the regression), without changing any preview/player functionality beyond restoring the click action.",
+      "text": "Restore the top action buttons in the File Browser header area to use labeled buttons (not icon-only) with no tooltips, and enforce the button order: Upload Files, then Upload Folder, then Create Folder.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-3"
         ],
         "quotes": [
-          "Also when I clicked filename in the search results it opened the file in preview - currently it does nothing, fix that to open in preview again - don't change anything in the preview/player or anything else I didn't ask!"
+          "Also restore the Create Folder, Upload Files and Upload Folder buttons to be with labels (as were) - and without tooltips! - First should be Upload Files, then Upload Folder and last Create Folder"
         ]
       },
       "acceptanceCriteria": [
-        "When search is active and a result item is a file, clicking the filename opens the existing FilePreviewModal for that file.",
-        "Preview navigation continues to work using the existing context behavior (no changes to preview/player features or UI besides restoring the click).",
-        "Folder search results (if present) still navigate as before (no regression to folder click behavior)."
+        "The top actions are displayed as labeled buttons: “Upload Files”, “Upload Folder”, “Create Folder”.",
+        "No tooltips are shown for these top action buttons.",
+        "The buttons appear in the specified order: Upload Files → Upload Folder → Create Folder.",
+        "Click behavior for each action remains unchanged."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Bump the application version constant to 0.3.101 so the UI displays version 0.3.101 wherever the centralized version is used.",
+      "text": "Restore the clickable folder path/breadcrumb context when viewing search results so users can click the displayed path to navigate to the containing folder.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "Also you removed the clickable folder path when searching - restore it!"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When search is active, each search result shows a folder path/breadcrumb context that is clickable.",
+        "Clicking the path navigates to the corresponding containing folder (and exits search mode).",
+        "Navigation via the clickable path works for both file results and folder results.",
+        "No other search UI/behavior changes beyond restoring the clickable path."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Set the application version to 0.4.111 and ensure it is reflected wherever the app version is displayed in the UI.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Version to 0.3.101"
+          "version should be 0.4.111 - my typo"
         ]
       },
       "acceptanceCriteria": [
-        "APP_VERSION is updated to 0.3.101 and the displayed version in the app reflects 0.3.101."
+        "The version constant is updated to 0.4.111 (e.g., the value exported from frontend/src/lib/appVersion.ts).",
+        "The footer (and any other version display) shows v0.4.111 after rebuild."
       ]
     }
   ],
   "constraints": [
-    "Do not implement or modify the file upload/folder upload behavior; the user explicitly chose to leave the failing upload issue for now.",
-    "Do not change any preview/player behavior or UI beyond restoring filename click-to-preview from search results.",
-    "Do not edit files under frontend/src/components/ui or any other immutable paths listed in SYSTEM_CONTEXT."
+    "No other changes beyond the UI restores and version bump requested by the user (\"No other changes!\").",
+    "Do not modify files under frontend immutable paths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Fixing the known folder upload error that occurs after creating the folder.",
-    "Any redesign of the search UI beyond restoring the two regressed interactions (clickable containing-folder path and filename click-to-preview)."
+    "Backend/canister logic changes.",
+    "Any redesign or new UI features unrelated to the specified restores.",
+    "Changing tooltip behavior for anything other than the specified top action buttons (which must have no tooltips)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

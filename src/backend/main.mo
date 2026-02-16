@@ -12,6 +12,9 @@ import Text "mo:core/Text";
 import Char "mo:core/Char";
 import Time "mo:core/Time";
 
+
+// Apply migration on upgrade (ensures persistent change of appVersion, not needed for empty file handling)
+
 actor {
   let storage = Storage.new();
   include MixinStorage(storage);
@@ -23,7 +26,7 @@ actor {
   var frontendCanisterId : Text = "";
   var backendCanisterId : Text = "";
   var firstAdmin : ?Principal = null;
-  let appVersion = "0.3.100";
+  var appVersion = "0.4.109";
   var nextFolderId = 1;
   let files = Map.empty<Text, FileMetadata>();
   let folders = Map.empty<Text, FolderMetadata>();
@@ -554,35 +557,34 @@ actor {
       Runtime.trap("Unauthorized: Only existing users can delete folders");
     };
 
-    if (hasChildItems(id)) {
-      Runtime.trap("Folder is not empty. Cannot delete");
-    };
-
-    switch (folders.get(id)) {
-      case (null) { false };
-      case (?_) {
-        folders.remove(id);
-        true;
-      };
-    };
+    recursiveDelete(id);
+    true;
   };
 
-  func hasChildItems(folderId : Text) : Bool {
-    for ((_, folder) in folders.entries()) {
-      switch (folder.parentId) {
-        case (?parent) { if (parent == folderId) { return true } };
-        case (null) {};
+  func recursiveDelete(folderId : Text) {
+    let folder = folders.get(folderId);
+    switch (folder) {
+      case (?_) {
+        for ((_, folder) in folders.entries()) {
+          if (folder.parentId == ?folderId) {
+            recursiveDelete(folder.id);
+          };
+        };
       };
+      case (null) {};
     };
 
-    for ((_, file) in files.entries()) {
+    for ((fileId, file) in files.entries()) {
       switch (file.parentId) {
-        case (?parent) { if (parent == folderId) { return true } };
+        case (?parentId) {
+          if (parentId == folderId) {
+            files.remove(fileId);
+          };
+        };
         case (null) {};
       };
     };
-
-    false;
+    folders.remove(folderId);
   };
 
   public query ({ caller }) func getFolderContents(folderId : ?Text) : async [FileSystemItem] {
@@ -718,4 +720,3 @@ actor {
     };
   };
 };
-

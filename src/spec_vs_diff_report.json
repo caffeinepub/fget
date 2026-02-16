@@ -1,33 +1,55 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T20:19:24.038Z",
-  "summary": "The diff updates the centralized APP_VERSION to 0.3.101 and updates Footer to display it. It also adds/uses folder-navigation helpers intended to render a containing-folder-only path for search results and enable navigation from that path, and indicates restoring filename click-to-preview in search results. However, additional unrequested behavior changes appear in the search implementation (useQueries) and potentially other FileList UI/behavior beyond the two specified regressions.",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-16T21:34:26.159Z",
+  "summary": "REQ-4 (version bump) is evidenced by updating APP_VERSION to 0.4.111. For REQ-1/2/3, FileList.tsx is truncated in the diff excerpt and does not show the relevant UI sections, so the requested UI restores cannot be verified from the provided evidence. Additionally, two non-requested files (frontend-file-summaries.txt and project_state.json) were modified, which violates the “No other changes” constraint.",
+  "missing_requirements": [
     {
-      "description": "Enhanced/changed subtree search behavior (client-side recursive subtree search with Unicode-aware, case-insensitive, diacritics-insensitive matching; fixes matching descendants; full-drive search when startFolderId is null).",
-      "reason": "BuildRequest only asked to restore two regressed search-result interactions (clickable containing-folder path and filename click-to-preview) and did not request any search algorithm/behavior changes.",
+      "id": "REQ-1",
+      "requirement": "Restore file/folder row action buttons in List view so they are visible at all times (not only on mouse hover), while keeping tooltips on those action buttons.",
+      "reason": "The provided diff excerpt for FileList.tsx is truncated before any row rendering / action-button logic, so there is no evidence that row actions were made always-visible or that tooltips were preserved.",
       "evidence": [
-        "frontend-file-summaries.txt (entry for \"frontend/src/hooks/useQueries.ts\")"
+        "frontend/src/components/FileList.tsx (truncated)"
       ]
     },
     {
-      "description": "Additional FileList UI/behavior changes beyond restoring the two regressed interactions (e.g., sortable listings via header row clicks, fixed-width column layout, breadcrumb path styled as interactive pill, shared ID generator for all uploads).",
-      "reason": "Constraints explicitly say not to change UI/behavior beyond restoring the clickable containing-folder path and filename click-to-preview from search results.",
+      "id": "REQ-2",
+      "requirement": "Restore the top action buttons in the File Browser header area to use labeled buttons (not icon-only) with no tooltips, and enforce the button order: Upload Files, then Upload Folder, then Create Folder.",
+      "reason": "The diff excerpt does not include the File Browser header/top action buttons rendering; therefore there is no evidence of labeled buttons, tooltip removal, or the required ordering.",
       "evidence": [
-        "frontend-file-summaries.txt (entry for \"frontend/src/components/FileList.tsx\")",
-        "frontend/src/components/FileList.tsx (truncated; shows new/extra imports like sortFileSystemItems, FileListHeaderRow, generateSecure32ByteId)"
+        "frontend/src/components/FileList.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Restore the clickable folder path/breadcrumb context when viewing search results so users can click the displayed path to navigate to the containing folder.",
+      "reason": "The diff excerpt does not include the search results rendering, so there is no evidence that a clickable breadcrumb/path is shown during search, nor that clicking navigates to the containing folder and exits search mode.",
+      "evidence": [
+        "frontend/src/components/FileList.tsx (truncated)"
       ]
     }
   ],
-  "confidence": 0.68,
+  "hallucinated_features": [
+    {
+      "description": "Modified project_state.json (metadata/new_feature_requests/status tracking) even though the request constrained changes to only UI restores and version bump (“No other changes!”).",
+      "reason": "This file change is not part of any REQ-1..REQ-4 acceptance criteria and conflicts with the explicit constraint to avoid other changes.",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "description": "Modified frontend-file-summaries.txt, which is not part of the requested UI restores or version bump.",
+      "reason": "The BuildRequest did not ask to update any documentation/summary artifacts; also the constraint says no other changes beyond the specified UI restores and version bump.",
+      "evidence": [
+        "frontend-file-summaries.txt (truncated)"
+      ]
+    }
+  ],
+  "confidence": 0.62,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/FileList.tsx",
-    "frontend/src/components/Footer.tsx",
     "frontend/src/lib/appVersion.ts",
-    "frontend/src/lib/folderNavigation.ts",
     "project_state.json"
   ]
 }

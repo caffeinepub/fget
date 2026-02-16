@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-search-results-ui-render-the-containing-folder-path-as-a-clickable-element-not-a-plain-full-file-path-including-the-filename-and-when-clicked-navigate-to-open-that-containing-folder-i-e-update-currentfolderid-and-breadcrumb-path-to-the-folder-that-contains-the-search-result-item",
-      "featureTitle": "In the search results UI, render the containing-folder path as a clickable element (not a plain full file path including the filename) and when clicked, navigate to/open that containing folder (i.e., update currentFolderId and breadcrumb path to the folder that contains the search result item).",
+      "featureId": "feature-restore-file-folder-row-action-buttons-in-list-view-so-they-are-visible-at-all-times-not-only-on-mouse-hover-while-keeping-tooltips-on-those-action-buttons",
+      "featureTitle": "Restore file/folder row action buttons in List view so they are visible at all times (not only on mouse hover), while keeping tooltips on those action buttons.",
       "files": [
-        "frontend/src/components/FileList.tsx",
-        "frontend/src/lib/folderNavigation.ts"
+        "frontend/src/components/FileList.tsx"
       ],
       "components": [
         "blob-storage@3.0.0",
@@ -24,8 +23,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-the-search-results-ui-make-clicking-a-file-s-filename-open-that-file-in-the-existing-preview-modal-same-behavior-as-before-the-regression-without-changing-any-preview-player-functionality-beyond-restoring-the-click-action",
-      "featureTitle": "In the search results UI, make clicking a file’s filename open that file in the existing preview modal (same behavior as before the regression), without changing any preview/player functionality beyond restoring the click action.",
+      "featureId": "feature-restore-the-top-action-buttons-in-the-file-browser-header-area-to-use-labeled-buttons-not-icon-only-with-no-tooltips-and-enforce-the-button-order-upload-files-then-upload-folder-then-create-folder",
+      "featureTitle": "Restore the top action buttons in the File Browser header area to use labeled buttons (not icon-only) with no tooltips, and enforce the button order: Upload Files, then Upload Folder, then Create Folder.",
       "files": [
         "frontend/src/components/FileList.tsx"
       ],
@@ -45,11 +44,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-bump-the-application-version-constant-to-0-3-101-so-the-ui-displays-version-0-3-101-wherever-the-centralized-version-is-used",
-      "featureTitle": "Bump the application version constant to 0.3.101 so the UI displays version 0.3.101 wherever the centralized version is used.",
+      "featureId": "feature-restore-the-clickable-folder-path-breadcrumb-context-when-viewing-search-results-so-users-can-click-the-displayed-path-to-navigate-to-the-containing-folder",
+      "featureTitle": "Restore the clickable folder path/breadcrumb context when viewing search results so users can click the displayed path to navigate to the containing folder.",
       "files": [
-        "frontend/src/components/Footer.tsx",
-        "frontend/src/lib/appVersion.ts"
+        "frontend/src/components/FileList.tsx"
       ],
       "components": [
         "blob-storage@3.0.0",
@@ -63,6 +61,27 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-set-the-application-version-to-0-4-111-and-ensure-it-is-reflected-wherever-the-app-version-is-displayed-in-the-ui",
+      "featureTitle": "Set the application version to 0.4.111 and ensure it is reflected wherever the app version is displayed in the UI.",
+      "files": [
+        "frontend/src/lib/appVersion.ts"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

@@ -1,34 +1,40 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project involves a file-browser/search UI where search results should include a clickable containing-folder path and clicking filenames should open a preview.",
+  "summary": "File/folder browser UI with List/Gallery view toggle; ongoing UI/UX refinements and regressions being restored.",
   "architectural_notes": [],
-  "known_issues": [
-    "File upload still fails after creating the folder (user chose to leave for now)."
-  ],
+  "known_issues": [],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-in-the-search-results-ui-render-the-containing-folder-path-as-a-clickable-element-not-a-plain-full-file-path-including-the-filename-and-when-clicked-navigate-to-open-that-containing-folder-i-e-update-currentfolderid-and-breadcrumb-path-to-the-folder-that-contains-the-search-result-item",
-      "title": "In the search results UI, render the containing-folder path as a clickable element (not a plain full file path including the filename) and when clicked, navigate to/open that containing folder (i.e., update currentFolderId and breadcrumb path to the folder that contains the search result item).",
+      "id": "feature-restore-file-folder-row-action-buttons-in-list-view-so-they-are-visible-at-all-times-not-only-on-mouse-hover-while-keeping-tooltips-on-those-action-buttons",
+      "title": "Restore file/folder row action buttons in List view so they are visible at all times (not only on mouse hover), while keeping tooltips on those action buttons.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-in-the-search-results-ui-make-clicking-a-file-s-filename-open-that-file-in-the-existing-preview-modal-same-behavior-as-before-the-regression-without-changing-any-preview-player-functionality-beyond-restoring-the-click-action",
-      "title": "In the search results UI, make clicking a file’s filename open that file in the existing preview modal (same behavior as before the regression), without changing any preview/player functionality beyond restoring the click action.",
+      "id": "feature-restore-the-top-action-buttons-in-the-file-browser-header-area-to-use-labeled-buttons-not-icon-only-with-no-tooltips-and-enforce-the-button-order-upload-files-then-upload-folder-then-create-folder",
+      "title": "Restore the top action buttons in the File Browser header area to use labeled buttons (not icon-only) with no tooltips, and enforce the button order: Upload Files, then Upload Folder, then Create Folder.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-bump-the-application-version-constant-to-0-3-101-so-the-ui-displays-version-0-3-101-wherever-the-centralized-version-is-used",
-      "title": "Bump the application version constant to 0.3.101 so the UI displays version 0.3.101 wherever the centralized version is used.",
+      "id": "feature-restore-the-clickable-folder-path-breadcrumb-context-when-viewing-search-results-so-users-can-click-the-displayed-path-to-navigate-to-the-containing-folder",
+      "title": "Restore the clickable folder path/breadcrumb context when viewing search results so users can click the displayed path to navigate to the containing folder.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-set-the-application-version-to-0-4-111-and-ensure-it-is-reflected-wherever-the-app-version-is-displayed-in-the-ui",
+      "title": "Set the application version to 0.4.111 and ensure it is reflected wherever the app version is displayed in the UI.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -36,18 +42,30 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Restore clickable containing-folder path in search results to open the containing folder (regression from v0.3.95).",
+      "summary": "Restore action buttons to be visible at all times (not hover-only) while keeping their tooltips.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Restore filename click behavior in search results to open the file in preview (do not change preview/player otherwise).",
+      "summary": "Restore top action buttons to have labels (no tooltips) and set order: Upload Files, Upload Folder, Create Folder.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Restore clickable folder path/breadcrumb when viewing search results.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Set app version to 0.4.111 for this build/release.",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Restore search result clickable folder path and filename preview; bump version to 0.3.101",
+  "projectName": "Drive Browser",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

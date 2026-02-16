@@ -429,3 +429,21 @@ export function useMoveItem() {
     },
   });
 }
+
+export function useMoveItems() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (moves: FileMove[]) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.moveItems(moves);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
+    },
+  });
+}
