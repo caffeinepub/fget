@@ -1,91 +1,94 @@
 {
   "kind": "build_request",
-  "title": "Restore always-visible row actions, labeled top buttons order, searchable breadcrumb path, and bump version to 0.4.111",
+  "title": "Restore filename tooltip, fix file type labeling, improve breadcrumb click affordance, and bump version to 0.4.119",
   "projectName": "Drive Browser",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Restore file/folder row action buttons in List view so they are visible at all times (not only on mouse hover), while keeping tooltips on those action buttons.",
+      "text": "Restore the filename hover tooltip in the List view by adding back the simple browser tooltip (HTML `title`) on the filename text element so long filenames can be fully seen on hover, matching the previous behavior.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "msg-1"
         ],
         "quotes": [
-          "it's nice! but you again changed the action buttons to appear only on mouse hoover - restore it to be visible all the time (keep the tooltips for them!)."
+          "- tooltip with filename (mainly for files with long name) is gone - add it back",
+          "1. yes"
         ]
       },
       "acceptanceCriteria": [
-        "In List view, each row’s action buttons are visible without hovering (default state).",
-        "Tooltips for the row action buttons still appear on hover/focus.",
-        "No other row layout/behavior changes beyond making the buttons always visible."
+        "In List view, hovering the filename shows the browser tooltip with the full filename (via `title`).",
+        "The visible layout/positions of existing elements (including action buttons and their tooltips) remain unchanged."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Restore the top action buttons in the File Browser header area to use labeled buttons (not icon-only) with no tooltips, and enforce the button order: Upload Files, then Upload Folder, then Create Folder.",
+      "text": "Fix file type detection so items with no file extension display Type as \"N/A\" (and use the existing unknown-type styling), while files that have an extension (even if the app cannot preview/open them) show their extension-derived label (e.g., \"DEB\" for `.deb`). This must treat filenames without any dot (`.`) as having no extension (not as the entire filename being the extension).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "msg-1"
         ],
         "quotes": [
-          "Also restore the Create Folder, Upload Files and Upload Folder buttons to be with labels (as were) - and without tooltips! - First should be Upload Files, then Upload Folder and last Create Folder"
+          "- unknown file type is still marked with the filename and not N/A - fix it",
+          "2. when the file has no extension - when the app doesn't know the filetype, e.g. if you know it's .deb package keep saying it's DEB although can't open it"
         ]
       },
       "acceptanceCriteria": [
-        "The top actions are displayed as labeled buttons: “Upload Files”, “Upload Folder”, “Create Folder”.",
-        "No tooltips are shown for these top action buttons.",
-        "The buttons appear in the specified order: Upload Files → Upload Folder → Create Folder.",
-        "Click behavior for each action remains unchanged."
+        "A filename with no `.` character displays Type badge text exactly \"N/A\" in List view.",
+        "A filename with an extension not in the known label map still displays a reasonable label based on the extension (e.g., `.deb` -> \"DEB\"), not \"N/A\" and not the full filename.",
+        "Existing folder type badge behavior remains unchanged.",
+        "No backend changes are required for this fix."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Restore the clickable folder path/breadcrumb context when viewing search results so users can click the displayed path to navigate to the containing folder.",
+      "text": "Make the current folder path (breadcrumb) more visibly clickable (clear link affordance), similar to the provided screenshot, without moving elements or changing the overall layout. Apply the styling consistently to the breadcrumb segments that are clickable so it is obvious they can be clicked to navigate.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "msg-1"
         ],
         "quotes": [
-          "Also you removed the clickable folder path when searching - restore it!"
+          "- for the current path make more visible that it's clickable - similar as is on teh screenshot",
+          "3. like in the screenshot to have it clear clickable path"
         ]
       },
       "acceptanceCriteria": [
-        "When search is active, each search result shows a folder path/breadcrumb context that is clickable.",
-        "Clicking the path navigates to the corresponding containing folder (and exits search mode).",
-        "Navigation via the clickable path works for both file results and folder results.",
-        "No other search UI/behavior changes beyond restoring the clickable path."
+        "Breadcrumb/path segments that can be clicked have clear link affordance (e.g., distinct link color and hover/underline) matching the intent of the screenshot (image-124.png).",
+        "Breadcrumb click behavior remains the same (navigates to the selected folder level).",
+        "No element positions are changed; only styling is adjusted to improve click visibility."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Set the application version to 0.4.111 and ensure it is reflected wherever the app version is displayed in the UI.",
+      "text": "Bump the application version string to 0.4.119 and ensure it is reflected wherever the app version is displayed in the UI.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "version should be 0.4.111 - my typo"
+          "- version to 0.4.119"
         ]
       },
       "acceptanceCriteria": [
-        "The version constant is updated to 0.4.111 (e.g., the value exported from frontend/src/lib/appVersion.ts).",
-        "The footer (and any other version display) shows v0.4.111 after rebuild."
+        "`frontend/src/lib/appVersion.ts` exports `APP_VERSION = '0.4.119'`.",
+        "The footer (and any other existing version display) shows v0.4.119."
       ]
     }
   ],
   "constraints": [
-    "No other changes beyond the UI restores and version bump requested by the user (\"No other changes!\").",
-    "Do not modify files under frontend immutable paths listed in SYSTEM_CONTEXT."
+    "Do not change the overall design or layout beyond the specific fixes requested.",
+    "Do not move UI elements to different places.",
+    "Do not introduce additional UI changes not explicitly requested (keep existing action buttons visible and keep existing tooltips).",
+    "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui."
   ],
   "nonGoals": [
-    "Backend/canister logic changes.",
-    "Any redesign or new UI features unrelated to the specified restores.",
-    "Changing tooltip behavior for anything other than the specified top action buttons (which must have no tooltips)."
+    "Adding new file preview/open capabilities for additional formats (e.g., making `.deb` openable).",
+    "Changing backend data models, storage, or access control behavior.",
+    "Redesigning the file manager UI or altering the placement of action buttons/columns."
   ],
   "imageRequirements": {
     "required": [],

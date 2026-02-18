@@ -1,4 +1,4 @@
-import { Download, File, FileText, Image, Video, Music, Archive, Link2, Check, Loader2, Trash2, Search, Folder, FolderPlus, MoveRight, ChevronRight, Upload, FolderUp, X, FileCode, FileQuestion, LayoutList, LayoutGrid } from 'lucide-react';
+import { Download, File, FileText, Image as ImageIcon, Video as VideoIcon, Music, Archive, Link2, Check, Loader2, Trash2, Search, Folder, FolderPlus, MoveRight, ChevronRight, Upload, FolderUp, X, FileCode, FileQuestion, LayoutList, LayoutGrid, FileImage, FileVideo, FileAudio, FileArchive, FileType } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,15 +45,17 @@ import {
 import { FilePreviewModal } from './FilePreviewModal';
 import { FileGallery } from './FileGallery';
 import { getFileExtension, getMimeType, isPreviewable, isImage, getFileTypeLabel, getFileCategory, type FileCategory } from '../lib/fileTypes';
-import { copyFileLink } from '../lib/fileLinks';
+import { copyFileLink, downloadFile } from '../lib/fileLinks';
 import { uploadFolderRecursively, extractFolderFiles, validateFolderFiles } from '../lib/folderUpload';
 import { extractDroppedFiles } from '../lib/dragDropDirectory';
 import { resolvePathSegment, buildBreadcrumbPath, resolveFileParentPath, getContainingFolderPath, getFolderContainingPath } from '../lib/folderNavigation';
 import { sortFileSystemItems, type SortField, type SortDirection } from '../lib/sortFileSystemItems';
 import { formatCompactTimestamp } from '../lib/formatTime';
+import { formatFileSize } from '../lib/formatFileSize';
 import { FileListHeaderRow } from './FileListHeaderRow';
 import { generateSecure32ByteId } from '../lib/id';
 import { usePerFolderViewMode, type ViewMode } from '../hooks/usePerFolderViewMode';
+import { getFileTypeTintClasses, getFolderTintClasses, getUnknownTypeTintClasses } from '../lib/fileTypeTints';
 
 export function FileList() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -425,15 +427,15 @@ export function FileList() {
       setUploadingFiles(folderFiles.map(f => f.file.name));
 
       await uploadFolderRecursively(folderFiles, currentFolderId, {
-        createFolder: async (name, parentId) => {
-          const result = await createFolder.mutateAsync({ name, parentId });
-          return result;
+        createFolder: async (name: string, parentId: string | null) => {
+          return createFolder.mutateAsync({ name, parentId });
         },
         addFile: async (params) => {
-          await addFile.mutateAsync(params);
+          return addFile.mutateAsync(params);
         },
         onProgress: (current, total, fileName) => {
-          setUploadProgress((current / total) * 100);
+          const percentage = Math.round((current / total) * 100);
+          setUploadProgress(percentage);
         },
       });
 
@@ -464,84 +466,33 @@ export function FileList() {
     e.preventDefault();
     setIsDragging(false);
 
+    const dataTransfer = e.dataTransfer;
+    if (!dataTransfer || !dataTransfer.items || dataTransfer.items.length === 0) return;
+
     try {
-      const droppedFiles = await extractDroppedFiles(e.dataTransfer);
+      const folderFiles = await extractDroppedFiles(dataTransfer);
       
-      if (droppedFiles.length === 0) {
-        toast.error('No files found');
+      if (folderFiles.length === 0) {
+        toast.error('No files found in the dropped items');
         return;
       }
 
-      // Check if any files have paths (indicating folder structure)
-      const hasStructure = droppedFiles.some(f => f.relativePath.includes('/'));
+      setUploadingFiles(folderFiles.map(f => f.file.name));
 
-      if (hasStructure) {
-        // Upload with folder structure
-        setUploadingFiles(droppedFiles.map(f => f.file.name));
+      await uploadFolderRecursively(folderFiles, currentFolderId, {
+        createFolder: async (name: string, parentId: string | null) => {
+          return createFolder.mutateAsync({ name, parentId });
+        },
+        addFile: async (params) => {
+          return addFile.mutateAsync(params);
+        },
+        onProgress: (current, total, fileName) => {
+          const percentage = Math.round((current / total) * 100);
+          setUploadProgress(percentage);
+        },
+      });
 
-        await uploadFolderRecursively(droppedFiles, currentFolderId, {
-          createFolder: async (name, parentId) => {
-            const result = await createFolder.mutateAsync({ name, parentId });
-            return result;
-          },
-          addFile: async (params) => {
-            await addFile.mutateAsync(params);
-          },
-          onProgress: (current, total, fileName) => {
-            setUploadProgress((current / total) * 100);
-          },
-        });
-
-        toast.success('Files uploaded successfully');
-      } else {
-        // Upload as individual files - filter out empty files
-        const nonEmptyFiles: typeof droppedFiles = [];
-        const emptyFiles: string[] = [];
-        
-        for (const droppedFile of droppedFiles) {
-          if (droppedFile.file.size === 0) {
-            emptyFiles.push(droppedFile.file.name);
-          } else {
-            nonEmptyFiles.push(droppedFile);
-          }
-        }
-
-        // Show info for skipped empty files
-        if (emptyFiles.length > 0) {
-          if (emptyFiles.length === 1) {
-            toast.info(`Skipped empty file: ${emptyFiles[0]}`);
-          } else {
-            toast.info(`Skipped ${emptyFiles.length} empty files`);
-          }
-        }
-
-        // If all files were empty, return early
-        if (nonEmptyFiles.length === 0) {
-          toast.info('No non-empty files to upload');
-          return;
-        }
-
-        setUploadingFiles(nonEmptyFiles.map(f => f.file.name));
-
-        for (const droppedFile of nonEmptyFiles) {
-          const arrayBuffer = await droppedFile.file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          
-          const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
-            setUploadProgress(percentage);
-          });
-
-          await addFile.mutateAsync({
-            id: generateSecure32ByteId(),
-            name: droppedFile.file.name,
-            size: BigInt(droppedFile.file.size),
-            blob,
-            parentId: currentFolderId,
-          });
-        }
-
-        toast.success('Files uploaded successfully');
-      }
+      toast.success('Files uploaded successfully');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       toast.error(errorMessage);
@@ -551,448 +502,243 @@ export function FileList() {
     }
   };
 
-  const getFileIcon = (category: FileCategory) => {
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  };
+
+  const handleDownload = async (file: FileMetadata) => {
+    await downloadFile(file);
+  };
+
+  const handleCopyLink = async (file: FileMetadata) => {
+    copyFileLink(file);
+  };
+
+  const renderFileIcon = (category: FileCategory) => {
     switch (category) {
       case 'image':
-        return <Image className="h-4 w-4" />;
+        return <FileImage className="h-4 w-4" />;
       case 'video':
-        return <Video className="h-4 w-4" />;
+        return <FileVideo className="h-4 w-4" />;
       case 'audio':
-        return <Music className="h-4 w-4" />;
+        return <FileAudio className="h-4 w-4" />;
       case 'archive':
-        return <Archive className="h-4 w-4" />;
+        return <FileArchive className="h-4 w-4" />;
       case 'code':
         return <FileCode className="h-4 w-4" />;
       case 'document':
         return <FileText className="h-4 w-4" />;
       case 'text':
-        return <FileText className="h-4 w-4" />;
+        return <FileType className="h-4 w-4" />;
       default:
-        return <FileQuestion className="h-4 w-4" />;
+        return <File className="h-4 w-4" />;
     }
   };
 
-  const handleDownload = (file: FileMetadata) => {
-    const url = file.blob.getDirectURL();
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = file.name;
-    link.click();
-    toast.success('Download started');
-  };
-
-  const renderFileRow = (item: FileSystemItem) => {
-    const isFolder = item.__kind__ === 'folder';
-    const data = isFolder ? item.folder : item.file;
-    const itemId = data.id;
-    const isSelected = selectedItems.has(itemId);
-
-    if (isFolder) {
-      const folder = item.folder;
+  const renderListView = () => {
+    if (isLoading || searchLoading) {
       return (
-        <div
-          key={folder.id}
-          className="grid items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/40"
-          style={{
-            gridTemplateColumns: '40px 1fr 60px 180px 120px 200px',
-          }}
-        >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={(checked) => handleSelectItem(itemId, checked as boolean)}
-            aria-label={`Select ${folder.name}`}
-          />
-          
-          <button
-            onClick={() => handleFolderClick(folder)}
-            className="flex items-center gap-3 text-left hover:text-primary transition-colors min-w-0"
-          >
-            <Folder className="h-5 w-5 text-primary flex-shrink-0" />
-            <span className="font-medium truncate">{folder.name}</span>
-          </button>
-
-          <div className="flex items-center justify-center">
-            <Folder className="h-4 w-4 text-muted-foreground" />
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            {formatCompactTimestamp(folder.createdAt)}
-          </div>
-
-          <div className="text-sm text-muted-foreground">—</div>
-
-          <div className="flex items-center justify-end gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setItemToMove({ id: folder.id, name: folder.name, isFolder: true })}
-                    className="h-8 w-8"
-                  >
-                    <MoveRight className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Move folder</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setItemToDelete({ id: folder.id, name: folder.name, isFolder: true })}
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete folder</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      );
-    } else {
-      const file = item.file;
-      const fileCategory = getFileCategory(file.name);
-      const fileTypeLabel = getFileTypeLabel(file.name);
-
-      return (
-        <div
-          key={file.id}
-          className="grid items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/40"
-          style={{
-            gridTemplateColumns: '40px 1fr 60px 180px 120px 200px',
-          }}
-        >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={(checked) => handleSelectItem(itemId, checked as boolean)}
-            aria-label={`Select ${file.name}`}
-          />
-
-          <button
-            onClick={() => handleFileClick(file)}
-            className="flex items-center gap-3 text-left hover:text-primary transition-colors min-w-0"
-          >
-            {getFileIcon(fileCategory)}
-            <span className="truncate">{file.name}</span>
-          </button>
-
-          <div className="flex items-center justify-center">
-            {getFileIcon(fileCategory)}
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            {formatCompactTimestamp(file.createdAt)}
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            {(Number(file.size) / 1024).toFixed(2)} KB
-          </div>
-
-          <div className="flex items-center justify-end gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDownload(file)}
-                    className="h-8 w-8"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Download file</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyFileLink(file)}
-                    className="h-8 w-8"
-                  >
-                    <Link2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Copy link</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setItemToMove({ id: file.id, name: file.name, isFolder: false })}
-                    className="h-8 w-8"
-                  >
-                    <MoveRight className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Move file</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setItemToDelete({ id: file.id, name: file.name, isFolder: false })}
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete file</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
         </div>
       );
     }
-  };
 
-  const renderSearchResultRow = (item: FileSystemItem) => {
-    const isFolder = item.__kind__ === 'folder';
-    const data = isFolder ? item.folder : item.file;
-    const itemId = data.id;
-    const isSelected = selectedItems.has(itemId);
-
-    // Get containing folder path for display
-    const containingPath = allFolders 
-      ? (isFolder 
-          ? getFolderContainingPath(item.folder, allFolders)
-          : getContainingFolderPath(item.file, allFolders))
-      : 'Drive';
-
-    if (isFolder) {
-      const folder = item.folder;
+    if (error) {
       return (
-        <div
-          key={folder.id}
-          className="grid items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/40"
-          style={{
-            gridTemplateColumns: '40px 1fr 60px 180px 120px 200px',
-          }}
-        >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={(checked) => handleSelectItem(itemId, checked as boolean)}
-            aria-label={`Select ${folder.name}`}
-          />
-          
-          <div className="flex flex-col gap-1 min-w-0">
-            <button
-              onClick={() => handleFolderClick(folder)}
-              className="flex items-center gap-3 text-left hover:text-primary transition-colors min-w-0"
-            >
-              <Folder className="h-5 w-5 text-primary flex-shrink-0" />
-              <span className="font-medium truncate">{folder.name}</span>
-            </button>
-            <button
-              onClick={(e) => handleSearchResultPathClick(item, e)}
-              className="text-xs text-muted-foreground hover:text-primary transition-colors truncate text-left pl-8"
-            >
-              in {containingPath}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-center">
-            <Folder className="h-4 w-4 text-muted-foreground" />
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            {formatCompactTimestamp(folder.createdAt)}
-          </div>
-
-          <div className="text-sm text-muted-foreground">—</div>
-
-          <div className="flex items-center justify-end gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setItemToMove({ id: folder.id, name: folder.name, isFolder: true })}
-                    className="h-8 w-8"
-                  >
-                    <MoveRight className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Move folder</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setItemToDelete({ id: folder.id, name: folder.name, isFolder: true })}
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete folder</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      );
-    } else {
-      const file = item.file;
-      const fileCategory = getFileCategory(file.name);
-      const fileTypeLabel = getFileTypeLabel(file.name);
-
-      return (
-        <div
-          key={file.id}
-          className="grid items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/40"
-          style={{
-            gridTemplateColumns: '40px 1fr 60px 180px 120px 200px',
-          }}
-        >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={(checked) => handleSelectItem(itemId, checked as boolean)}
-            aria-label={`Select ${file.name}`}
-          />
-
-          <div className="flex flex-col gap-1 min-w-0">
-            <button
-              onClick={() => handleFileClick(file)}
-              className="flex items-center gap-3 text-left hover:text-primary transition-colors min-w-0"
-            >
-              {getFileIcon(fileCategory)}
-              <span className="truncate">{file.name}</span>
-            </button>
-            <button
-              onClick={(e) => handleSearchResultPathClick(item, e)}
-              className="text-xs text-muted-foreground hover:text-primary transition-colors truncate text-left pl-8"
-            >
-              in {containingPath}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-center">
-            {getFileIcon(fileCategory)}
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            {formatCompactTimestamp(file.createdAt)}
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            {(Number(file.size) / 1024).toFixed(2)} KB
-          </div>
-
-          <div className="flex items-center justify-end gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDownload(file)}
-                    className="h-8 w-8"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Download file</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyFileLink(file)}
-                    className="h-8 w-8"
-                  >
-                    <Link2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Copy link</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setItemToMove({ id: file.id, name: file.name, isFolder: false })}
-                    className="h-8 w-8"
-                  >
-                    <MoveRight className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Move file</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setItemToDelete({ id: file.id, name: file.name, isFolder: false })}
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete file</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+        <div className="text-center py-8 text-destructive">
+          Error loading files: {error instanceof Error ? error.message : 'Unknown error'}
         </div>
       );
     }
-  };
 
-  if (error) {
+    if (!displayItems || displayItems.length === 0) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          {isSearchActive ? 'No results found' : 'No files or folders yet'}
+        </div>
+      );
+    }
+
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-destructive">Error loading files: {error.message}</p>
+      <div className="space-y-1">
+        <FileListHeaderRow
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          allSelected={allSelected}
+          onSelectAll={handleSelectAll}
+          hasSelection={displayItems.length > 0}
+        />
+        {displayItems.map((item) => {
+          const isFolder = item.__kind__ === 'folder';
+          const data = isFolder ? item.folder : item.file;
+          const itemId = data.id;
+          const isSelected = selectedItems.has(itemId);
+          const category = isFolder ? null : getFileCategory(data.name);
+          const typeLabel = isFolder ? 'Folder' : getFileTypeLabel(data.name);
+          const ext = isFolder ? '' : getFileExtension(data.name);
+          const tintClasses = isFolder 
+            ? getFolderTintClasses() 
+            : (typeLabel === 'N/A' ? getUnknownTypeTintClasses() : getFileTypeTintClasses(category!));
+
+          return (
+            <div
+              key={itemId}
+              className={`grid grid-cols-[40px_1fr_120px_140px_140px_160px] gap-4 items-center px-4 py-2.5 rounded-lg hover:bg-muted/50 transition-colors ${
+                isSelected ? 'bg-muted/70' : ''
+              }`}
+            >
+              {/* Selection checkbox */}
+              <div className="flex items-center justify-center">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={(checked) => handleSelectItem(itemId, checked as boolean)}
+                />
+              </div>
+
+              {/* Name with icon */}
+              <div className="flex items-center gap-3 min-w-0">
+                {isFolder ? (
+                  <Folder className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                ) : (
+                  <div className="flex-shrink-0 text-muted-foreground">
+                    {renderFileIcon(category!)}
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    if (isFolder) {
+                      handleFolderClick(data as FolderMetadata);
+                    } else {
+                      handleFileClick(data as FileMetadata);
+                    }
+                  }}
+                  className="text-left hover:text-primary transition-colors truncate font-medium"
+                  title={data.name}
+                >
+                  {data.name}
+                </button>
+              </div>
+
+              {/* Type badge */}
+              <div className="flex items-center justify-center">
+                <Badge variant="outline" className={`text-xs font-medium ${tintClasses}`}>
+                  {typeLabel}
+                </Badge>
+              </div>
+
+              {/* Size */}
+              <div className="text-sm text-muted-foreground text-center">
+                {isFolder ? '—' : formatFileSize((data as FileMetadata).size)}
+              </div>
+
+              {/* Updated */}
+              <div className="text-sm text-muted-foreground text-center">
+                {formatCompactTimestamp(data.updatedAt)}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-1">
+                <TooltipProvider>
+                  {!isFolder && (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleDownload(data as FileMetadata)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Download</TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleCopyLink(data as FileMetadata)}
+                          >
+                            <Link2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Copy link</TooltipContent>
+                      </Tooltip>
+                    </>
+                  )}
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setItemToMove({ id: itemId, name: data.name, isFolder });
+                          setMoveDestination(null);
+                        }}
+                      >
+                        <MoveRight className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Move</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setItemToDelete({ id: itemId, name: data.name, isFolder })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
-  }
+  };
 
   return (
-    <div className="w-full h-full flex flex-col">
-      <Card className="flex-1 flex flex-col">
-        <CardHeader className="space-y-4">
-          {/* Breadcrumb and View Toggle Row */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 flex-wrap">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4">
+            {/* Breadcrumb navigation */}
+            <div className="flex items-center gap-2 text-sm flex-wrap">
               {folderPath.map((segment, index) => (
                 <div key={segment.id || 'root'} className="flex items-center gap-2">
                   {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                   <button
                     onClick={() => handleBreadcrumbClick(index)}
-                    className="text-sm font-medium hover:text-primary transition-colors"
+                    className="breadcrumb-link font-medium"
                   >
                     {segment.name}
                   </button>
@@ -1000,157 +746,158 @@ export function FileList() {
               ))}
             </div>
 
-            {/* View mode toggle */}
-            {!isSearchActive && (
-              <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                <Button
-                  variant={currentViewMode === 'list' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode(currentFolderId, 'list')}
-                  className="h-8 w-8"
-                >
-                  <LayoutList className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={currentViewMode === 'gallery' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode(currentFolderId, 'gallery')}
-                  className="h-8 w-8"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+              {/* Search */}
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search files and folders..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-9"
+                />
+                {searchTerm && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={handleClearSearch}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Search and Action Buttons Row */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search files and folders..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-9"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    searchInputRef.current?.focus();
-                  }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* View mode toggle */}
+                <div className="flex items-center gap-1 border rounded-lg p-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={currentViewMode === 'list' ? 'secondary' : 'ghost'}
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setViewMode(currentFolderId, 'list')}
+                        >
+                          <LayoutList className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>List view</TooltipContent>
+                    </Tooltip>
 
-            {/* Action buttons - labeled, no tooltips, ordered: Upload Files → Upload Folder → Create Folder */}
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingFiles.length > 0}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Files
-            </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={currentViewMode === 'gallery' ? 'secondary' : 'ghost'}
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setViewMode(currentFolderId, 'gallery')}
+                        >
+                          <LayoutGrid className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Gallery view</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
 
-            <Button
-              variant="outline"
-              onClick={() => folderInputRef.current?.click()}
-              disabled={uploadingFiles.length > 0}
-            >
-              <FolderUp className="h-4 w-4 mr-2" />
-              Upload Folder
-            </Button>
+                {selectedItems.size > 0 && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowBulkMove(true)}
+                    >
+                      <MoveRight className="h-4 w-4 mr-2" />
+                      Move ({selectedItems.size})
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowBulkDelete(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete ({selectedItems.size})
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearSelection}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Clear
+                    </Button>
+                  </>
+                )}
 
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateFolder(true)}
-            >
-              <FolderPlus className="h-4 w-4 mr-2" />
-              Create Folder
-            </Button>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              onChange={(e) => handleFileUpload(e.target.files)}
-              className="hidden"
-            />
-            <input
-              ref={folderInputRef}
-              type="file"
-              // @ts-ignore - webkitdirectory is not in the types
-              webkitdirectory="true"
-              directory="true"
-              onChange={handleFolderUpload}
-              className="hidden"
-            />
-          </div>
-
-          {/* Multi-select toolbar */}
-          {selectedItems.size > 0 && (
-            <div className="flex items-center justify-between gap-4 p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">
-                  {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearSelection}
-                >
-                  Clear
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowBulkMove(true)}
+                  onClick={() => setShowCreateFolder(true)}
                 >
-                  <MoveRight className="h-4 w-4 mr-2" />
-                  Move
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  New Folder
                 </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowBulkDelete(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </div>
-            </div>
-          )}
 
-          {/* Upload progress */}
-          {uploadingFiles.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Uploading {uploadingFiles.length} file{uploadingFiles.length !== 1 ? 's' : ''}...
-                </span>
-                <span className="font-medium">{Math.round(uploadProgress)}%</span>
+                <input
+                  ref={folderInputRef}
+                  type="file"
+                  /* @ts-ignore */
+                  webkitdirectory=""
+                  directory=""
+                  multiple
+                  onChange={handleFolderUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => folderInputRef.current?.click()}
+                >
+                  <FolderUp className="h-4 w-4 mr-2" />
+                  Upload Folder
+                </Button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                  className="hidden"
+                />
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Files
+                </Button>
               </div>
-              <Progress value={uploadProgress} className="h-2" />
             </div>
-          )}
+
+            {/* Search results info */}
+            {isSearchActive && displayItems && (
+              <div className="text-sm text-muted-foreground">
+                Found {displayItems.length} result{displayItems.length !== 1 ? 's' : ''} for "{searchTerm}"
+              </div>
+            )}
+          </div>
         </CardHeader>
 
         <CardContent
-          className="flex-1 overflow-auto"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          className={`min-h-[400px] relative ${isDragging ? 'bg-muted/50 border-2 border-dashed border-primary' : ''}`}
         >
           {isDragging && (
-            <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center z-10">
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10 pointer-events-none">
               <div className="text-center">
                 <Upload className="h-12 w-12 mx-auto mb-4 text-primary" />
                 <p className="text-lg font-medium">Drop files or folders here</p>
@@ -1158,63 +905,48 @@ export function FileList() {
             </div>
           )}
 
-          {isLoading || searchLoading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : displayItems && displayItems.length > 0 ? (
-            currentViewMode === 'gallery' && !isSearchActive ? (
-              <FileGallery
-                items={displayItems}
-                selectedItems={selectedItems}
-                onSelectItem={handleSelectItem}
-                onFileClick={handleFileClick}
-                onFolderClick={handleFolderClick}
-                onDownload={handleDownload}
-                onCopyLink={copyFileLink}
-                onMove={(item) => setItemToMove(item)}
-                onDelete={(item) => setItemToDelete(item)}
-              />
-            ) : (
-              <div className="space-y-0">
-                <FileListHeaderRow
-                  sortField={sortField}
-                  sortDirection={sortDirection}
-                  onSort={(field) => {
-                    if (sortField === field) {
-                      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-                    } else {
-                      setSortField(field);
-                      setSortDirection('asc');
-                    }
-                  }}
-                  hasSelection={selectedItems.size > 0}
-                  allSelected={allSelected}
-                  onSelectAll={handleSelectAll}
-                />
-                {displayItems.map((item) => 
-                  isSearchActive ? renderSearchResultRow(item) : renderFileRow(item)
+          {uploadingFiles.length > 0 && (
+            <div className="mb-6 p-4 bg-muted/50 rounded-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  Uploading {uploadingFiles.length} file{uploadingFiles.length !== 1 ? 's' : ''}...
+                </span>
+                <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-2" />
+              <div className="text-xs text-muted-foreground space-y-1">
+                {uploadingFiles.slice(0, 3).map((name, i) => (
+                  <div key={i} className="truncate">{name}</div>
+                ))}
+                {uploadingFiles.length > 3 && (
+                  <div>...and {uploadingFiles.length - 3} more</div>
                 )}
               </div>
-            )
-          ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              {isSearchActive ? (
-                <>
-                  <Search className="h-12 w-12 mb-4" />
-                  <p className="text-lg font-medium">No results found</p>
-                  <p className="text-sm">Try a different search term</p>
-                </>
-              ) : (
-                <>
-                  <Folder className="h-12 w-12 mb-4" />
-                  <p className="text-lg font-medium">This folder is empty</p>
-                  <p className="text-sm">Upload files or create a new folder to get started</p>
-                </>
-              )}
             </div>
+          )}
+
+          {currentViewMode === 'list' ? (
+            renderListView()
+          ) : (
+            <FileGallery
+              items={displayItems || []}
+              isLoading={isLoading || searchLoading}
+              error={error}
+              isSearchActive={isSearchActive}
+              onFolderClick={handleFolderClick}
+              onFileClick={handleFileClick}
+              onDownload={handleDownload}
+              onCopyLink={handleCopyLink}
+              onMove={(id, name, isFolder) => {
+                setItemToMove({ id, name, isFolder });
+                setMoveDestination(null);
+              }}
+              onDelete={(id, name, isFolder) => setItemToDelete({ id, name, isFolder })}
+              selectedItems={selectedItems}
+              onSelectItem={handleSelectItem}
+              onSearchResultPathClick={handleSearchResultPathClick}
+              allFolders={allFolders || []}
+            />
           )}
         </CardContent>
       </Card>
@@ -1229,9 +961,9 @@ export function FileList() {
             </DialogDescription>
           </DialogHeader>
           <Input
+            placeholder="Folder name"
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
-            placeholder="Folder name"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 handleCreateFolder();
@@ -1318,9 +1050,9 @@ export function FileList() {
       <Dialog open={!!itemToMove} onOpenChange={() => setItemToMove(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Move {itemToMove?.isFolder ? 'Folder' : 'File'}</DialogTitle>
+            <DialogTitle>Move "{itemToMove?.name}"</DialogTitle>
             <DialogDescription>
-              Select a destination folder for "{itemToMove?.name}"
+              Select a destination folder
             </DialogDescription>
           </DialogHeader>
           <Select
@@ -1401,7 +1133,7 @@ export function FileList() {
       </Dialog>
 
       {/* File Preview Modal */}
-      {showPreview && previewFile && (
+      {previewFile && (
         <FilePreviewModal
           file={previewFile}
           isOpen={showPreview}

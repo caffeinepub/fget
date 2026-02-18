@@ -81,3 +81,9 @@
         @apply bg-background text-foreground;
     }
 }
+
+@layer components {
+    .breadcrumb-link {
+        @apply text-primary hover:text-primary/80 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm px-1 -mx-1 cursor-pointer transition-colors;
+    }
+}

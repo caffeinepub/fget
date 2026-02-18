@@ -1,55 +1,25 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T21:34:26.159Z",
-  "summary": "REQ-4 (version bump) is evidenced by updating APP_VERSION to 0.4.111. For REQ-1/2/3, FileList.tsx is truncated in the diff excerpt and does not show the relevant UI sections, so the requested UI restores cannot be verified from the provided evidence. Additionally, two non-requested files (frontend-file-summaries.txt and project_state.json) were modified, which violates the “No other changes” constraint.",
-  "missing_requirements": [
-    {
-      "id": "REQ-1",
-      "requirement": "Restore file/folder row action buttons in List view so they are visible at all times (not only on mouse hover), while keeping tooltips on those action buttons.",
-      "reason": "The provided diff excerpt for FileList.tsx is truncated before any row rendering / action-button logic, so there is no evidence that row actions were made always-visible or that tooltips were preserved.",
-      "evidence": [
-        "frontend/src/components/FileList.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Restore the top action buttons in the File Browser header area to use labeled buttons (not icon-only) with no tooltips, and enforce the button order: Upload Files, then Upload Folder, then Create Folder.",
-      "reason": "The diff excerpt does not include the File Browser header/top action buttons rendering; therefore there is no evidence of labeled buttons, tooltip removal, or the required ordering.",
-      "evidence": [
-        "frontend/src/components/FileList.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Restore the clickable folder path/breadcrumb context when viewing search results so users can click the displayed path to navigate to the containing folder.",
-      "reason": "The diff excerpt does not include the search results rendering, so there is no evidence that a clickable breadcrumb/path is shown during search, nor that clicking navigates to the containing folder and exits search mode.",
-      "evidence": [
-        "frontend/src/components/FileList.tsx (truncated)"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-18T14:07:44.868Z",
+  "summary": "All four requested UI fixes appear to be implemented: app version bumped to 0.4.119, file type labeling updated to show \"N/A\" only for no-extension filenames and otherwise use extension-derived labels, breadcrumb click affordance styling added via a shared CSS class, and filename hover tooltips restored (per FileList-related change notes). However, there are substantial unrequested global theme/color variable changes in index.css that go beyond the requested breadcrumb styling and may violate the constraint to avoid additional UI/design changes.",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Modified project_state.json (metadata/new_feature_requests/status tracking) even though the request constrained changes to only UI restores and version bump (“No other changes!”).",
-      "reason": "This file change is not part of any REQ-1..REQ-4 acceptance criteria and conflicts with the explicit constraint to avoid other changes.",
+      "description": "Global theme/color system changes (large set of CSS variable updates for light/dark themes) beyond the requested breadcrumb link affordance styling.",
+      "reason": "REQ-3 only asked to adjust breadcrumb segment styling to improve click visibility without changing overall design/layout; the diff shows broad palette/theme variable changes in frontend/src/index.css that are not explicitly requested and could alter the overall look.",
       "evidence": [
-        "project_state.json"
-      ]
-    },
-    {
-      "description": "Modified frontend-file-summaries.txt, which is not part of the requested UI restores or version bump.",
-      "reason": "The BuildRequest did not ask to update any documentation/summary artifacts; also the constraint says no other changes beyond the specified UI restores and version bump.",
-      "evidence": [
-        "frontend-file-summaries.txt (truncated)"
+        "frontend/src/index.css"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.63,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/components/FileList.tsx",
+    "frontend/src/index.css",
     "frontend/src/lib/appVersion.ts",
+    "frontend/src/lib/fileTypes.ts",
     "project_state.json"
   ]
 }

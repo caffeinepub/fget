@@ -1,80 +1,83 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Drive Browser UI restores (row actions, header buttons, search breadcrumb) + version bump to 0.4.111",
+  "title": "Drive Browser: Restore List tooltip, correct Type labels, improve breadcrumb affordance, bump version to 0.4.119",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Make List view row action buttons always visible (no hover-only reveal) while preserving tooltips.",
+      "summary": "Restore List view filename hover tooltip using the native HTML title attribute on the filename text element.",
       "acceptanceCriteria": [
-        "In List view, each row’s action buttons are visible without hovering (default state).",
-        "Tooltips for the row action buttons still appear on hover/focus.",
-        "No other row layout/behavior changes beyond making the buttons always visible."
+        "In List view, hovering the filename shows the browser tooltip with the full filename (via `title`).",
+        "The visible layout/positions of existing elements (including action buttons and their tooltips) remain unchanged."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Update the List view row action area styling so action buttons are visible by default (remove any hover-only opacity/visibility classes) while keeping the existing Tooltip/TooltipTrigger wrappers intact for those row actions."
+          "description": "In the List view row renderer, add a `title={fullFilename}` attribute to the filename *text* element (not the whole row) so long names show the native browser tooltip on hover, without changing spacing/structure or affecting existing action-button tooltips."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Restore labeled top action buttons (no tooltips) in the File Browser header and enforce the order Upload Files → Upload Folder → Create Folder.",
+      "summary": "Fix file type labeling so filenames without any dot show Type as \"N/A\" with unknown styling, while filenames with an extension show an extension-derived label even if unpreviewable.",
       "acceptanceCriteria": [
-        "The top actions are displayed as labeled buttons: “Upload Files”, “Upload Folder”, “Create Folder”.",
-        "No tooltips are shown for these top action buttons.",
-        "The buttons appear in the specified order: Upload Files → Upload Folder → Create Folder.",
-        "Click behavior for each action remains unchanged."
+        "A filename with no `.` character displays Type badge text exactly \"N/A\" in List view.",
+        "A filename with an extension not in the known label map still displays a reasonable label based on the extension (e.g., `.deb` -> \"DEB\"), not \"N/A\" and not the full filename.",
+        "Existing folder type badge behavior remains unchanged.",
+        "No backend changes are required for this fix."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/lib/fileTypes.ts",
+          "operation": "modify",
+          "description": "Update `getFileExtension` to treat filenames with no `.` as having no extension (return empty string), and adjust `getFileTypeLabel` so files with no extension yield the Type label \"N/A\" while unknown extensions fall back to the uppercase extension (e.g., `deb` -> `DEB`)."
+        },
+        {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Adjust the File Browser header top actions to use labeled Button variants (not icon-only) for “Upload Files”, “Upload Folder”, and “Create Folder”, remove any Tooltip usage for these header buttons, and reorder them to Upload Files → Upload Folder → Create Folder without changing their existing click/upload/create behaviors."
+          "description": "Adjust List view Type badge logic to: (1) keep folder Type badge behavior unchanged, (2) for files with no extension display text exactly \"N/A\" and use the existing unknown-type styling helper, and (3) for files with an extension display the extension-derived label from `getFileTypeLabel` (even if unpreviewable) using existing non-unknown styling behavior."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Restore clickable breadcrumb/path context for search results so users can navigate to the containing folder and exit search mode.",
+      "summary": "Improve breadcrumb/path link affordance via styling only, making clickable segments clearly look like links without changing layout or behavior.",
       "acceptanceCriteria": [
-        "When search is active, each search result shows a folder path/breadcrumb context that is clickable.",
-        "Clicking the path navigates to the corresponding containing folder (and exits search mode).",
-        "Navigation via the clickable path works for both file results and folder results.",
-        "No other search UI/behavior changes beyond restoring the clickable path."
+        "Breadcrumb/path segments that can be clicked have clear link affordance (e.g., distinct link color and hover/underline) matching the intent of the screenshot (image-124.png).",
+        "Breadcrumb click behavior remains the same (navigates to the selected folder level).",
+        "No element positions are changed; only styling is adjusted to improve click visibility."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/FileList.tsx",
+          "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "In search mode rendering, restore display of each result’s containing folder path/breadcrumb context (for both file and folder results) and wire it to the existing click handler so clicking the path navigates to the containing folder and clears search state."
+          "description": "Add a small reusable style (e.g., a Tailwind `@apply`-based utility class) for breadcrumb link affordance: distinct link color + hover underline/focus-visible outline, ensuring it does not alter spacing/layout."
         },
         {
-          "path": "frontend/src/lib/folderNavigation.ts",
+          "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "If needed to support the restored UI, add/adjust a minimal helper for generating a user-facing breadcrumb/path label for search results without changing existing navigation behavior; keep changes scoped strictly to enabling the clickable search path display."
+          "description": "Apply the breadcrumb link affordance styling consistently to clickable breadcrumb segments (e.g., all but the current segment), keeping existing click handlers and DOM structure intact so only visual affordance changes (no repositioning)."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Bump the app version to 0.4.111 and ensure all UI version displays reflect it.",
+      "summary": "Bump the UI application version to 0.4.119 wherever displayed.",
       "acceptanceCriteria": [
-        "The version constant is updated to 0.4.111 (e.g., the value exported from frontend/src/lib/appVersion.ts).",
-        "The footer (and any other version display) shows v0.4.111 after rebuild."
+        "`frontend/src/lib/appVersion.ts` exports `APP_VERSION = '0.4.119'`.",
+        "The footer (and any other existing version display) shows v0.4.119."
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/appVersion.ts",
           "operation": "modify",
-          "description": "Update APP_VERSION constant to \"0.4.111\"."
+          "description": "Update `APP_VERSION` export to exactly `0.4.119` so all UI surfaces that import it (e.g., footer) reflect the new version automatically."
         },
         {
           "path": "frontend/src/components/Footer.tsx",
           "operation": "modify",
-          "description": "Verify the footer continues to display the app version via APP_VERSION and renders as v0.4.111 after the version bump (no design/behavior changes beyond ensuring the updated version is shown)."
+          "description": "Verify the footer renders the updated version string from `APP_VERSION` (no layout/design changes); adjust only if needed to ensure it displays `v0.4.119`."
         }
       ]
     }

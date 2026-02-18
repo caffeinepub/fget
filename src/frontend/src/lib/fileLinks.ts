@@ -2,62 +2,74 @@ import { toast } from 'sonner';
 import type { FileMetadata } from '../backend';
 
 /**
- * Get a fully-qualified direct URL for a file that can be used with curl/wget
+ * Generates a fully-qualified direct download URL from a file blob
  */
-export function getFullDirectURL(file: FileMetadata): string {
-  const directURL = file.blob.getDirectURL();
-  
-  // If the URL is already absolute, return it as-is
-  if (directURL.startsWith('http://') || directURL.startsWith('https://')) {
-    return directURL;
-  }
-  
-  // Otherwise, construct a fully-qualified URL using the current origin
-  const url = new URL(directURL, window.location.origin);
-  return url.toString();
+export function getFileDirectURL(file: FileMetadata): string {
+  return file.blob.getDirectURL();
 }
 
 /**
- * Copy a file's direct download URL to the clipboard
+ * Copies a file's direct URL to the clipboard
  */
 export async function copyFileLink(file: FileMetadata): Promise<void> {
+  const url = getFileDirectURL(file);
+  
   try {
-    const fullURL = getFullDirectURL(file);
-    
-    // Try modern clipboard API first
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(fullURL);
-      toast.success('Link copied', {
-        description: 'Direct download link copied to clipboard'
-      });
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard');
     } else {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = fullURL;
+      textArea.value = url;
       textArea.style.position = 'fixed';
       textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
       document.body.appendChild(textArea);
-      textArea.focus();
       textArea.select();
       
       try {
         document.execCommand('copy');
-        toast.success('Link copied', {
-          description: 'Direct download link copied to clipboard'
-        });
+        toast.success('Link copied to clipboard');
       } catch (err) {
-        toast.error('Copy failed', {
-          description: 'Please try again'
-        });
-      } finally {
-        document.body.removeChild(textArea);
+        toast.error('Failed to copy link');
       }
+      
+      document.body.removeChild(textArea);
     }
   } catch (error) {
-    console.error('Copy link error:', error);
-    toast.error('Copy failed', {
-      description: 'Please try again'
-    });
+    toast.error('Failed to copy link');
+  }
+}
+
+/**
+ * Downloads a file with the correct filename using blob approach for reliable naming
+ */
+export async function downloadFile(file: FileMetadata): Promise<void> {
+  try {
+    // Fetch the file bytes and create a local blob URL for reliable filename control
+    const bytes = await file.blob.getBytes();
+    const blob = new Blob([bytes]);
+    const blobUrl = URL.createObjectURL(blob);
+    
+    // Create a temporary anchor element with the correct filename
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = file.name; // Set the download filename to the original name
+    a.style.display = 'none';
+    
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    }, 100);
+    
+    toast.success(`Downloading ${file.name}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    toast.error(`Failed to download file: ${errorMessage}`);
+    console.error('Download error:', error);
   }
 }

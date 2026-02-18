@@ -1,5 +1,9 @@
 export function getFileExtension(filename: string): string {
-  return filename.split('.').pop()?.toLowerCase() || '';
+  const lastDotIndex = filename.lastIndexOf('.');
+  if (lastDotIndex === -1 || lastDotIndex === 0) {
+    return '';
+  }
+  return filename.slice(lastDotIndex + 1).toLowerCase();
 }
 
 export function getMimeType(extension: string): string {
@@ -103,9 +107,11 @@ export function isCode(extension: string): boolean {
  * Gets a human-readable file type label from a filename
  */
 export function getFileTypeLabel(filename: string): string {
-  const ext = getFileExtension(filename).toUpperCase();
+  const ext = getFileExtension(filename);
   
-  if (!ext) return 'FILE';
+  if (!ext) return 'N/A';
+  
+  const extUpper = ext.toUpperCase();
   
   // Map common extensions to friendly names
   const typeLabels: Record<string, string> = {
@@ -145,7 +151,7 @@ export function getFileTypeLabel(filename: string): string {
     'CSV': 'CSV',
   };
   
-  return typeLabels[ext] || ext;
+  return typeLabels[extUpper] || extUpper;
 }
 
 /**
