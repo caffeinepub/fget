@@ -193,8 +193,8 @@ export function FileGallery({
                     <ChevronRight className="h-3 w-3 flex-shrink-0" />
                     <span className="truncate">
                       {isFolder 
-                        ? getFolderContainingPath(item.folder, allFolders)
-                        : getContainingFolderPath(item.file, allFolders)
+                        ? getFolderContainingPath(item.folder.parentId, allFolders)
+                        : getContainingFolderPath(item.file.parentId, allFolders)
                       }
                     </span>
                   </button>

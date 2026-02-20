@@ -1,107 +1,54 @@
 {
   "kind": "build_request",
-  "title": "Restore filename tooltip, fix file type labeling, improve breadcrumb click affordance, and bump version to 0.4.119",
-  "projectName": "Drive Browser",
+  "title": "Restore clickable path in search results and update to v0.4.121",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Restore the filename hover tooltip in the List view by adding back the simple browser tooltip (HTML `title`) on the filename text element so long filenames can be fully seen on hover, matching the previous behavior.",
+      "text": "Add clickable path/location information to each search result row in the FileList component, allowing users to navigate to the folder containing each found file",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-recent"
         ],
         "quotes": [
-          "- tooltip with filename (mainly for files with long name) is gone - add it back",
-          "1. yes"
+          "restore the clickable path for search results"
         ]
       },
       "acceptanceCriteria": [
-        "In List view, hovering the filename shows the browser tooltip with the full filename (via `title`).",
-        "The visible layout/positions of existing elements (including action buttons and their tooltips) remain unchanged."
+        "Each search result displays the folder path where the file is located",
+        "The path is clickable and navigates to the containing folder",
+        "Path display is clearly visible in the search results view"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix file type detection so items with no file extension display Type as \"N/A\" (and use the existing unknown-type styling), while files that have an extension (even if the app cannot preview/open them) show their extension-derived label (e.g., \"DEB\" for `.deb`). This must treat filenames without any dot (`.`) as having no extension (not as the entire filename being the extension).",
+      "text": "Update the app version constant in frontend/src/lib/appVersion.ts to '0.4.121'",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-recent"
         ],
         "quotes": [
-          "- unknown file type is still marked with the filename and not N/A - fix it",
-          "2. when the file has no extension - when the app doesn't know the filetype, e.g. if you know it's .deb package keep saying it's DEB although can't open it"
+          "app version to 0.4.121"
         ]
       },
       "acceptanceCriteria": [
-        "A filename with no `.` character displays Type badge text exactly \"N/A\" in List view.",
-        "A filename with an extension not in the known label map still displays a reasonable label based on the extension (e.g., `.deb` -> \"DEB\"), not \"N/A\" and not the full filename.",
-        "Existing folder type badge behavior remains unchanged.",
-        "No backend changes are required for this fix."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Make the current folder path (breadcrumb) more visibly clickable (clear link affordance), similar to the provided screenshot, without moving elements or changing the overall layout. Apply the styling consistently to the breadcrumb segments that are clickable so it is obvious they can be clicked to navigate.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "- for the current path make more visible that it's clickable - similar as is on teh screenshot",
-          "3. like in the screenshot to have it clear clickable path"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Breadcrumb/path segments that can be clicked have clear link affordance (e.g., distinct link color and hover/underline) matching the intent of the screenshot (image-124.png).",
-        "Breadcrumb click behavior remains the same (navigates to the selected folder level).",
-        "No element positions are changed; only styling is adjusted to improve click visibility."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Bump the application version string to 0.4.119 and ensure it is reflected wherever the app version is displayed in the UI.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "- version to 0.4.119"
-        ]
-      },
-      "acceptanceCriteria": [
-        "`frontend/src/lib/appVersion.ts` exports `APP_VERSION = '0.4.119'`.",
-        "The footer (and any other existing version display) shows v0.4.119."
+        "Version displayed in footer shows '0.4.121'"
       ]
     }
   ],
   "constraints": [
-    "Do not change the overall design or layout beyond the specific fixes requested.",
-    "Do not move UI elements to different places.",
-    "Do not introduce additional UI changes not explicitly requested (keep existing action buttons visible and keep existing tooltips).",
-    "Frontend immutable paths must not be edited: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui."
+    "Do not modify any other functionality, styling, or behavior beyond the specified requirements",
+    "Preserve all existing search functionality"
   ],
   "nonGoals": [
-    "Adding new file preview/open capabilities for additional formats (e.g., making `.deb` openable).",
-    "Changing backend data models, storage, or access control behavior.",
-    "Redesigning the file manager UI or altering the placement of action buttons/columns."
+    "Changing design or layout beyond adding the clickable path",
+    "Modifying backend logic",
+    "Altering other UI components or features"
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

@@ -1,59 +1,34 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T14:07:44.870Z",
+  "generatedAt": "2026-02-20T10:55:43.185Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Restore the filename hover tooltip in the List view by adding back the simple browser tooltip (HTML `title`) on the filename text element so long filenames can be fully seen on hover, matching the previous behavior.",
+        "summary": "Add clickable path/location information to each search result row in the FileList component, allowing users to navigate to the folder containing each found file",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/FileList.tsx"
+          "frontend/src/components/FileList.tsx",
+          "frontend/src/lib/folderNavigation.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/FileList.tsx"
+          "frontend/src/components/FileList.tsx",
+          "frontend/src/lib/folderNavigation.ts"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix file type detection so items with no file extension display Type as \"N/A\" (and use the existing unknown-type styling), while files that have an extension (even if the app cannot preview/open them) show their extension-derived label (e.g., \"DEB\" for `.deb`). This must treat filenames without any dot (`.`) as having no extension (not as the entire filename being the extension).",
+        "summary": "Update the app version constant in frontend/src/lib/appVersion.ts to '0.4.121'",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/fileTypes.ts",
-          "frontend/src/components/FileList.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/fileTypes.ts",
-          "frontend/src/components/FileList.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Make the current folder path (breadcrumb) more visibly clickable (clear link affordance), similar to the provided screenshot, without moving elements or changing the overall layout. Apply the styling consistently to the breadcrumb segments that are clickable so it is obvious they can be clicked to navigate.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/index.css",
-          "frontend/src/components/FileList.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/index.css",
-          "frontend/src/components/FileList.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Bump the application version string to 0.4.119 and ensure it is reflected wherever the app version is displayed in the UI.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/appVersion.ts",
-          "frontend/src/components/Footer.tsx"
+          "frontend/src/lib/appVersion.ts"
         ],
         "matchedFiles": [
           "frontend/src/lib/appVersion.ts"
@@ -63,13 +38,16 @@
   },
   "changedFiles": [
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
+    "frontend/src/components/FileGallery.tsx",
     "frontend/src/components/FileList.tsx",
-    "frontend/src/index.css",
+    "frontend/src/components/FileListHeaderRow.tsx",
     "frontend/src/lib/appVersion.ts",
-    "frontend/src/lib/fileTypes.ts",
+    "frontend/src/lib/folderNavigation.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

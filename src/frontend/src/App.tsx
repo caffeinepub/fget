@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { FileList } from './components/FileList';
@@ -25,6 +25,9 @@ export default function App() {
   // Only fetch profile if user has access
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const setFrontendCanisterId = useSetFrontendCanisterId();
+
+  // Folder navigation state
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   const isAuthenticated = !!identity;
   
@@ -63,6 +66,10 @@ export default function App() {
     }
   }, [isAuthenticated, accessLoading, hasAccess, queryClient]);
 
+  const handleFolderNavigate = (folderId: string | null) => {
+    setCurrentFolderId(folderId);
+  };
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <div className="flex min-h-screen flex-col">
@@ -89,7 +96,10 @@ export default function App() {
             <ProfileSetup />
           ) : showContent ? (
             <div className="container mx-auto px-4 py-8 max-w-5xl">
-              <FileList />
+              <FileList 
+                currentFolderId={currentFolderId}
+                onFolderNavigate={handleFolderNavigate}
+              />
             </div>
           ) : (
             <div className="container mx-auto px-4 py-16 max-w-5xl">

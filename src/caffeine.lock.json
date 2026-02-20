@@ -13,7 +13,7 @@
     "initial-app": "1.0.0",
     "github-export-icp-cli": "1.0.0"
   },
-  "aiCoreVersion": "0.19.9",
+  "aiCoreVersion": "0.20.2",
   "motokoVersion": "1.0.0-beta",
   "coreLibVersion": "implicits-20",
   "tags": []

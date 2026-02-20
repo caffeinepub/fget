@@ -1,83 +1,40 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Drive Browser: Restore List tooltip, correct Type labels, improve breadcrumb affordance, bump version to 0.4.119",
+  "title": "Restore clickable path in search results and update to v0.4.121",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Restore List view filename hover tooltip using the native HTML title attribute on the filename text element.",
+      "summary": "Add clickable path/location information to each search result row in the FileList component",
       "acceptanceCriteria": [
-        "In List view, hovering the filename shows the browser tooltip with the full filename (via `title`).",
-        "The visible layout/positions of existing elements (including action buttons and their tooltips) remain unchanged."
+        "Each search result displays the folder path where the file is located",
+        "The path is clickable and navigates to the containing folder",
+        "Path display is clearly visible in the search results view"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "In the List view row renderer, add a `title={fullFilename}` attribute to the filename *text* element (not the whole row) so long names show the native browser tooltip on hover, without changing spacing/structure or affecting existing action-button tooltips."
+          "description": "Add a clickable path/location column to search result rows. When in search mode (searchTerm is non-empty), display the containing folder path for each file using the folderNavigation utility. The path should be clickable and call onFolderNavigate with the parent folder ID to navigate the user to the folder containing the file. Use the existing folder metadata from the getAllFolders query to resolve full folder paths. Ensure the path display integrates cleanly with the existing table layout and does not disrupt the current file operation buttons or sorting behavior."
+        },
+        {
+          "path": "frontend/src/lib/folderNavigation.ts",
+          "operation": "modify",
+          "description": "Ensure the getFolderPath utility function can accept a file's parentId and return the full folder path string (e.g., 'Folder A / Folder B'). If the function does not already handle this case, extend it to support resolving paths for files in addition to folders. The path should be human-readable and suitable for display in the search results UI."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Fix file type labeling so filenames without any dot show Type as \"N/A\" with unknown styling, while filenames with an extension show an extension-derived label even if unpreviewable.",
+      "summary": "Update the app version constant to '0.4.121'",
       "acceptanceCriteria": [
-        "A filename with no `.` character displays Type badge text exactly \"N/A\" in List view.",
-        "A filename with an extension not in the known label map still displays a reasonable label based on the extension (e.g., `.deb` -> \"DEB\"), not \"N/A\" and not the full filename.",
-        "Existing folder type badge behavior remains unchanged.",
-        "No backend changes are required for this fix."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/fileTypes.ts",
-          "operation": "modify",
-          "description": "Update `getFileExtension` to treat filenames with no `.` as having no extension (return empty string), and adjust `getFileTypeLabel` so files with no extension yield the Type label \"N/A\" while unknown extensions fall back to the uppercase extension (e.g., `deb` -> `DEB`)."
-        },
-        {
-          "path": "frontend/src/components/FileList.tsx",
-          "operation": "modify",
-          "description": "Adjust List view Type badge logic to: (1) keep folder Type badge behavior unchanged, (2) for files with no extension display text exactly \"N/A\" and use the existing unknown-type styling helper, and (3) for files with an extension display the extension-derived label from `getFileTypeLabel` (even if unpreviewable) using existing non-unknown styling behavior."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Improve breadcrumb/path link affordance via styling only, making clickable segments clearly look like links without changing layout or behavior.",
-      "acceptanceCriteria": [
-        "Breadcrumb/path segments that can be clicked have clear link affordance (e.g., distinct link color and hover/underline) matching the intent of the screenshot (image-124.png).",
-        "Breadcrumb click behavior remains the same (navigates to the selected folder level).",
-        "No element positions are changed; only styling is adjusted to improve click visibility."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Add a small reusable style (e.g., a Tailwind `@apply`-based utility class) for breadcrumb link affordance: distinct link color + hover underline/focus-visible outline, ensuring it does not alter spacing/layout."
-        },
-        {
-          "path": "frontend/src/components/FileList.tsx",
-          "operation": "modify",
-          "description": "Apply the breadcrumb link affordance styling consistently to clickable breadcrumb segments (e.g., all but the current segment), keeping existing click handlers and DOM structure intact so only visual affordance changes (no repositioning)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Bump the UI application version to 0.4.119 wherever displayed.",
-      "acceptanceCriteria": [
-        "`frontend/src/lib/appVersion.ts` exports `APP_VERSION = '0.4.119'`.",
-        "The footer (and any other existing version display) shows v0.4.119."
+        "Version displayed in footer shows '0.4.121'"
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/appVersion.ts",
           "operation": "modify",
-          "description": "Update `APP_VERSION` export to exactly `0.4.119` so all UI surfaces that import it (e.g., footer) reflect the new version automatically."
-        },
-        {
-          "path": "frontend/src/components/Footer.tsx",
-          "operation": "modify",
-          "description": "Verify the footer renders the updated version string from `APP_VERSION` (no layout/design changes); adjust only if needed to ensure it displays `v0.4.119`."
+          "description": "Update the exported app version constant from its current value to '0.4.121'. This is a simple constant change with no logic modifications required."
         }
       ]
     }

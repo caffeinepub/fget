@@ -1,4 +1,4 @@
-import type { FolderMetadata, FileMetadata } from '../backend';
+import type { FolderMetadata } from '../backend';
 
 /**
  * Builds a breadcrumb path array from a folder ID
@@ -93,18 +93,18 @@ export function getFolderPath(
  * Used for navigating from search results to the folder containing a file
  */
 export function resolveFileParentPath(
-  file: FileMetadata,
+  parentId: string | undefined,
   allFolders: FolderMetadata[]
 ): string | null {
   // If file has no parent, it's in root
-  if (!file.parentId) {
+  if (!parentId) {
     return null;
   }
 
   // Find the parent folder
-  const parentFolder = allFolders.find(f => f.id === file.parentId);
+  const parentFolder = allFolders.find(f => f.id === parentId);
   if (!parentFolder) {
-    throw new Error(`Parent folder not found for file "${file.name}"`);
+    throw new Error(`Parent folder not found`);
   }
 
   return parentFolder.id;
@@ -112,28 +112,30 @@ export function resolveFileParentPath(
 
 /**
  * Gets the containing folder path string for a file (excludes the filename)
+ * Accepts parentId which can be string | undefined from FileMetadata
  */
 export function getContainingFolderPath(
-  file: FileMetadata,
+  parentId: string | undefined,
   allFolders: FolderMetadata[]
 ): string {
-  if (!file.parentId) {
+  if (!parentId) {
     return 'Drive';
   }
 
-  return getFolderPath(file.parentId, allFolders) || 'Drive';
+  return getFolderPath(parentId, allFolders) || 'Drive';
 }
 
 /**
  * Gets the containing folder path string for a folder (path to its parent)
+ * Accepts parentId which can be string | undefined from FolderMetadata
  */
 export function getFolderContainingPath(
-  folder: FolderMetadata,
+  parentId: string | undefined,
   allFolders: FolderMetadata[]
 ): string {
-  if (!folder.parentId) {
+  if (!parentId) {
     return 'Drive';
   }
 
-  return getFolderPath(folder.parentId, allFolders) || 'Drive';
+  return getFolderPath(parentId, allFolders) || 'Drive';
 }

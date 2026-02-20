@@ -1,93 +1,78 @@
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 import type { SortField, SortDirection } from '../lib/sortFileSystemItems';
 
 interface FileListHeaderRowProps {
+  allSelected: boolean;
+  someSelected: boolean;
+  onSelectAll: (checked: boolean) => void;
   sortField: SortField;
   sortDirection: SortDirection;
   onSort: (field: SortField) => void;
-  hasSelection?: boolean;
-  allSelected?: boolean;
-  onSelectAll?: (checked: boolean) => void;
+  showLocationColumn?: boolean;
 }
 
-export function FileListHeaderRow({ 
-  sortField, 
-  sortDirection, 
+export function FileListHeaderRow({
+  allSelected,
+  someSelected,
+  onSelectAll,
+  sortField,
+  sortDirection,
   onSort,
-  hasSelection = false,
-  allSelected = false,
-  onSelectAll
+  showLocationColumn = false,
 }: FileListHeaderRowProps) {
-  const renderSortArrow = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUp className="h-3 w-3 text-muted-foreground/40" />;
-    }
-    return sortDirection === 'asc' ? (
-      <ArrowUp className="h-3 w-3 text-foreground" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-foreground" />
+  const SortButton = ({ field, label }: { field: SortField; label: string }) => {
+    const isActive = sortField === field;
+    return (
+      <button
+        onClick={() => onSort(field)}
+        className="flex items-center justify-center gap-1 hover:text-foreground transition-colors w-full"
+      >
+        <span>{label}</span>
+        {isActive && (
+          sortDirection === 'asc' ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          )
+        )}
+      </button>
     );
   };
 
-  const handleHeaderClick = (field: SortField) => {
-    onSort(field);
-  };
-
   return (
-    <div className="grid grid-cols-[40px_1fr_60px_180px_120px_160px] gap-2 px-4 py-2 border-b bg-muted/30 text-xs font-medium text-muted-foreground">
-      {/* Selection column */}
-      {hasSelection && onSelectAll && (
-        <div className="flex items-center justify-center">
+    <thead className="bg-muted/50">
+      <tr>
+        <th className="p-4 w-12">
           <Checkbox
             checked={allSelected}
             onCheckedChange={onSelectAll}
             aria-label="Select all"
+            className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
           />
-        </div>
-      )}
-      {!hasSelection && <div />}
-
-      {/* Name column - centered header */}
-      <button
-        onClick={() => handleHeaderClick('name')}
-        className="flex items-center justify-center gap-1 hover:text-foreground transition-colors"
-      >
-        <span>Name</span>
-        {renderSortArrow('name')}
-      </button>
-
-      {/* Type column - centered header */}
-      <button
-        onClick={() => handleHeaderClick('type')}
-        className="flex items-center justify-center gap-1 hover:text-foreground transition-colors whitespace-nowrap"
-      >
-        <span>Type</span>
-        {renderSortArrow('type')}
-      </button>
-
-      {/* Created column - centered header */}
-      <button
-        onClick={() => handleHeaderClick('created')}
-        className="flex items-center justify-center gap-1 hover:text-foreground transition-colors whitespace-nowrap"
-      >
-        <span>Created</span>
-        {renderSortArrow('created')}
-      </button>
-
-      {/* Size column - centered header */}
-      <button
-        onClick={() => handleHeaderClick('size')}
-        className="flex items-center justify-center gap-1 hover:text-foreground transition-colors whitespace-nowrap"
-      >
-        <span>Size</span>
-        {renderSortArrow('size')}
-      </button>
-
-      {/* Actions column (no sort) - centered header */}
-      <div className="flex items-center justify-center">
-        <span>Actions</span>
-      </div>
-    </div>
+        </th>
+        <th className="p-4 text-center font-medium text-muted-foreground">
+          <SortButton field="name" label="Name" />
+        </th>
+        <th className="p-4 text-center font-medium text-muted-foreground">
+          <SortButton field="type" label="Type" />
+        </th>
+        {showLocationColumn && (
+          <th className="p-4 text-center font-medium text-muted-foreground">
+            Location
+          </th>
+        )}
+        <th className="p-4 text-center font-medium text-muted-foreground">
+          <SortButton field="created" label="Created" />
+        </th>
+        <th className="p-4 text-center font-medium text-muted-foreground">
+          <SortButton field="size" label="Size" />
+        </th>
+        <th className="p-4 text-center font-medium text-muted-foreground w-[160px]">
+          Actions
+        </th>
+      </tr>
+    </thead>
   );
 }
