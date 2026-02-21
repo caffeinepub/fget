@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-clickable-path-location-information-to-each-search-result-row-in-the-filelist-component-allowing-users-to-navigate-to-the-folder-containing-each-found-file",
-      "featureTitle": "Add clickable path/location information to each search result row in the FileList component, allowing users to navigate to the folder containing each found file",
+      "featureId": "feature-display-specific-file-types-json-folder-etc-in-the-type-column-for-files-with-unknown-or-unrecognized-file-types-display-n-a-instead-of-showing-the-entire-filename",
+      "featureTitle": "Display specific file types (JSON, Folder, etc.) in the Type column. For files with unknown or unrecognized file types, display 'N/A' instead of showing the entire filename.",
       "files": [
-        "frontend/src/components/FileList.tsx",
-        "frontend/src/lib/folderNavigation.ts"
+        "frontend/src/components/FileList.tsx"
       ],
       "components": [
         "blob-storage@3.0.0",
@@ -24,8 +23,50 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-app-version-constant-in-frontend-src-lib-appversion-ts-to-0-4-121",
-      "featureTitle": "Update the app version constant in frontend/src/lib/appVersion.ts to '0.4.121'",
+      "featureId": "feature-reposition-the-upload-files-button-to-appear-before-the-new-folder-button-in-the-toolbar-style-it-similar-to-the-folder-buttons-with-a-subtle-yellow-border-while-keeping-the-blue-color-scheme",
+      "featureTitle": "Reposition the 'Upload Files' button to appear before the 'New Folder' button in the toolbar. Style it similar to the folder buttons with a subtle yellow border while keeping the blue color scheme.",
+      "files": [
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-restore-the-blue-colors-in-the-drive-path-breadcrumb-navigation-drive-testup-test2-test3-as-shown-in-v0-4-121",
+      "featureTitle": "Restore the blue colors in the Drive path breadcrumb navigation (Drive > testup > test2 > test3) as shown in v0.4.121.",
+      "files": [
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-application-version-to-v0-4-127-in-frontend-src-lib-appversion-ts",
+      "featureTitle": "Update the application version to v0.4.127 in frontend/src/lib/appVersion.ts.",
       "files": [
         "frontend/src/lib/appVersion.ts"
       ],
@@ -40,7 +81,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-4"
       ],
       "confidence": "high"
     }

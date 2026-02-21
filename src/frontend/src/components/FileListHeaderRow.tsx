@@ -22,12 +22,12 @@ export function FileListHeaderRow({
   onSort,
   showLocationColumn = false,
 }: FileListHeaderRowProps) {
-  const SortButton = ({ field, label }: { field: SortField; label: string }) => {
+  const SortButton = ({ field, label, centered = true }: { field: SortField; label: string; centered?: boolean }) => {
     const isActive = sortField === field;
     return (
       <button
         onClick={() => onSort(field)}
-        className="flex items-center justify-center gap-1 hover:text-foreground transition-colors w-full"
+        className={`flex items-center gap-1 hover:text-foreground transition-colors w-full ${centered ? 'justify-center' : 'justify-start'}`}
       >
         <span>{label}</span>
         {isActive && (
@@ -52,14 +52,14 @@ export function FileListHeaderRow({
             className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
           />
         </th>
-        <th className="p-4 text-center font-medium text-muted-foreground">
-          <SortButton field="name" label="Name" />
+        <th className="p-4 text-left font-medium text-muted-foreground">
+          <SortButton field="name" label="Name" centered={false} />
         </th>
         <th className="p-4 text-center font-medium text-muted-foreground">
           <SortButton field="type" label="Type" />
         </th>
         {showLocationColumn && (
-          <th className="p-4 text-center font-medium text-muted-foreground">
+          <th className="p-4 text-left font-medium text-muted-foreground">
             Location
           </th>
         )}

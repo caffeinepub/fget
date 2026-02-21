@@ -7,24 +7,40 @@
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-clickable-path-location-information-to-each-search-result-row-in-the-filelist-component-allowing-users-to-navigate-to-the-folder-containing-each-found-file",
-      "title": "Add clickable path/location information to each search result row in the FileList component, allowing users to navigate to the folder containing each found file",
+      "id": "feature-display-specific-file-types-json-folder-etc-in-the-type-column-for-files-with-unknown-or-unrecognized-file-types-display-n-a-instead-of-showing-the-entire-filename",
+      "title": "Display specific file types (JSON, Folder, etc.) in the Type column. For files with unknown or unrecognized file types, display 'N/A' instead of showing the entire filename.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-app-version-constant-in-frontend-src-lib-appversion-ts-to-0-4-121",
-      "title": "Update the app version constant in frontend/src/lib/appVersion.ts to '0.4.121'",
+      "id": "feature-reposition-the-upload-files-button-to-appear-before-the-new-folder-button-in-the-toolbar-style-it-similar-to-the-folder-buttons-with-a-subtle-yellow-border-while-keeping-the-blue-color-scheme",
+      "title": "Reposition the 'Upload Files' button to appear before the 'New Folder' button in the toolbar. Style it similar to the folder buttons with a subtle yellow border while keeping the blue color scheme.",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-restore-the-blue-colors-in-the-drive-path-breadcrumb-navigation-drive-testup-test2-test3-as-shown-in-v0-4-121",
+      "title": "Restore the blue colors in the Drive path breadcrumb navigation (Drive > testup > test2 > test3) as shown in v0.4.121.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-application-version-to-v0-4-127-in-frontend-src-lib-appversion-ts",
+      "title": "Update the application version to v0.4.127 in frontend/src/lib/appVersion.ts.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [],
-  "projectName": "Restore clickable path in search results and update to v0.4.121",
+  "projectName": "fget",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

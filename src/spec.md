@@ -1,10 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Restore clickable path display in search results and update app version to 0.4.121.
+**Goal:** Fix file type display logic, reposition Upload Files button, restore breadcrumb navigation colors, and update version to v0.4.127.
 
 **Planned changes:**
-- Add clickable folder path/location information to each search result row in the FileList component
-- Update app version constant to '0.4.121' in frontend/src/lib/appVersion.ts
+- Display specific file types (JSON, Folder, etc.) in Type column, showing 'N/A' for unknown types instead of the full filename
+- Move Upload Files button before New Folder button with folder-style yellow border while keeping blue color scheme
+- Restore blue colors in Drive path breadcrumb navigation (Drive > testup > test2 > test3)
+- Bump application version to v0.4.127
 
-**User-visible outcome:** Users can see and click on the folder path for each search result to navigate directly to the containing folder. The footer displays version 0.4.121.
+**User-visible outcome:** Users will see proper file type labels or 'N/A' for unknowns, a repositioned Upload Files button with consistent styling, blue-colored breadcrumb navigation matching v0.4.121, and version v0.4.127 displayed in the footer.

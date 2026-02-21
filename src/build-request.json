@@ -1,52 +1,90 @@
 {
   "kind": "build_request",
-  "title": "Restore clickable path in search results and update to v0.4.121",
+  "title": "Fix file type display, reposition Upload Files button, restore breadcrumb colors, and bump version",
+  "projectName": "fget",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add clickable path/location information to each search result row in the FileList component, allowing users to navigate to the folder containing each found file",
+      "text": "Display specific file types (JSON, Folder, etc.) in the Type column. For files with unknown or unrecognized file types, display 'N/A' instead of showing the entire filename.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-recent"
+          "msg-recent-9",
+          "msg-recent-10"
         ],
         "quotes": [
-          "restore the clickable path for search results"
+          "yes, for #1 still keep 'N/A' for unknowns (instead of showing the whole filename)",
+          "File types: Display specific file types (JSON, Folder, etc.) with 'N/A' only for unknown file types (instead of showing the whole filename)"
         ]
       },
       "acceptanceCriteria": [
-        "Each search result displays the folder path where the file is located",
-        "The path is clickable and navigates to the containing folder",
-        "Path display is clearly visible in the search results view"
+        "Files with recognized types display their specific type label (e.g., 'JSON', 'Folder')",
+        "Files with unknown or unrecognized types display 'N/A' in the Type column",
+        "The entire filename is never displayed in the Type column"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the app version constant in frontend/src/lib/appVersion.ts to '0.4.121'",
+      "text": "Reposition the 'Upload Files' button to appear before the 'New Folder' button in the toolbar. Style it similar to the folder buttons with a subtle yellow border while keeping the blue color scheme.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-recent"
+          "msg-recent-8",
+          "msg-recent-10"
         ],
         "quotes": [
-          "app version to 0.4.121"
+          "upload files is not before New Folder button - also make it visually similar to the Folder buttons, just with the blue",
+          "Upload Files button: Move before 'New Folder' button with folder button styling (subtle yellow border) while keeping the blue color"
         ]
       },
       "acceptanceCriteria": [
-        "Version displayed in footer shows '0.4.121'"
+        "Upload Files button appears before New Folder button in the toolbar",
+        "Upload Files button has a subtle yellow border similar to folder buttons",
+        "Upload Files button retains its blue color scheme"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Restore the blue colors in the Drive path breadcrumb navigation (Drive > testup > test2 > test3) as shown in v0.4.121.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-8",
+          "msg-recent-10"
+        ],
+        "quotes": [
+          "the current Drive path also lost the colors - re-attaching screenshot from 0.4.121",
+          "Drive path breadcrumb: Restore the blue colors in the navigation (Drive > testup > test2 > test3)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Breadcrumb navigation path segments display in blue color",
+        "Visual appearance matches the v0.4.121 reference screenshot"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Update the application version to v0.4.127 in frontend/src/lib/appVersion.ts.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-8",
+          "msg-recent-10"
+        ],
+        "quotes": [
+          "app version to 0.4.127",
+          "Version: Bump to v0.4.127"
+        ]
+      },
+      "acceptanceCriteria": [
+        "APP_VERSION constant in appVersion.ts is set to '0.4.127'",
+        "Version number displays correctly in the application footer"
       ]
     }
   ],
-  "constraints": [
-    "Do not modify any other functionality, styling, or behavior beyond the specified requirements",
-    "Preserve all existing search functionality"
-  ],
-  "nonGoals": [
-    "Changing design or layout beyond adding the clickable path",
-    "Modifying backend logic",
-    "Altering other UI components or features"
-  ],
+  "constraints": [],
+  "nonGoals": [],
   "imageRequirements": {
     "required": [],
     "edits": []
