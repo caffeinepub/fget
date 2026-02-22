@@ -1,77 +1,21 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix file type display, reposition Upload Files button, restore breadcrumb colors, and bump version",
+  "title": "Remove tooltips from three selected view mode buttons",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Display specific file types (JSON, Folder, etc.) in the Type column with 'N/A' for unknown types instead of showing the entire filename",
+      "summary": "Remove tooltips from the three view mode toggle buttons in the toolbar while keeping all other button tooltips unchanged",
       "acceptanceCriteria": [
-        "Files with recognized types display their specific type label (e.g., 'JSON', 'Folder')",
-        "Files with unknown or unrecognized types display 'N/A' in the Type column",
-        "The entire filename is never displayed in the Type column"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/fileTypes.ts",
-          "operation": "modify",
-          "description": "Update the getFileTypeLabel function to ensure it returns 'N/A' for unknown or unrecognized file types instead of falling back to displaying the filename. Verify the function properly handles edge cases where file extensions cannot be determined."
-        },
-        {
-          "path": "frontend/src/components/FileList.tsx",
-          "operation": "modify",
-          "description": "Review the Type column rendering logic to ensure it uses getFileTypeLabel correctly and never displays the full filename as a fallback. Update any inline type display logic to consistently show specific type labels or 'N/A' for unknowns."
-        },
-        {
-          "path": "frontend/src/components/FileGallery.tsx",
-          "operation": "modify",
-          "description": "If the gallery view displays file types, update the type display logic to use the corrected getFileTypeLabel function and ensure 'N/A' is shown for unknown types instead of filenames."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Reposition the 'Upload Files' button before 'New Folder' button with folder-button styling (subtle yellow border) while keeping blue color",
-      "acceptanceCriteria": [
-        "Upload Files button appears before New Folder button in the toolbar",
-        "Upload Files button has a subtle yellow border similar to folder buttons",
-        "Upload Files button retains its blue color scheme"
+        "The three selected view mode toggle buttons (button[1], button[2], button[3]) have no tooltips",
+        "Action buttons (download, link, move, delete) in file rows retain their tooltips",
+        "All other UI elements remain unchanged"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Reorder the toolbar buttons so the 'Upload Files' button appears before the 'New Folder' button. Update the Upload Files button styling to add a subtle yellow border similar to the folder buttons while preserving its blue color scheme. Review the existing folder button classes and apply the appropriate border styling (e.g., border-yellow-500/30 or similar) to the Upload Files button."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Restore the blue colors in the Drive path breadcrumb navigation (Drive > testup > test2 > test3) as shown in v0.4.121",
-      "acceptanceCriteria": [
-        "Breadcrumb navigation path segments display in blue color",
-        "Visual appearance matches the v0.4.121 reference screenshot"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FileList.tsx",
-          "operation": "modify",
-          "description": "Locate the breadcrumb navigation rendering logic and restore the blue color styling to the path segments. The breadcrumb should display 'Drive > folder1 > folder2 > ...' with blue-colored links. Review the v0.4.121 reference screenshot (image-138.png shows blue breadcrumb links) and apply the appropriate text-blue-* classes or similar styling to match the previous appearance."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Update the application version to v0.4.127",
-      "acceptanceCriteria": [
-        "APP_VERSION constant in appVersion.ts is set to '0.4.127'",
-        "Version number displays correctly in the application footer"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/appVersion.ts",
-          "operation": "modify",
-          "description": "Update the APP_VERSION constant from '0.4.126' to '0.4.127'."
+          "description": "Remove the tooltip (title attribute or Tooltip component wrapper) from the three view mode toggle buttons located in the toolbar. These are the list view button, gallery view button, and any third view mode button. Preserve all other tooltips on action buttons (download, link, move, delete) in file rows. Do not modify any other UI elements, styling, or functionality."
         }
       ]
     }

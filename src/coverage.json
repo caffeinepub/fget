@@ -1,59 +1,24 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-21T14:15:32.838Z",
+  "generatedAt": "2026-02-22T12:16:23.847Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Display specific file types (JSON, Folder, etc.) in the Type column. For files with unknown or unrecognized file types, display 'N/A' instead of showing the entire filename.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/fileTypes.ts",
-          "frontend/src/components/FileList.tsx",
-          "frontend/src/components/FileGallery.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Reposition the 'Upload Files' button to appear before the 'New Folder' button in the toolbar. Style it similar to the folder buttons with a subtle yellow border while keeping the blue color scheme.",
+        "summary": "Remove tooltips from the three view mode toggle buttons in the toolbar (XPath: /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[3]/button[1], button[2], and button[3]). Keep all other button tooltips unchanged.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/FileList.tsx"
         ],
         "matchedFiles": [
           "frontend/src/components/FileList.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Restore the blue colors in the Drive path breadcrumb navigation (Drive > testup > test2 > test3) as shown in v0.4.121.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Update the application version to v0.4.127 in frontend/src/lib/appVersion.ts.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/appVersion.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/appVersion.ts"
         ]
       }
     ]
@@ -64,7 +29,6 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/components/FileList.tsx",
-    "frontend/src/lib/appVersion.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

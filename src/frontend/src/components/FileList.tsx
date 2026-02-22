@@ -1,3 +1,4 @@
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { Download, File, FileText, Image as ImageIcon, Video as VideoIcon, Music, Archive, Link2, Check, Loader2, Trash2, Search, Folder, FolderPlus, MoveRight, ChevronRight, Upload, FolderUp, X, FileCode, FileQuestion, LayoutList, LayoutGrid, FileImage, FileVideo, FileAudio, FileArchive, FileType } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useGetFolderContents, useDeleteFile, useDeleteFolder, useCreateFolder, useMoveItem, useMoveItems, useGetAllFolders, useAddFile, useSearchSubtree } from '../hooks/useQueries';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useState, useMemo, useCallback, useRef } from 'react';
 import type { FileSystemItem, FolderMetadata, FileMetadata, FileMove } from '../backend';
 import { ExternalBlob } from '../backend';
 import {
@@ -48,7 +48,7 @@ import { getFileExtension, getMimeType, isPreviewable, isImage, getFileTypeLabel
 import { copyFileLink, downloadFile } from '../lib/fileLinks';
 import { uploadFolderRecursively, extractFolderFiles, validateFolderFiles } from '../lib/folderUpload';
 import { extractDroppedFiles } from '../lib/dragDropDirectory';
-import { resolvePathSegment, buildBreadcrumbPath, resolveFileParentPath, getContainingFolderPath, getFolderContainingPath } from '../lib/folderNavigation';
+import { resolvePathSegment, buildBreadcrumbPath, resolveFileParentPath, getContainingFolderPath, getFolderContainingPath, getFolderPathString } from '../lib/folderNavigation';
 import { sortFileSystemItems, type SortField, type SortDirection } from '../lib/sortFileSystemItems';
 import { formatCompactTimestamp } from '../lib/formatTime';
 import { formatFileSize } from '../lib/formatFileSize';
@@ -516,283 +516,201 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     }
   };
 
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  };
+  const handleCopyLink = useCallback(async (file: FileMetadata) => {
+    await copyFileLink(file);
+  }, []);
 
-  const toggleViewMode = () => {
-    const newMode: ViewMode = currentViewMode === 'list' ? 'gallery' : 'list';
-    setViewMode(currentFolderId, newMode);
-  };
+  const handleDownload = useCallback(async (file: FileMetadata) => {
+    await downloadFile(file);
+  }, []);
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-destructive">Error loading files</p>
+      <div className="flex items-center justify-center h-64 text-destructive">
+        Error loading files: {error.message}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Breadcrumb Navigation with blue colors */}
-      <nav className="flex items-center gap-2 text-sm">
-        {folderPath.map((segment, index) => (
-          <div key={segment.id ?? 'root'} className="flex items-center gap-2">
-            <button
-              onClick={() => handleBreadcrumbClick(index)}
-              className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-            >
-              {segment.name}
-            </button>
-            {index < folderPath.length - 1 && (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )}
-          </div>
-        ))}
-      </nav>
-
-      {/* Search and Actions Bar */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search files and folders..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 pr-9"
-          />
-          {searchTerm && (
-            <button
-              onClick={handleClearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+    <TooltipProvider>
+      <div className="space-y-4">
+        {/* Breadcrumb navigation */}
+        <div className="flex items-center gap-2">
+          <nav className="flex items-center gap-1 text-sm flex-1">
+            {folderPath.map((segment, index) => (
+              <React.Fragment key={segment.id || 'root'}>
+                {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                <button
+                  onClick={() => handleBreadcrumbClick(index)}
+                  className="breadcrumb-link"
+                >
+                  {segment.name}
+                </button>
+              </React.Fragment>
+            ))}
+          </nav>
         </div>
 
-        {/* View Toggle */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={toggleViewMode}
+        {/* Search and actions bar */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              ref={searchInputRef}
+              placeholder="Search files and folders..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                {currentViewMode === 'list' ? (
-                  <LayoutList className="h-4 w-4" />
-                ) : (
-                  <LayoutGrid className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {currentViewMode === 'list' ? 'Switch to gallery view' : 'Switch to list view'}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
 
-        {/* Upload Files Button - Now BEFORE New Folder with yellow border and blue color */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="default"
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-yellow-500/30"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Files
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Upload files to current folder</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+          {/* View mode toggle buttons - NO TOOLTIPS on these three buttons */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant={currentViewMode === 'list' ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setViewMode(currentFolderId, 'list')}
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={currentViewMode === 'gallery' ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setViewMode(currentFolderId, 'gallery')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
 
-        {/* New Folder Button */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                onClick={() => setShowCreateFolder(true)}
-                className="border-2 border-yellow-500/30"
-              >
-                <FolderPlus className="h-4 w-4 mr-2" />
-                New Folder
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Create a new folder</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        {/* Upload Folder Button */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                onClick={() => folderInputRef.current?.click()}
-                className="border-2 border-yellow-500/30"
-              >
-                <FolderUp className="h-4 w-4 mr-2" />
-                Upload Folder
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Upload an entire folder</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      {/* Hidden file inputs */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        onChange={(e) => handleFileUpload(e.target.files)}
-        className="hidden"
-      />
-      <input
-        ref={folderInputRef}
-        type="file"
-        // @ts-ignore - webkitdirectory is not in the types but is supported
-        webkitdirectory=""
-        directory=""
-        multiple
-        onChange={handleFolderUpload}
-        className="hidden"
-      />
-
-      {/* Multi-select toolbar */}
-      {selectedItems.size > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-          <span className="text-sm font-medium">
-            {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
-          </span>
-          <div className="flex-1" />
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            onClick={() => setShowBulkMove(true)}
+            onClick={() => fileInputRef.current?.click()}
+            className="text-blue-500"
           >
-            <MoveRight className="h-4 w-4 mr-2" />
-            Move
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setShowBulkDelete(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Files
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleClearSelection}
+            onClick={() => setShowCreateFolder(true)}
+            className="text-orange-500"
           >
-            <X className="h-4 w-4 mr-2" />
-            Clear
+            <FolderPlus className="h-4 w-4 mr-2" />
+            New Folder
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => folderInputRef.current?.click()}
+            className="text-orange-500"
+          >
+            <FolderUp className="h-4 w-4 mr-2" />
+            Upload Folder
           </Button>
         </div>
-      )}
 
-      {/* Upload Progress */}
-      {uploadingFiles.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span>Uploading {uploadingFiles.length} file(s)...</span>
-                <span>{uploadProgress}%</span>
-              </div>
-              <Progress value={uploadProgress} />
-              <div className="text-xs text-muted-foreground">
-                {uploadingFiles.slice(0, 3).join(', ')}
-                {uploadingFiles.length > 3 && ` and ${uploadingFiles.length - 3} more...`}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Hidden file inputs */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={(e) => handleFileUpload(e.target.files)}
+          className="hidden"
+        />
+        <input
+          ref={folderInputRef}
+          type="file"
+          // @ts-ignore - webkitdirectory is not in the types
+          webkitdirectory=""
+          directory=""
+          multiple
+          onChange={handleFolderUpload}
+          className="hidden"
+        />
 
-      {/* File List or Gallery */}
-      {currentViewMode === 'gallery' ? (
-        displayItems && allFolders ? (
-          <FileGallery
-            items={displayItems}
-            isLoading={isLoading || searchLoading}
-            error={error}
-            isSearchActive={isSearchActive}
-            selectedItems={selectedItems}
-            onSelectItem={handleSelectItem}
-            onFileClick={handleFileClick}
-            onFolderClick={handleFolderClick}
-            onSearchResultPathClick={handleSearchResultPathClick}
-            onDownload={async (file) => {
-              try {
-                await downloadFile(file);
-              } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Download failed';
-                toast.error(errorMessage);
-              }
-            }}
-            onCopyLink={async (file) => {
-              copyFileLink(file);
-            }}
-            onMove={(id, name, isFolder) => {
-              setItemToMove({ id, name, isFolder });
-              setMoveDestination(currentFolderId);
-            }}
-            onDelete={(id, name, isFolder) => setItemToDelete({ id, name, isFolder })}
-            allFolders={allFolders}
-          />
-        ) : (
-          <div className="p-8 space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
+        {/* Bulk actions bar */}
+        {selectedItems.size > 0 && (
+          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+            <span className="text-sm text-muted-foreground flex-1">
+              {selectedItems.size} item(s) selected
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBulkMove(true)}
+            >
+              <MoveRight className="h-4 w-4 mr-2" />
+              Move
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowBulkDelete(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearSelection}
+            >
+              Clear
+            </Button>
           </div>
-        )
-      ) : (
-        <Card
+        )}
+
+        {/* Upload progress */}
+        {uploadingFiles.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  Uploading {uploadingFiles.length} file(s)...
+                </span>
+                <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Progress value={uploadProgress} className="h-2" />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Drag and drop overlay */}
+        {isDragging && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className="flex flex-col items-center gap-4 p-8 border-2 border-dashed border-primary rounded-lg bg-card">
+              <Upload className="h-16 w-16 text-primary" />
+              <p className="text-lg font-medium">Drop files or folders here</p>
+            </div>
+          </div>
+        )}
+
+        {/* File list or gallery view */}
+        <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={isDragging ? 'border-primary border-2' : ''}
         >
-          <CardContent className="p-0">
-            {isLoading || searchLoading ? (
-              <div className="p-8 space-y-4">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ) : !displayItems || displayItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                {isSearchActive ? (
-                  <>
-                    <Search className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No results found for "{searchTerm}"</p>
-                  </>
-                ) : (
-                  <>
-                    <Folder className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">This folder is empty</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Drag and drop files here or use the upload buttons above
-                    </p>
-                  </>
-                )}
-              </div>
-            ) : (
+          {currentViewMode === 'list' ? (
+            <div className="border rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <FileListHeaderRow
@@ -804,159 +722,114 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                     onSelectAll={handleSelectAll}
                     showLocationColumn={isSearchActive}
                   />
-                  <tbody>
-                    {displayItems.map((item) => {
-                      const isFolder = item.__kind__ === 'folder';
-                      const metadata = isFolder ? item.folder : item.file;
-                      const itemId = metadata.id;
-                      const isSelected = selectedItems.has(itemId);
+                  <tbody className="divide-y divide-border">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={isSearchActive ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                        </td>
+                      </tr>
+                    ) : displayItems && displayItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={isSearchActive ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                          {isSearchActive ? 'No results found' : 'No files or folders'}
+                        </td>
+                      </tr>
+                    ) : (
+                      displayItems?.map((item) => {
+                        const isFolder = item.__kind__ === 'folder';
+                        const id = isFolder ? item.folder.id : item.file.id;
+                        const name = isFolder ? item.folder.name : item.file.name;
+                        const createdAt = isFolder ? item.folder.createdAt : item.file.createdAt;
+                        const size = isFolder ? null : item.file.size;
+                        const isSelected = selectedItems.has(id);
 
-                      return (
-                        <tr
-                          key={itemId}
-                          className="border-b border-border hover:bg-muted/50 transition-colors"
-                        >
-                          {/* Checkbox */}
-                          <td className="p-4 w-12">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={(checked) => handleSelectItem(itemId, checked as boolean)}
-                            />
-                          </td>
+                        const typeLabel = isFolder ? 'Folder' : getFileTypeLabel(name);
+                        const category = isFolder ? null : getFileCategory(name);
+                        const tintClasses = isFolder
+                          ? getFolderTintClasses()
+                          : typeLabel === 'N/A'
+                          ? getUnknownTypeTintClasses()
+                          : getFileTypeTintClasses(category!);
 
-                          {/* Name */}
-                          <td className="p-4 text-left">
-                            <button
-                              onClick={() => {
-                                if (isFolder) {
-                                  handleFolderClick(item.folder);
-                                } else {
-                                  handleFileClick(item.file);
-                                }
-                              }}
-                              className="flex items-center gap-3 hover:underline text-left w-full"
-                            >
-                              {isFolder ? (
-                                <Folder className="h-5 w-5 text-yellow-500 flex-shrink-0" />
-                              ) : (
-                                (() => {
-                                  const ext = getFileExtension(item.file.name);
-                                  const category = getFileCategory(item.file.name);
-                                  
-                                  if (category === 'image') {
-                                    return <FileImage className="h-5 w-5 text-blue-500 flex-shrink-0" />;
-                                  } else if (category === 'video') {
-                                    return <FileVideo className="h-5 w-5 text-purple-500 flex-shrink-0" />;
-                                  } else if (category === 'audio') {
-                                    return <FileAudio className="h-5 w-5 text-green-500 flex-shrink-0" />;
-                                  } else if (category === 'archive') {
-                                    return <FileArchive className="h-5 w-5 text-orange-500 flex-shrink-0" />;
-                                  } else if (category === 'code') {
-                                    return <FileCode className="h-5 w-5 text-cyan-500 flex-shrink-0" />;
-                                  } else if (category === 'document' || category === 'text') {
-                                    return <FileText className="h-5 w-5 text-indigo-500 flex-shrink-0" />;
+                        return (
+                          <tr key={id} className="hover:bg-muted/50">
+                            <td className="p-4 w-12">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => handleSelectItem(id, checked as boolean)}
+                              />
+                            </td>
+                            <td className="p-4">
+                              <button
+                                onClick={() => {
+                                  if (isFolder) {
+                                    handleFolderClick(item.folder);
                                   } else {
-                                    return <File className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
+                                    handleFileClick(item.file);
                                   }
-                                })()
-                              )}
-                              <span className="truncate">{metadata.name}</span>
-                            </button>
-                          </td>
-
-                          {/* Type */}
-                          <td className="p-4 text-center">
-                            {isFolder ? (
-                              <Badge variant="outline" className={getFolderTintClasses()}>
-                                Folder
-                              </Badge>
-                            ) : (() => {
-                              const typeLabel = getFileTypeLabel(item.file.name);
-                              const category = getFileCategory(item.file.name);
-                              const tintClasses = typeLabel === 'N/A' 
-                                ? getUnknownTypeTintClasses()
-                                : getFileTypeTintClasses(category);
-                              
-                              return (
-                                <Badge variant="outline" className={tintClasses}>
-                                  {typeLabel}
-                                </Badge>
-                              );
-                            })()}
-                          </td>
-
-                          {/* Location (only in search mode) */}
-                          {isSearchActive && (
+                                }}
+                                className="text-left hover:underline font-medium"
+                                title={name}
+                              >
+                                {name}
+                              </button>
+                            </td>
                             <td className="p-4 text-center">
-                              {allFolders && (
+                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${tintClasses}`}>
+                                {typeLabel}
+                              </span>
+                            </td>
+                            {isSearchActive && (
+                              <td className="p-4">
                                 <button
                                   onClick={(e) => handleSearchResultPathClick(item, e)}
-                                  className="text-sm text-primary hover:underline truncate max-w-xs"
+                                  className="breadcrumb-link text-sm"
                                 >
-                                  {isFolder
-                                    ? getContainingFolderPath(item.folder.parentId, allFolders)
-                                    : getFolderContainingPath(item.file.parentId, allFolders)}
+                                  {isFolder 
+                                    ? getFolderContainingPath(item.folder.parentId, allFolders || [])
+                                    : getContainingFolderPath(item.file.parentId, allFolders || [])
+                                  }
                                 </button>
-                              )}
+                              </td>
+                            )}
+                            <td className="p-4 text-center text-muted-foreground">
+                              {formatCompactTimestamp(createdAt)}
                             </td>
-                          )}
-
-                          {/* Created */}
-                          <td className="p-4 text-center text-sm text-muted-foreground">
-                            {formatCompactTimestamp(metadata.createdAt)}
-                          </td>
-
-                          {/* Size */}
-                          <td className="p-4 text-center text-sm text-muted-foreground">
-                            {isFolder ? '—' : formatFileSize(item.file.size)}
-                          </td>
-
-                          {/* Actions */}
-                          <td className="p-4">
-                            <div className="flex items-center justify-center gap-2">
-                              {!isFolder && (
-                                <>
-                                  <TooltipProvider>
+                            <td className="p-4 text-center text-muted-foreground">
+                              {size !== null ? formatFileSize(size) : '—'}
+                            </td>
+                            <td className="p-4 w-[160px]">
+                              <div className="flex items-center justify-end gap-1">
+                                {!isFolder && (
+                                  <>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          onClick={async () => {
-                                            try {
-                                              await downloadFile(item.file);
-                                            } catch (error) {
-                                              const errorMessage = error instanceof Error ? error.message : 'Download failed';
-                                              toast.error(errorMessage);
-                                            }
-                                          }}
+                                          onClick={() => handleDownload(item.file)}
                                         >
                                           <Download className="h-4 w-4" />
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>Download</TooltipContent>
                                     </Tooltip>
-                                  </TooltipProvider>
-
-                                  <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          onClick={() => copyFileLink(item.file)}
+                                          onClick={() => handleCopyLink(item.file)}
                                         >
                                           <Link2 className="h-4 w-4" />
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>Copy link</TooltipContent>
                                     </Tooltip>
-                                  </TooltipProvider>
-                                </>
-                              )}
-
-                              {isFolder && (
-                                <TooltipProvider>
+                                  </>
+                                )}
+                                {isFolder && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
@@ -969,18 +842,15 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                                     </TooltipTrigger>
                                     <TooltipContent>Open folder</TooltipContent>
                                   </Tooltip>
-                                </TooltipProvider>
-                              )}
-
-                              <TooltipProvider>
+                                )}
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => {
-                                        setItemToMove({ id: itemId, name: metadata.name, isFolder });
-                                        setMoveDestination(currentFolderId);
+                                        setItemToMove({ id, name, isFolder });
+                                        setMoveDestination(null);
                                       }}
                                     >
                                       <MoveRight className="h-4 w-4" />
@@ -988,230 +858,196 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                                   </TooltipTrigger>
                                   <TooltipContent>Move</TooltipContent>
                                 </Tooltip>
-                              </TooltipProvider>
-
-                              <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      onClick={() => setItemToDelete({ id: itemId, name: metadata.name, isFolder })}
+                                      onClick={() => setItemToDelete({ id, name, isFolder })}
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>Delete</TooltipContent>
                                 </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            </div>
+          ) : (
+            <FileGallery
+              items={displayItems || []}
+              isLoading={isLoading}
+              error={error}
+              isSearchActive={isSearchActive}
+              selectedItems={selectedItems}
+              onSelectItem={handleSelectItem}
+              onFolderClick={handleFolderClick}
+              onFileClick={handleFileClick}
+              onDownload={handleDownload}
+              onCopyLink={handleCopyLink}
+              onMove={(id, name, isFolder) => {
+                setItemToMove({ id, name, isFolder });
+                setMoveDestination(null);
+              }}
+              onDelete={(id, name, isFolder) => setItemToDelete({ id, name, isFolder })}
+              onSearchResultPathClick={handleSearchResultPathClick}
+              allFolders={allFolders || []}
+            />
+          )}
+        </div>
 
-      {/* Create Folder Dialog */}
-      <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Folder</DialogTitle>
-            <DialogDescription>
-              Enter a name for the new folder
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            placeholder="Folder name"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleCreateFolder();
-              }
-            }}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateFolder(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateFolder} disabled={createFolder.isPending}>
-              {createFolder.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete {itemToDelete?.isFolder ? 'the folder' : 'the file'} "{itemToDelete?.name}"
-              {itemToDelete?.isFolder && ' and all its contents'}.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteFile.isPending || deleteFolder.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Bulk Delete Confirmation Dialog */}
-      <AlertDialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedItems.size} items?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the selected items and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteFile.isPending || deleteFolder.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete All'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Move Item Dialog */}
-      <Dialog open={!!itemToMove} onOpenChange={() => setItemToMove(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Move {itemToMove?.isFolder ? 'Folder' : 'File'}</DialogTitle>
-            <DialogDescription>
-              Select a destination folder for "{itemToMove?.name}"
-            </DialogDescription>
-          </DialogHeader>
-          <Select
-            value={moveDestination ?? 'root'}
-            onValueChange={(value) => setMoveDestination(value === 'root' ? null : value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select destination" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="root">Drive (Root)</SelectItem>
-              {allFolders?.map((folder) => (
-                <SelectItem key={folder.id} value={folder.id}>
-                  {folder.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setItemToMove(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleMoveConfirm} disabled={moveItem.isPending}>
-              {moveItem.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Moving...
-                </>
-              ) : (
-                'Move'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Move Dialog */}
-      <Dialog open={showBulkMove} onOpenChange={setShowBulkMove}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Move {selectedItems.size} items</DialogTitle>
-            <DialogDescription>
-              Select a destination folder for the selected items
-            </DialogDescription>
-          </DialogHeader>
-          <Select
-            value={bulkMoveDestination ?? 'root'}
-            onValueChange={(value) => setBulkMoveDestination(value === 'root' ? null : value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select destination" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="root">Drive (Root)</SelectItem>
-              {allFolders?.map((folder) => (
-                <SelectItem key={folder.id} value={folder.id}>
-                  {folder.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBulkMove(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleBulkMoveConfirm} disabled={moveItems.isPending}>
-              {moveItems.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Moving...
-                </>
-              ) : (
-                'Move All'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* File Preview Modal */}
-      {showPreview && previewFile && (
+        {/* File preview modal */}
         <FilePreviewModal
           file={previewFile}
           isOpen={showPreview}
-          onClose={() => {
-            setShowPreview(false);
-            setPreviewFile(null);
-          }}
+          onClose={() => setShowPreview(false)}
           allFiles={allFilesInContext}
           currentFileIndex={currentFileIndex}
           onNavigateFile={handleNavigateFile}
         />
-      )}
-    </div>
+
+        {/* Create folder dialog */}
+        <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Folder</DialogTitle>
+              <DialogDescription>
+                Enter a name for the new folder
+              </DialogDescription>
+            </DialogHeader>
+            <Input
+              placeholder="Folder name"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleCreateFolder();
+                }
+              }}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateFolder(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateFolder}>Create</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{itemToDelete?.name}"?
+                {itemToDelete?.isFolder && ' This will delete all contents of the folder.'}
+                {' '}This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Move item dialog */}
+        <Dialog open={!!itemToMove} onOpenChange={(open) => !open && setItemToMove(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Move Item</DialogTitle>
+              <DialogDescription>
+                Select a destination folder for "{itemToMove?.name}"
+              </DialogDescription>
+            </DialogHeader>
+            <Select
+              value={moveDestination || 'root'}
+              onValueChange={(value) => setMoveDestination(value === 'root' ? null : value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select destination" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="root">Root (Drive)</SelectItem>
+                {allFolders?.map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    {getFolderPathString(folder.id, allFolders)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setItemToMove(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleMoveConfirm}>Move</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk delete confirmation dialog */}
+        <AlertDialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Bulk Deletion</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {selectedItems.size} item(s)?
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBulkDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete All
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk move dialog */}
+        <Dialog open={showBulkMove} onOpenChange={setShowBulkMove}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Move Items</DialogTitle>
+              <DialogDescription>
+                Select a destination folder for {selectedItems.size} item(s)
+              </DialogDescription>
+            </DialogHeader>
+            <Select
+              value={bulkMoveDestination || 'root'}
+              onValueChange={(value) => setBulkMoveDestination(value === 'root' ? null : value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select destination" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="root">Root (Drive)</SelectItem>
+                {allFolders?.map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    {getFolderPathString(folder.id, allFolders)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowBulkMove(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleBulkMoveConfirm}>Move</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
 }

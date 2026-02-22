@@ -89,6 +89,20 @@ export function getFolderPath(
 }
 
 /**
+ * Gets the full path string for a folder (alias for getFolderPath for clarity)
+ */
+export function getFolderPathString(
+  folderId: string | undefined,
+  allFolders: FolderMetadata[]
+): string {
+  if (!folderId) {
+    return 'Drive';
+  }
+  const path = getFolderPath(folderId, allFolders);
+  return path || 'Drive';
+}
+
+/**
  * Resolves a file's parent folder path to a navigable folder ID
  * Used for navigating from search results to the folder containing a file
  */

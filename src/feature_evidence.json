@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-display-specific-file-types-json-folder-etc-in-the-type-column-for-files-with-unknown-or-unrecognized-file-types-display-n-a-instead-of-showing-the-entire-filename",
-      "featureTitle": "Display specific file types (JSON, Folder, etc.) in the Type column. For files with unknown or unrecognized file types, display 'N/A' instead of showing the entire filename.",
+      "featureId": "feature-remove-tooltips-from-the-three-view-mode-toggle-buttons-in-the-toolbar-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-2-div-3-button-1-button-2-and-button-3-keep-all-other-button-tooltips-unchanged",
+      "featureTitle": "Remove tooltips from the three view mode toggle buttons in the toolbar (XPath: /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[3]/button[1], button[2], and button[3]). Keep all other button tooltips unchanged.",
       "files": [
         "frontend/src/components/FileList.tsx"
       ],
@@ -19,69 +19,6 @@
       ],
       "testIds": [
         "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-reposition-the-upload-files-button-to-appear-before-the-new-folder-button-in-the-toolbar-style-it-similar-to-the-folder-buttons-with-a-subtle-yellow-border-while-keeping-the-blue-color-scheme",
-      "featureTitle": "Reposition the 'Upload Files' button to appear before the 'New Folder' button in the toolbar. Style it similar to the folder buttons with a subtle yellow border while keeping the blue color scheme.",
-      "files": [
-        "frontend/src/components/FileList.tsx"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-restore-the-blue-colors-in-the-drive-path-breadcrumb-navigation-drive-testup-test2-test3-as-shown-in-v0-4-121",
-      "featureTitle": "Restore the blue colors in the Drive path breadcrumb navigation (Drive > testup > test2 > test3) as shown in v0.4.121.",
-      "files": [
-        "frontend/src/components/FileList.tsx"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-application-version-to-v0-4-127-in-frontend-src-lib-appversion-ts",
-      "featureTitle": "Update the application version to v0.4.127 in frontend/src/lib/appVersion.ts.",
-      "files": [
-        "frontend/src/lib/appVersion.ts"
-      ],
-      "components": [
-        "blob-storage@3.0.0",
-        "authorization@3.0.0",
-        "user-approval@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }
