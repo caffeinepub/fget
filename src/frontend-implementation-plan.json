@@ -1,21 +1,166 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove tooltips from three selected view mode buttons",
+  "title": "Version 0.4.143: UI improvements and individual upload stats",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Remove tooltips from the three view mode toggle buttons in the toolbar while keeping all other button tooltips unchanged",
+      "summary": "Add individual file upload progress statistics during multi-file uploads",
       "acceptanceCriteria": [
-        "The three selected view mode toggle buttons (button[1], button[2], button[3]) have no tooltips",
-        "Action buttons (download, link, move, delete) in file rows retain their tooltips",
-        "All other UI elements remain unchanged"
+        "During multi-file uploads, each file shows its own upload progress statistics",
+        "Upload stats are displayed in the current upload area without blocking the UI",
+        "Upload Files, New Folder, and Upload Folder buttons remain usable during active uploads"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Remove the tooltip (title attribute or Tooltip component wrapper) from the three view mode toggle buttons located in the toolbar. These are the list view button, gallery view button, and any third view mode button. Preserve all other tooltips on action buttons (download, link, move, delete) in file rows. Do not modify any other UI elements, styling, or functionality."
+          "description": "Add individual file upload progress tracking by creating a Map of file-level progress states (filename, percentage, status). Display each file's upload progress in the existing upload area UI. Use ExternalBlob's withUploadProgress method to track each file individually. Ensure upload action buttons remain enabled during uploads."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Merge two view toggle buttons into a single button that toggles between list and grid views",
+      "acceptanceCriteria": [
+        "Only one view toggle button is visible in the UI",
+        "The button switches between list and grid views on click",
+        "The button's appearance reflects the current view mode"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Replace the two separate view toggle buttons (XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[2]/button[1] and button[2]) with a single toggle button. The button should display an icon representing the opposite view (grid icon when in list mode, list icon when in gallery mode). Wire the button to call setViewMode with the opposite mode on click."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add a tooltip to the single view toggle button",
+      "acceptanceCriteria": [
+        "The view toggle button displays a tooltip on hover",
+        "The tooltip clearly indicates the button's function"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Add a tooltip to the single view toggle button that displays text like 'Switch to Grid View' or 'Switch to List View' depending on current mode. Use a standard HTML title attribute or a shadcn/ui Tooltip component for consistent styling."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Truncate long filenames in Name column cells to maintain consistent cell dimensions",
+      "acceptanceCriteria": [
+        "Long filenames are visually truncated in the Name column cells",
+        "Cell dimensions remain fixed and do not expand for long filenames",
+        "Truncation is applied consistently across all filename displays in the table"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Apply CSS truncation to filename text in the Name column cells using text-overflow: ellipsis, overflow: hidden, and white-space: nowrap. Set a fixed max-width for the name cell to prevent expansion. Ensure truncation applies to both list view table cells and gallery view item names."
+        },
+        {
+          "path": "frontend/src/components/FileGallery.tsx",
+          "operation": "modify",
+          "description": "Apply CSS truncation to filename text in gallery item cards using text-overflow: ellipsis, overflow: hidden, and white-space: nowrap. Set consistent max-width for name display areas to prevent card dimension changes."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add tooltips to filenames in the Name column showing the full filename",
+      "acceptanceCriteria": [
+        "Hovering over a filename displays a tooltip with the complete filename",
+        "Tooltip appears only on mouse hover over the filename",
+        "Tooltip is readable and clearly shows the full filename"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Add title attribute or shadcn/ui Tooltip component to filename display elements in the Name column. The tooltip should show the complete filename from item.file.name or item.folder.name. Apply to both list view table cells and gallery view item names."
+        },
+        {
+          "path": "frontend/src/components/FileGallery.tsx",
+          "operation": "modify",
+          "description": "Add title attribute or shadcn/ui Tooltip component to filename display elements in gallery item cards. The tooltip should show the complete filename from item.file.name or item.folder.name."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Restore simple black/white button styling with subtle colored borders for upload and folder buttons",
+      "acceptanceCriteria": [
+        "Upload Files button has black/white styling with a subtle blue border",
+        "New Folder button has black/white styling with a subtle yellow border",
+        "Upload Folder button has black/white styling with a subtle yellow border",
+        "Button styling matches the design shown in image-167.png",
+        "Buttons are not shiny and have a clean, simple appearance"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Update the Upload Files, New Folder, and Upload Folder button styles to match image-167.png. Remove any gradient or shiny effects. Apply simple black text on white background (or white text on black background in dark mode) with border-2 borders: border-blue-500 for Upload Files, border-yellow-500 for New Folder and Upload Folder. Use rounded corners and consistent padding."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Add tooltips to action buttons (download, share/copy link, move, delete)",
+      "acceptanceCriteria": [
+        "Download button displays a tooltip on hover",
+        "Share/copy link button displays a tooltip on hover",
+        "Move button displays a tooltip on hover",
+        "Delete button displays a tooltip on hover",
+        "Tooltips clearly describe each action"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Add tooltips to action buttons in the Actions column (download, share/copy link, move, delete) using title attribute or shadcn/ui Tooltip component. Tooltip text should be descriptive: 'Download', 'Copy Link', 'Move', 'Delete'. Apply to both list view action buttons and gallery view action dropdowns."
+        },
+        {
+          "path": "frontend/src/components/FileGallery.tsx",
+          "operation": "modify",
+          "description": "Add tooltips to action buttons in gallery view item action dropdowns (download, copy link, move, delete) using title attribute or shadcn/ui Tooltip component. Tooltip text should be descriptive: 'Download', 'Copy Link', 'Move', 'Delete'."
+        }
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "summary": "Do not add tooltips to Upload Files, New Folder, or Upload Folder buttons",
+      "acceptanceCriteria": [
+        "Upload Files button has no tooltip on hover",
+        "New Folder button has no tooltip on hover",
+        "Upload Folder button has no tooltip on hover"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Verify that Upload Files, New Folder, and Upload Folder buttons do not have title attributes or Tooltip components. Remove any existing tooltips from these buttons if present."
+        }
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "summary": "Update the application version to 0.4.143",
+      "acceptanceCriteria": [
+        "The appVersion.ts file exports version string '0.4.143'",
+        "The version is displayed correctly in the footer"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/appVersion.ts",
+          "operation": "modify",
+          "description": "Change the exported version string from '0.4.136' to '0.4.143'. Ensure the version is correctly displayed in the Footer component."
         }
       ]
     }

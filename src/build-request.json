@@ -1,39 +1,204 @@
 {
   "kind": "build_request",
-  "title": "Remove tooltips from three selected view mode buttons",
+  "title": "Version 0.4.143: UI improvements and individual upload stats",
+  "projectName": "fget",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove tooltips from the three view mode toggle buttons in the toolbar (XPath: /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[3]/button[1], button[2], and button[3]). Keep all other button tooltips unchanged.",
+      "text": "Add individual file upload progress statistics during multi-file uploads in the current upload area, displaying stats for each file being uploaded",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-current"
+          "msg-recent-1",
+          "msg-recent-2"
         ],
         "quotes": [
-          "don't make any other changes and build!",
-          "I clearly wrote from which buttons to remove it - the selected ones - and I selected the buttons"
+          "Individual file upload stats: Display stats for each file during upload to better track progress",
+          "just add stats for individual files - also when uploading don't block usage of the File/Folder upload/create buttons!"
         ]
       },
       "acceptanceCriteria": [
-        "The three selected view mode toggle buttons (button[1], button[2], button[3]) have no tooltips",
-        "Action buttons (download, link, move, delete) in file rows retain their tooltips",
-        "All other UI elements remain unchanged"
+        "During multi-file uploads, each file shows its own upload progress statistics",
+        "Upload stats are displayed in the current upload area without blocking the UI",
+        "Upload Files, New Folder, and Upload Folder buttons remain usable during active uploads"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Merge the two view toggle buttons (identified by XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[2]/button[1] and /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[2]/button[2]) into a single button that toggles between list and grid views",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1",
+          "msg-recent-2"
+        ],
+        "quotes": [
+          "keep only one toogle view button",
+          "there should be just one button which will represent both views - will toogle between them"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Only one view toggle button is visible in the UI",
+        "The button switches between list and grid views on click",
+        "The button's appearance reflects the current view mode"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Add a tooltip to the single view toggle button that displays on mouse hover",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1",
+          "msg-recent-2"
+        ],
+        "quotes": [
+          "keep only one toogle view button and add to it tooltip",
+          "Add tooltips to the single toggle view button"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The view toggle button displays a tooltip on hover",
+        "The tooltip clearly indicates the button's function"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Truncate long filenames in the Name column cells to maintain consistent cell dimensions, ensuring the cell width and height do not change",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1",
+          "msg-recent-3"
+        ],
+        "quotes": [
+          "Truncate long filenames: Keep consistent cell sizes while preserving the full name in tooltips",
+          "just truncate the long filename in the cell (not to change the width or hight)",
+          "the filename is not truncated"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Long filenames are visually truncated in the Name column cells",
+        "Cell dimensions remain fixed and do not expand for long filenames",
+        "Truncation is applied consistently across all filename displays in the table"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add tooltips to filenames in the Name column that display the full filename on mouse hover",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1",
+          "msg-recent-2"
+        ],
+        "quotes": [
+          "if anyone wants to see full name will hoover over mouse and see tooltip with the name",
+          "show the full filename in tooltips on hover"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Hovering over a filename displays a tooltip with the complete filename",
+        "Tooltip appears only on mouse hover over the filename",
+        "Tooltip is readable and clearly shows the full filename"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Restore simple black/white button styling with subtle colored borders for Upload Files (blue border), New Folder (yellow border), and Upload Folder (yellow border) buttons as shown in image-167.png",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1",
+          "msg-recent-4"
+        ],
+        "quotes": [
+          "Simplify button styling: Make Upload Files, Create Folder, and Upload Folder buttons less shiny with simple black/white styling and just a subtle colored border (blue for files, yellow for folders) - as are on the screenshot",
+          "I can see from image-167.png the target design - simple black/white buttons with subtle colored borders"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Upload Files button has black/white styling with a subtle blue border",
+        "New Folder button has black/white styling with a subtle yellow border",
+        "Upload Folder button has black/white styling with a subtle yellow border",
+        "Button styling matches the design shown in image-167.png",
+        "Buttons are not shiny and have a clean, simple appearance"
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Add tooltips to action buttons (download, share/copy link, move, delete) that display on mouse hover",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1",
+          "msg-recent-2"
+        ],
+        "quotes": [
+          "tooltips will have that button + action buttons",
+          "Add tooltips to the single toggle view button and action buttons (download/share/move/delete)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Download button displays a tooltip on hover",
+        "Share/copy link button displays a tooltip on hover",
+        "Move button displays a tooltip on hover",
+        "Delete button displays a tooltip on hover",
+        "Tooltips clearly describe each action"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Do not add tooltips to Upload Files, New Folder, or Upload Folder buttons",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1",
+          "msg-recent-2"
+        ],
+        "quotes": [
+          "no tooltip for Upload Files, New Folder and Upload Folder buttons"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Upload Files button has no tooltip on hover",
+        "New Folder button has no tooltip on hover",
+        "Upload Folder button has no tooltip on hover"
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "text": "Update the application version to 0.4.143 in frontend/src/lib/appVersion.ts",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent-1"
+        ],
+        "quotes": [
+          "Version 0.4.143: Bump the version"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The appVersion.ts file exports version string '0.4.143'",
+        "The version is displayed correctly in the footer"
       ]
     }
   ],
   "constraints": [
-    "Do not modify any UI elements except the three selected view mode buttons",
-    "Do not change action button tooltips",
-    "Do not change Type column styling",
-    "Do not change Actions column alignment",
-    "Do not modify any other design elements"
+    "Do not move any UI elements to different positions",
+    "Do not change names of buttons or action buttons",
+    "Do not change alignments of action buttons",
+    "Do not modify the breadcrumb path component",
+    "Do not modify the search functionality",
+    "Preserve all existing functionality during the version update"
   ],
   "nonGoals": [
-    "Changing Type column from text to icons",
-    "Right-aligning action buttons",
-    "Any other UI modifications beyond removing tooltips from the three selected buttons"
+    "Changing the overall layout or structure of the file manager",
+    "Modifying backend file storage logic",
+    "Adding new file operations beyond the specified UI improvements",
+    "Changing the authentication or access control system",
+    "Modifying the theme system or color scheme beyond the specified button styling"
   ],
   "imageRequirements": {
     "required": [],

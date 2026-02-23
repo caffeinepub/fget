@@ -1,29 +1,128 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "File manager web application with focus on UI fixes for type column icons, action button alignment, and tooltip management",
+  "summary": "Cloud storage file manager application with file/folder upload, view toggling, and progress tracking",
   "architectural_notes": [
-    "File manager displays files with Type column showing file type icons instead of text labels",
-    "Action buttons (download, link, move, delete) are right-aligned in the Actions column",
-    "View mode toggle buttons in toolbar do not have tooltips",
-    "Action buttons in file rows retain tooltips for accessibility"
+    "Cloud storage file manager with upload/download capabilities",
+    "Grid and list view modes for file display",
+    "File operations: upload, create folder, download, share, move, delete",
+    "Individual file upload progress tracking",
+    "Breadcrumb navigation system"
   ],
   "known_issues": [
-    "Previous build v0.4.134 did not apply UI changes correctly - rebuild required"
+    "Upload/create buttons were blocked during file uploads (fixed in v0.4.143)",
+    "Long filenames were not truncated in cells (fixed in v0.4.143)",
+    "Button styling lost simple black/white design (restored in v0.4.143)"
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-remove-tooltips-from-the-three-view-mode-toggle-buttons-in-the-toolbar-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-2-div-3-button-1-button-2-and-button-3-keep-all-other-button-tooltips-unchanged",
-      "title": "Remove tooltips from the three view mode toggle buttons in the toolbar (XPath: /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[3]/button[1], button[2], and button[3]). Keep all other button tooltips unchanged.",
+      "id": "feature-add-individual-file-upload-progress-statistics-during-multi-file-uploads-in-the-current-upload-area-displaying-stats-for-each-file-being-uploaded",
+      "title": "Add individual file upload progress statistics during multi-file uploads in the current upload area, displaying stats for each file being uploaded",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-merge-the-two-view-toggle-buttons-identified-by-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-2-div-2-button-1-and-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-2-div-2-button-2-into-a-single-button-that-toggles-between-list-and-grid-views",
+      "title": "Merge the two view toggle buttons (identified by XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[2]/button[1] and /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[2]/button[2]) into a single button that toggles between list and grid views",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-tooltip-to-the-single-view-toggle-button-that-displays-on-mouse-hover",
+      "title": "Add a tooltip to the single view toggle button that displays on mouse hover",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-truncate-long-filenames-in-the-name-column-cells-to-maintain-consistent-cell-dimensions-ensuring-the-cell-width-and-height-do-not-change",
+      "title": "Truncate long filenames in the Name column cells to maintain consistent cell dimensions, ensuring the cell width and height do not change",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-tooltips-to-filenames-in-the-name-column-that-display-the-full-filename-on-mouse-hover",
+      "title": "Add tooltips to filenames in the Name column that display the full filename on mouse hover",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-restore-simple-black-white-button-styling-with-subtle-colored-borders-for-upload-files-blue-border-new-folder-yellow-border-and-upload-folder-yellow-border-buttons-as-shown-in-image-167-png",
+      "title": "Restore simple black/white button styling with subtle colored borders for Upload Files (blue border), New Folder (yellow border), and Upload Folder (yellow border) buttons as shown in image-167.png",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-tooltips-to-action-buttons-download-share-copy-link-move-delete-that-display-on-mouse-hover",
+      "title": "Add tooltips to action buttons (download, share/copy link, move, delete) that display on mouse hover",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-do-not-add-tooltips-to-upload-files-new-folder-or-upload-folder-buttons",
+      "title": "Do not add tooltips to Upload Files, New Folder, or Upload Folder buttons",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-application-version-to-0-4-143-in-frontend-src-lib-appversion-ts",
+      "title": "Update the application version to 0.4.143 in frontend/src/lib/appVersion.ts",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Remove tooltips from three selected view mode buttons",
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Display individual file upload stats during multi-file uploads",
+      "reqIds": [],
+      "status": "in_progress"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Merge grid/list view toggle buttons into single button with tooltip",
+      "reqIds": [],
+      "status": "in_progress"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Truncate long filenames in cells with full name tooltips on hover",
+      "reqIds": [],
+      "status": "in_progress"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Restore simple black/white button styling with colored borders (blue for Upload Files, yellow for folders)",
+      "reqIds": [],
+      "status": "in_progress"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Add tooltips to view toggle and action buttons (not upload/create buttons or filenames)",
+      "reqIds": [],
+      "status": "in_progress"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "fget",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

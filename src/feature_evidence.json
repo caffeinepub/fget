@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-tooltips-from-the-three-view-mode-toggle-buttons-in-the-toolbar-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-2-div-3-button-1-button-2-and-button-3-keep-all-other-button-tooltips-unchanged",
-      "featureTitle": "Remove tooltips from the three view mode toggle buttons in the toolbar (XPath: /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[3]/button[1], button[2], and button[3]). Keep all other button tooltips unchanged.",
+      "featureId": "feature-add-individual-file-upload-progress-statistics-during-multi-file-uploads-in-the-current-upload-area-displaying-stats-for-each-file-being-uploaded",
+      "featureTitle": "Add individual file upload progress statistics during multi-file uploads in the current upload area, displaying stats for each file being uploaded",
       "files": [
         "frontend/src/components/FileList.tsx"
       ],
@@ -19,6 +19,177 @@
       ],
       "testIds": [
         "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-merge-the-two-view-toggle-buttons-identified-by-xpath-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-2-div-2-button-1-and-html-1-body-1-div-1-div-1-main-1-div-1-div-1-div-2-div-2-button-2-into-a-single-button-that-toggles-between-list-and-grid-views",
+      "featureTitle": "Merge the two view toggle buttons (identified by XPath /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[2]/button[1] and /html[1]/body[1]/div[1]/div[1]/main[1]/div[1]/div[1]/div[2]/div[2]/button[2]) into a single button that toggles between list and grid views",
+      "files": [
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-tooltip-to-the-single-view-toggle-button-that-displays-on-mouse-hover",
+      "featureTitle": "Add a tooltip to the single view toggle button that displays on mouse hover",
+      "files": [
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-truncate-long-filenames-in-the-name-column-cells-to-maintain-consistent-cell-dimensions-ensuring-the-cell-width-and-height-do-not-change",
+      "featureTitle": "Truncate long filenames in the Name column cells to maintain consistent cell dimensions, ensuring the cell width and height do not change",
+      "files": [
+        "frontend/src/components/FileGallery.tsx",
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-tooltips-to-filenames-in-the-name-column-that-display-the-full-filename-on-mouse-hover",
+      "featureTitle": "Add tooltips to filenames in the Name column that display the full filename on mouse hover",
+      "files": [
+        "frontend/src/components/FileGallery.tsx",
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-restore-simple-black-white-button-styling-with-subtle-colored-borders-for-upload-files-blue-border-new-folder-yellow-border-and-upload-folder-yellow-border-buttons-as-shown-in-image-167-png",
+      "featureTitle": "Restore simple black/white button styling with subtle colored borders for Upload Files (blue border), New Folder (yellow border), and Upload Folder (yellow border) buttons as shown in image-167.png",
+      "files": [
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-tooltips-to-action-buttons-download-share-copy-link-move-delete-that-display-on-mouse-hover",
+      "featureTitle": "Add tooltips to action buttons (download, share/copy link, move, delete) that display on mouse hover",
+      "files": [
+        "frontend/src/components/FileGallery.tsx",
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-do-not-add-tooltips-to-upload-files-new-folder-or-upload-folder-buttons",
+      "featureTitle": "Do not add tooltips to Upload Files, New Folder, or Upload Folder buttons",
+      "files": [
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-8"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-application-version-to-0-4-143-in-frontend-src-lib-appversion-ts",
+      "featureTitle": "Update the application version to 0.4.143 in frontend/src/lib/appVersion.ts",
+      "files": [
+        "frontend/src/lib/appVersion.ts"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-9"
       ],
       "confidence": "high"
     }
