@@ -1,0 +1,62 @@
+{
+  "kind": "build_request",
+  "title": "Toolbar button background styling + version bump to 0.4.147",
+  "projectName": "File Manager",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Update the application version string in frontend/src/lib/appVersion.ts from '0.4.143' to '0.4.147'.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "version to 0.4.147 (now is restored 0.4.143)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The exported version string in appVersion.ts reads '0.4.147'",
+        "The footer displays '0.4.147'"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "In the toolbar div of FileList.tsx, apply styling changes to exactly three buttons identified by XPath positions button[2], button[3], and button[4] within the toolbar's button group div: (1) Remove any border color styling from all three buttons. (2) button[2] (the File upload button): set background color to '#eff6ff' (very light blue). (3) button[3] and button[4] (the Folder-related buttons): set background color to '#fefce8' (very light yellow). No other buttons, components, styles, or logic may be changed.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "button[2] (File): very light blue background `#eff6ff`",
+          "button[3] and button[4] (Folder buttons): very light yellow background `#fefce8`",
+          "Remove any border color styling"
+        ]
+      },
+      "acceptanceCriteria": [
+        "button[2] in the toolbar has backgroundColor '#eff6ff' and no border color styling",
+        "button[3] in the toolbar has backgroundColor '#fefce8' and no border color styling",
+        "button[4] in the toolbar has backgroundColor '#fefce8' and no border color styling",
+        "All other buttons and components remain byte-for-byte identical to v0.4.143",
+        "No tooltip logic, breadcrumb, or other component is modified"
+      ]
+    }
+  ],
+  "constraints": [
+    "Only FileList.tsx (toolbar buttons) and appVersion.ts may be modified — no other files",
+    "Changes must be surgical: only the three specified buttons and the version string are altered",
+    "No style refactoring, no tooltip logic changes, no breadcrumb changes"
+  ],
+  "nonGoals": [
+    "Changing any other toolbar buttons beyond button[2], button[3], button[4]",
+    "Modifying backend logic",
+    "Changing any other frontend components",
+    "Any layout or interaction pattern changes"
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

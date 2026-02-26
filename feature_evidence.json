@@ -1,0 +1,26 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-update-the-application-version-string-in-frontend-src-lib-appversion-ts-from-0-4-143-to-0-4-147",
+      "featureTitle": "Update the application version string in frontend/src/lib/appVersion.ts from '0.4.143' to '0.4.147'.",
+      "files": [
+        "frontend/src/lib/appVersion.ts"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

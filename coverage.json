@@ -1,0 +1,48 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-26T15:41:47.525Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 2,
+    "implemented": 1,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Update the application version string in frontend/src/lib/appVersion.ts from '0.4.143' to '0.4.147'.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/appVersion.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/appVersion.ts"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "In the toolbar div of FileList.tsx, apply styling changes to exactly three buttons identified by XPath positions button[2], button[3], and button[4] within the toolbar's button group div: (1) Remove any border color styling from all three buttons. (2) button[2] (the File upload button): set background color to '#eff6ff' (very light blue). (3) button[3] and button[4] (the Folder-related buttons): set background color to '#fefce8' (very light yellow). No other buttons, components, styles, or logic may be changed.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/components/FileList.tsx"
+        ],
+        "matchedFiles": []
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "build-template/README.md",
+    "caffeine.lock.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/lib/appVersion.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

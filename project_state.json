@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "File manager / toolbar UI project. Currently on v0.4.143 (restored). Working on toolbar button styling and version bumps.",
+  "architectural_notes": [
+    "Toolbar buttons [2], [3], [4] use light blue (#eff6ff) and light yellow (#fefce8) backgrounds respectively, with no border color styling"
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-update-the-application-version-string-in-frontend-src-lib-appversion-ts-from-0-4-143-to-0-4-147",
+      "title": "Update the application version string in frontend/src/lib/appVersion.ts from '0.4.143' to '0.4.147'.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-2",
+      "summary": "In the toolbar div of FileList.tsx, apply styling changes to exactly three buttons identified by XPath positions button[2], button[3], and button[4] within the toolbar's button group div: (1) Remove any border color styling from all three buttons. (2) button[2] (the File upload button): set background color to '#eff6ff' (very light blue). (3) button[3] and button[4] (the Folder-related buttons): set background color to '#fefce8' (very light yellow). No other buttons, components, styles, or logic may be changed.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "File Manager",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

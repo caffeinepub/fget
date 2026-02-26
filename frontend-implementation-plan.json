@@ -1,0 +1,40 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Toolbar button background styling + version bump to 0.4.147",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Update application version from 0.4.143 to 0.4.147",
+      "acceptanceCriteria": [
+        "The exported version string in appVersion.ts reads '0.4.147'",
+        "The footer displays '0.4.147'"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/appVersion.ts",
+          "operation": "modify",
+          "description": "Change the exported version string from '0.4.143' to '0.4.147'. This is a single-line change to the string literal."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Apply background color styling to three specific toolbar buttons in FileList.tsx",
+      "acceptanceCriteria": [
+        "button[2] in the toolbar has backgroundColor '#eff6ff' and no border color styling",
+        "button[3] in the toolbar has backgroundColor '#fefce8' and no border color styling",
+        "button[4] in the toolbar has backgroundColor '#fefce8' and no border color styling",
+        "All other buttons and components remain byte-for-byte identical to v0.4.143",
+        "No tooltip logic, breadcrumb, or other component is modified"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "In the toolbar div, locate the button group containing the three target buttons at XPath positions button[2], button[3], and button[4]. For button[2] (File upload), remove any border color styling and add backgroundColor: '#eff6ff' to its style prop. For button[3] and button[4] (Folder-related buttons), remove any border color styling and add backgroundColor: '#fefce8' to their style props. Make no other changes to FileList.tsx—do not modify tooltip logic, breadcrumb rendering, event handlers, or any other buttons."
+        }
+      ]
+    }
+  ]
+}
