@@ -2,8 +2,50 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-application-version-string-in-frontend-src-lib-appversion-ts-from-0-4-143-to-0-4-147",
-      "featureTitle": "Update the application version string in frontend/src/lib/appVersion.ts from '0.4.143' to '0.4.147'.",
+      "featureId": "feature-in-filelist-tsx-update-the-upload-files-button-so-it-has-a-light-blue-filled-background-e-g-bg-blue-100-in-light-mode-bg-blue-900-30-in-dark-mode-uses-the-native-default-button-border-no-custom-border-color-or-outline-color-remove-any-blue-border-ring-outline-classes-and-has-dark-text-and-icon-for-contrast",
+      "featureTitle": "In FileList.tsx, update the 'Upload Files' button so it has a light blue filled background (e.g. bg-blue-100 in light mode / bg-blue-900/30 in dark mode), uses the native/default button border (no custom border color or outline color — remove any blue border/ring/outline classes), and has dark text and icon for contrast.",
+      "files": [
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-filelist-tsx-update-the-new-folder-and-upload-folder-buttons-so-they-have-a-light-yellow-filled-background-e-g-bg-yellow-100-in-light-mode-bg-yellow-900-30-in-dark-mode-use-the-native-default-button-border-no-custom-border-color-or-outline-color-remove-any-yellow-border-ring-outline-classes-and-have-dark-text-and-icon-for-contrast",
+      "featureTitle": "In FileList.tsx, update the 'New Folder' and 'Upload Folder' buttons so they have a light yellow filled background (e.g. bg-yellow-100 in light mode / bg-yellow-900/30 in dark mode), use the native/default button border (no custom border color or outline color — remove any yellow border/ring/outline classes), and have dark text and icon for contrast.",
+      "files": [
+        "frontend/src/components/FileList.tsx"
+      ],
+      "components": [
+        "blob-storage@3.0.0",
+        "authorization@3.0.0",
+        "user-approval@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-app-version-constant-in-frontend-src-lib-appversion-ts-from-0-4-148-to-0-4-149",
+      "featureTitle": "Update the APP_VERSION constant in frontend/src/lib/appVersion.ts from '0.4.148' to '0.4.149'.",
       "files": [
         "frontend/src/lib/appVersion.ts"
       ],
@@ -18,7 +60,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-3"
       ],
       "confidence": "high"
     }

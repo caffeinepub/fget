@@ -1,34 +1,43 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "File manager / toolbar UI project. Currently on v0.4.143 (restored). Working on toolbar button styling and version bumps.",
+  "summary": "File manager app (v0.4.149) with styled upload/folder buttons featuring light filled backgrounds (no colored borders) and native button styling.",
   "architectural_notes": [
-    "Toolbar buttons [2], [3], [4] use light blue (#eff6ff) and light yellow (#fefce8) backgrounds respectively, with no border color styling"
+    "Buttons (Upload Files, New Folder, Upload Folder) use light filled backgrounds (light blue / light yellow) with native border style — no colored outlines. Dark text/icon for contrast."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Button background color fix (light fill, native border) has been repeatedly requested but not yet successfully applied as of v0.4.148."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-application-version-string-in-frontend-src-lib-appversion-ts-from-0-4-143-to-0-4-147",
-      "title": "Update the application version string in frontend/src/lib/appVersion.ts from '0.4.143' to '0.4.147'.",
+      "id": "feature-in-filelist-tsx-update-the-upload-files-button-so-it-has-a-light-blue-filled-background-e-g-bg-blue-100-in-light-mode-bg-blue-900-30-in-dark-mode-uses-the-native-default-button-border-no-custom-border-color-or-outline-color-remove-any-blue-border-ring-outline-classes-and-has-dark-text-and-icon-for-contrast",
+      "title": "In FileList.tsx, update the 'Upload Files' button so it has a light blue filled background (e.g. bg-blue-100 in light mode / bg-blue-900/30 in dark mode), uses the native/default button border (no custom border color or outline color — remove any blue border/ring/outline classes), and has dark text and icon for contrast.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
-    }
-  ],
-  "new_feature_requests": [
+    },
     {
-      "id": "AR-2",
-      "summary": "In the toolbar div of FileList.tsx, apply styling changes to exactly three buttons identified by XPath positions button[2], button[3], and button[4] within the toolbar's button group div: (1) Remove any border color styling from all three buttons. (2) button[2] (the File upload button): set background color to '#eff6ff' (very light blue). (3) button[3] and button[4] (the Folder-related buttons): set background color to '#fefce8' (very light yellow). No other buttons, components, styles, or logic may be changed.",
+      "id": "feature-in-filelist-tsx-update-the-new-folder-and-upload-folder-buttons-so-they-have-a-light-yellow-filled-background-e-g-bg-yellow-100-in-light-mode-bg-yellow-900-30-in-dark-mode-use-the-native-default-button-border-no-custom-border-color-or-outline-color-remove-any-yellow-border-ring-outline-classes-and-have-dark-text-and-icon-for-contrast",
+      "title": "In FileList.tsx, update the 'New Folder' and 'Upload Folder' buttons so they have a light yellow filled background (e.g. bg-yellow-100 in light mode / bg-yellow-900/30 in dark mode), use the native/default button border (no custom border color or outline color — remove any yellow border/ring/outline classes), and have dark text and icon for contrast.",
       "reqIds": [
         "REQ-2"
       ],
-      "status": "pending"
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-app-version-constant-in-frontend-src-lib-appversion-ts-from-0-4-148-to-0-4-149",
+      "title": "Update the APP_VERSION constant in frontend/src/lib/appVersion.ts from '0.4.148' to '0.4.149'.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
     }
   ],
+  "new_feature_requests": [],
   "gameProjectType": "none",
-  "projectName": "File Manager",
+  "projectName": "fget",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

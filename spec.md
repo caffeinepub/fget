@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Apply toolbar button background color styling to three specific buttons in FileList.tsx and bump the app version to 0.4.147.
+**Goal:** Fix button background colors in FileList.tsx so they use light filled backgrounds with native borders instead of colored outlines, and bump the app version to 0.4.149.
 
 **Planned changes:**
-- Update the version string in `frontend/src/lib/appVersion.ts` from `'0.4.143'` to `'0.4.147'`
-- In the toolbar of `FileList.tsx`, for button[2] (File upload): remove border color styling and set background color to `#eff6ff` (very light blue)
-- In the toolbar of `FileList.tsx`, for button[3] and button[4] (Folder buttons): remove border color styling and set background color to `#fefce8` (very light yellow)
+- Update the "Upload Files" button to have a light blue filled background (bg-blue-100 / dark: bg-blue-900/30), remove any custom blue border/ring/outline classes, and use dark text and icon
+- Update the "New Folder" and "Upload Folder" buttons to have a light yellow filled background (bg-yellow-100 / dark: bg-yellow-900/30), remove any custom yellow border/ring/outline classes, and use dark text and icon
+- Bump APP_VERSION in `frontend/src/lib/appVersion.ts` from `0.4.148` to `0.4.149`
 
-**User-visible outcome:** The toolbar's File upload button has a light blue background, the two Folder-related buttons have a light yellow background, all border color styling is removed from those three buttons, and the footer shows version 0.4.147.
+**User-visible outcome:** The Upload Files, New Folder, and Upload Folder buttons display subtle light-colored filled backgrounds with standard native-looking borders (no colored outlines), and the footer shows version 0.4.149.

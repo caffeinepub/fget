@@ -1,38 +1,54 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Toolbar button background styling + version bump to 0.4.147",
+  "title": "Fix button background colors — light fill, native border (v0.4.149)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Update application version from 0.4.143 to 0.4.147",
+      "summary": "Update 'Upload Files' button with light blue filled background and native border styling",
       "acceptanceCriteria": [
-        "The exported version string in appVersion.ts reads '0.4.147'",
-        "The footer displays '0.4.147'"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/appVersion.ts",
-          "operation": "modify",
-          "description": "Change the exported version string from '0.4.143' to '0.4.147'. This is a single-line change to the string literal."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Apply background color styling to three specific toolbar buttons in FileList.tsx",
-      "acceptanceCriteria": [
-        "button[2] in the toolbar has backgroundColor '#eff6ff' and no border color styling",
-        "button[3] in the toolbar has backgroundColor '#fefce8' and no border color styling",
-        "button[4] in the toolbar has backgroundColor '#fefce8' and no border color styling",
-        "All other buttons and components remain byte-for-byte identical to v0.4.143",
-        "No tooltip logic, breadcrumb, or other component is modified"
+        "The 'Upload Files' button has a light blue filled background (subtle tint, not vivid)",
+        "No custom blue border, outline, or ring is applied — the border looks like a standard native button border",
+        "Text and icon on the button are dark-colored for contrast against the light blue background",
+        "The button does not have any colored border in dark mode either"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "In the toolbar div, locate the button group containing the three target buttons at XPath positions button[2], button[3], and button[4]. For button[2] (File upload), remove any border color styling and add backgroundColor: '#eff6ff' to its style prop. For button[3] and button[4] (Folder-related buttons), remove any border color styling and add backgroundColor: '#fefce8' to their style props. Make no other changes to FileList.tsx—do not modify tooltip logic, breadcrumb rendering, event handlers, or any other buttons."
+          "description": "Update the 'Upload Files' button styling: apply bg-blue-100 (light mode) and dark:bg-blue-900/30 (dark mode) for a light blue filled background; remove any custom blue border, ring, or outline classes (e.g., border-blue-500, ring-blue-500, outline-blue-500); ensure text and icon use dark colors (e.g., text-blue-900 dark:text-blue-100) for proper contrast against the light background; verify the button retains its native/default border appearance without colored borders in either theme."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Update 'New Folder' and 'Upload Folder' buttons with light yellow filled background and native border styling",
+      "acceptanceCriteria": [
+        "The 'New Folder' and 'Upload Folder' buttons have a light yellow filled background (subtle tint, not vivid)",
+        "No custom yellow border, outline, or ring is applied — the border looks like a standard native button border",
+        "Text and icon on the buttons are dark-colored for contrast against the light yellow background",
+        "The buttons do not have any colored border in dark mode either"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/FileList.tsx",
+          "operation": "modify",
+          "description": "Update the 'New Folder' and 'Upload Folder' button styling: apply bg-yellow-100 (light mode) and dark:bg-yellow-900/30 (dark mode) for a light yellow filled background; remove any custom yellow border, ring, or outline classes (e.g., border-yellow-500, ring-yellow-500, outline-yellow-500); ensure text and icon use dark colors (e.g., text-yellow-900 dark:text-yellow-100) for proper contrast against the light background; verify the buttons retain their native/default border appearance without colored borders in either theme."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Bump APP_VERSION to 0.4.149",
+      "acceptanceCriteria": [
+        "APP_VERSION in appVersion.ts reads '0.4.149'",
+        "The footer displays version 0.4.149"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/appVersion.ts",
+          "operation": "modify",
+          "description": "Change the APP_VERSION constant from '0.4.148' to '0.4.149'."
         }
       ]
     }
