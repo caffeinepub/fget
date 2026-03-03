@@ -1,54 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix button background colors — light fill, native border (v0.4.149)",
+  "title": "Fix button backgrounds and update version to 0.4.151",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Update 'Upload Files' button with light blue filled background and native border styling",
+      "summary": "Fix Upload Files, New Folder, and Upload Folder button backgrounds to use solid fills with neutral borders in both light and dark modes",
       "acceptanceCriteria": [
-        "The 'Upload Files' button has a light blue filled background (subtle tint, not vivid)",
-        "No custom blue border, outline, or ring is applied — the border looks like a standard native button border",
-        "Text and icon on the button are dark-colored for contrast against the light blue background",
-        "The button does not have any colored border in dark mode either"
+        "Upload Files button renders with a filled #eff6ff background and no blue/colored border",
+        "New Folder button renders with a filled #fefce8 background and no yellow/colored border",
+        "Upload Folder button renders with a filled #fefce8 background and no yellow/colored border",
+        "Background fills are visible in both light and dark themes"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/FileList.tsx",
           "operation": "modify",
-          "description": "Update the 'Upload Files' button styling: apply bg-blue-100 (light mode) and dark:bg-blue-900/30 (dark mode) for a light blue filled background; remove any custom blue border, ring, or outline classes (e.g., border-blue-500, ring-blue-500, outline-blue-500); ensure text and icon use dark colors (e.g., text-blue-900 dark:text-blue-100) for proper contrast against the light background; verify the button retains its native/default border appearance without colored borders in either theme."
+          "description": "Update the three action buttons (Upload Files, New Folder, Upload Folder) at the top of the file manager to apply solid background colors (#eff6ff for Upload Files, #fefce8 for New Folder and Upload Folder) with neutral/default borders. Remove any colored border classes (border-blue-*, border-yellow-*) and replace with border-gray-200 dark:border-gray-700 or similar neutral border. Ensure the background colors persist in dark mode by using inline styles or custom CSS classes that override dark mode defaults. The buttons are rendered in the header section of the FileList component alongside the search bar and view mode toggle."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Update 'New Folder' and 'Upload Folder' buttons with light yellow filled background and native border styling",
+      "summary": "Update APP_VERSION to 0.4.151",
       "acceptanceCriteria": [
-        "The 'New Folder' and 'Upload Folder' buttons have a light yellow filled background (subtle tint, not vivid)",
-        "No custom yellow border, outline, or ring is applied — the border looks like a standard native button border",
-        "Text and icon on the buttons are dark-colored for contrast against the light yellow background",
-        "The buttons do not have any colored border in dark mode either"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/FileList.tsx",
-          "operation": "modify",
-          "description": "Update the 'New Folder' and 'Upload Folder' button styling: apply bg-yellow-100 (light mode) and dark:bg-yellow-900/30 (dark mode) for a light yellow filled background; remove any custom yellow border, ring, or outline classes (e.g., border-yellow-500, ring-yellow-500, outline-yellow-500); ensure text and icon use dark colors (e.g., text-yellow-900 dark:text-yellow-100) for proper contrast against the light background; verify the buttons retain their native/default border appearance without colored borders in either theme."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Bump APP_VERSION to 0.4.149",
-      "acceptanceCriteria": [
-        "APP_VERSION in appVersion.ts reads '0.4.149'",
-        "The footer displays version 0.4.149"
+        "The footer displays v0.4.151",
+        "APP_VERSION in appVersion.ts is exactly '0.4.151'"
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/appVersion.ts",
           "operation": "modify",
-          "description": "Change the APP_VERSION constant from '0.4.148' to '0.4.149'."
+          "description": "Change the APP_VERSION constant from its current value to the string '0.4.151'. This version will be displayed in the footer component."
         }
       ]
     }

@@ -1,18 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-28T10:51:10.157Z",
+  "generatedAt": "2026-03-03T13:08:04.417Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In FileList.tsx, update the 'Upload Files' button so it has a light blue filled background (e.g. bg-blue-100 in light mode / bg-blue-900/30 in dark mode), uses the native/default button border (no custom border color or outline color — remove any blue border/ring/outline classes), and has dark text and icon for contrast.",
+        "summary": "Fix the Upload Files button so it has a solid light blue background (#eff6ff) with no colored border (use a neutral/default border or no border). Fix the New Folder and Upload Folder buttons so they have a solid light yellow background (#fefce8) with no colored border. These styles must apply in both light and dark modes — do not let dark mode override or remove the background fills.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/FileList.tsx"
@@ -23,18 +23,7 @@
       },
       {
         "id": "REQ-2",
-        "summary": "In FileList.tsx, update the 'New Folder' and 'Upload Folder' buttons so they have a light yellow filled background (e.g. bg-yellow-100 in light mode / bg-yellow-900/30 in dark mode), use the native/default button border (no custom border color or outline color — remove any yellow border/ring/outline classes), and have dark text and icon for contrast.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/FileList.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Update the APP_VERSION constant in frontend/src/lib/appVersion.ts from '0.4.148' to '0.4.149'.",
+        "summary": "Update the APP_VERSION constant in frontend/src/lib/appVersion.ts from its current value to '0.4.151'.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/lib/appVersion.ts"
