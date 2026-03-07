@@ -7,13 +7,13 @@
     "blob-storage": "3.0.0",
     "authorization": "3.0.0",
     "user-approval": "3.0.0",
-    "core-infrastructure": "1.0.2",
+    "core-infrastructure": "1.0.3",
     "shadcn-ui": "1.0.0",
-    "build-template-react": "1.0.0",
+    "build-template-react": "1.1.0",
     "initial-app": "1.0.0",
-    "github-export-icp-cli": "1.0.0"
+    "github-export-icp-cli": "1.0.1"
   },
-  "aiCoreVersion": "0.20.4",
+  "aiCoreVersion": "0.dev",
   "motokoVersion": "1.0.0-beta",
   "coreLibVersion": "implicits-20",
   "tags": []

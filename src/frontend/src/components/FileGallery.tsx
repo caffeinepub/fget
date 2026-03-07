@@ -1,23 +1,33 @@
-import { Download, Folder, Link2, MoveRight, Trash2, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import type { FileSystemItem, FolderMetadata, FileMetadata } from '../backend';
-import { getFileExtension, isImage, isVideo } from '../lib/fileTypes';
-import { getContainingFolderPath, getFolderContainingPath } from '../lib/folderNavigation';
+} from "@/components/ui/tooltip";
+import {
+  ChevronRight,
+  Download,
+  Folder,
+  Link2,
+  MoveRight,
+  Trash2,
+} from "lucide-react";
+import type { FileMetadata, FileSystemItem, FolderMetadata } from "../backend";
+import { getFileExtension, isImage, isVideo } from "../lib/fileTypes";
+import {
+  getContainingFolderPath,
+  getFolderContainingPath,
+} from "../lib/folderNavigation";
 
 interface FileGalleryProps {
   items: FileSystemItem[];
@@ -55,8 +65,10 @@ export function FileGallery({
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {[...Array(10)].map((_, i) => (
-          <Skeleton key={i} className="aspect-square rounded-lg" />
+        {(
+          ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"] as const
+        ).map((k) => (
+          <Skeleton key={k} className="aspect-square rounded-lg" />
         ))}
       </div>
     );
@@ -73,7 +85,7 @@ export function FileGallery({
   if (!items || items.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        {isSearchActive ? 'No results found' : 'No files or folders yet'}
+        {isSearchActive ? "No results found" : "No files or folders yet"}
       </div>
     );
   }
@@ -82,7 +94,7 @@ export function FileGallery({
     <TooltipProvider>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {items.map((item) => {
-          const isFolder = item.__kind__ === 'folder';
+          const isFolder = item.__kind__ === "folder";
           const data = isFolder ? item.folder : item.file;
           const itemId = data.id;
           const isSelected = selectedItems.has(itemId);
@@ -96,7 +108,9 @@ export function FileGallery({
               <div className="absolute top-2 left-2 z-10">
                 <Checkbox
                   checked={isSelected}
-                  onCheckedChange={(checked) => onSelectItem(itemId, checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    onSelectItem(itemId, checked as boolean)
+                  }
                   className="bg-background/80 backdrop-blur-sm"
                   aria-label={`Select ${data.name}`}
                 />
@@ -122,6 +136,8 @@ export function FileGallery({
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
+                        aria-label="Actions"
+                        role="img"
                       >
                         <circle cx="12" cy="12" r="1" />
                         <circle cx="12" cy="5" r="1" />
@@ -134,7 +150,9 @@ export function FileGallery({
                       <>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <DropdownMenuItem onClick={() => onDownload(item.file)}>
+                            <DropdownMenuItem
+                              onClick={() => onDownload(item.file)}
+                            >
                               <Download className="h-4 w-4 mr-2" />
                               Download
                             </DropdownMenuItem>
@@ -143,7 +161,9 @@ export function FileGallery({
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <DropdownMenuItem onClick={() => onCopyLink(item.file)}>
+                            <DropdownMenuItem
+                              onClick={() => onCopyLink(item.file)}
+                            >
                               <Link2 className="h-4 w-4 mr-2" />
                               Copy link
                             </DropdownMenuItem>
@@ -155,7 +175,9 @@ export function FileGallery({
                     )}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <DropdownMenuItem onClick={() => onMove(itemId, data.name, isFolder)}>
+                        <DropdownMenuItem
+                          onClick={() => onMove(itemId, data.name, isFolder)}
+                        >
                           <MoveRight className="h-4 w-4 mr-2" />
                           Move
                         </DropdownMenuItem>
@@ -180,7 +202,10 @@ export function FileGallery({
 
               {/* Thumbnail/Preview */}
               <button
-                onClick={() => isFolder ? onFolderClick(item.folder) : onFileClick(item.file)}
+                type="button"
+                onClick={() =>
+                  isFolder ? onFolderClick(item.folder) : onFileClick(item.file)
+                }
                 className="w-full h-full flex flex-col"
               >
                 <div className="flex-1 flex items-center justify-center p-4 bg-muted/30">
@@ -201,31 +226,34 @@ export function FileGallery({
                     />
                   ) : (
                     <div className="text-4xl font-bold text-muted-foreground uppercase">
-                      {getFileExtension(data.name) || '?'}
+                      {getFileExtension(data.name) || "?"}
                     </div>
                   )}
                 </div>
 
                 {/* Name and path */}
                 <div className="p-2 bg-background border-t">
-                  <p 
-                    className="text-sm font-medium truncate" 
-                    title={data.name}
-                  >
+                  <p className="text-sm font-medium truncate" title={data.name}>
                     {data.name}
                   </p>
                   {isSearchActive && allFolders && (
                     <button
+                      type="button"
                       onClick={(e) => onSearchResultPathClick(item, e)}
                       className="text-xs text-muted-foreground hover:text-foreground transition-colors truncate flex items-center gap-1 w-full"
                       title="Click to navigate to containing folder"
                     >
                       <ChevronRight className="h-3 w-3 shrink-0" />
                       <span className="truncate">
-                        {isFolder 
-                          ? getFolderContainingPath(item.folder.parentId, allFolders)
-                          : getContainingFolderPath(item.file.parentId, allFolders)
-                        }
+                        {isFolder
+                          ? getFolderContainingPath(
+                              item.folder.parentId,
+                              allFolders,
+                            )
+                          : getContainingFolderPath(
+                              item.file.parentId,
+                              allFolders,
+                            )}
                       </span>
                     </button>
                   )}

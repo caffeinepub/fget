@@ -1,7 +1,7 @@
-import React from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowUp, ArrowDown } from 'lucide-react';
-import type { SortField, SortDirection } from '../lib/sortFileSystemItems';
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import React from "react";
+import type { SortDirection, SortField } from "../lib/sortFileSystemItems";
 
 interface FileListHeaderRowProps {
   allSelected: boolean;
@@ -22,21 +22,24 @@ export function FileListHeaderRow({
   onSort,
   showLocationColumn = false,
 }: FileListHeaderRowProps) {
-  const SortButton = ({ field, label }: { field: SortField; label: string }) => {
+  const SortButton = ({
+    field,
+    label,
+  }: { field: SortField; label: string }) => {
     const isActive = sortField === field;
     return (
       <button
+        type="button"
         onClick={() => onSort(field)}
         className="flex items-center justify-center gap-1 hover:text-foreground transition-colors w-full"
       >
         <span>{label}</span>
-        {isActive && (
-          sortDirection === 'asc' ? (
+        {isActive &&
+          (sortDirection === "asc" ? (
             <ArrowUp className="h-3 w-3" />
           ) : (
             <ArrowDown className="h-3 w-3" />
-          )
-        )}
+          ))}
       </button>
     );
   };
@@ -49,7 +52,7 @@ export function FileListHeaderRow({
             checked={allSelected}
             onCheckedChange={onSelectAll}
             aria-label="Select all"
-            className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+            className={someSelected ? "data-[state=checked]:bg-primary/50" : ""}
           />
         </th>
         <th className="p-4 text-center font-medium text-muted-foreground">

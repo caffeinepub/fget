@@ -1,16 +1,22 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Check, Clock, Copy } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 export function AccessDenied() {
   const { identity } = useInternetIdentity();
   const [copied, setCopied] = useState(false);
 
-  const principalId = identity?.getPrincipal().toString() || '';
-  
+  const principalId = identity?.getPrincipal().toString() || "";
+
   const getShortenedPrincipal = (principal: string) => {
     if (principal.length <= 11) return principal;
     return `${principal.slice(0, 4)}...${principal.slice(-4)}`;
@@ -20,10 +26,10 @@ export function AccessDenied() {
     try {
       await navigator.clipboard.writeText(principalId);
       setCopied(true);
-      toast.success('Principal ID copied to clipboard');
+      toast.success("Principal ID copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      toast.error('Failed to copy Principal ID');
+    } catch (_error) {
+      toast.error("Failed to copy Principal ID");
     }
   };
 
@@ -36,7 +42,9 @@ export function AccessDenied() {
               <Clock className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-center text-2xl">Pending approval...</CardTitle>
+          <CardTitle className="text-center text-2xl">
+            Pending approval...
+          </CardTitle>
           <CardDescription className="text-center">
             Your account is awaiting administrator approval
           </CardDescription>
@@ -44,7 +52,9 @@ export function AccessDenied() {
         <CardContent className="space-y-4">
           <div className="rounded-lg bg-muted p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Your Principal ID:</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Your Principal ID:
+              </span>
               <Button
                 onClick={handleCopyPrincipal}
                 size="sm"
@@ -72,7 +82,8 @@ export function AccessDenied() {
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
             <div className="space-y-2 text-center">
               <p className="text-sm text-muted-foreground">
-                Please contact an administrator and provide them with your Principal ID above to request access to this application.
+                Please contact an administrator and provide them with your
+                Principal ID above to request access to this application.
               </p>
             </div>
           </div>

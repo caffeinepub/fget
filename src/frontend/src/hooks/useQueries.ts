@@ -1,18 +1,27 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
-import { ExternalBlob } from '../backend';
-import type { UserProfile, FileMetadata, AdminInfo, StorageStats, FileSystemItem, FolderMetadata, FileMove, UserRole } from '../backend';
-import { Principal } from '@icp-sdk/core/principal';
-import { containsNormalized } from '../lib/searchNormalize';
-import { buildSubtreeFolderIds } from '../lib/subtreeIndex';
+import type { Principal } from "@icp-sdk/core/principal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ExternalBlob } from "../backend";
+import type {
+  AdminInfo,
+  FileMetadata,
+  FileMove,
+  FileSystemItem,
+  FolderMetadata,
+  StorageStats,
+  UserProfile,
+  UserRole,
+} from "../backend";
+import { containsNormalized } from "../lib/searchNormalize";
+import { buildSubtreeFolderIds } from "../lib/subtreeIndex";
+import { useActor } from "./useActor";
 
 export function useGetCallerUserRole() {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<UserRole>({
-    queryKey: ['callerUserRole'],
+    queryKey: ["callerUserRole"],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.getUserRole();
     },
     enabled: !!actor && !actorFetching,
@@ -23,9 +32,9 @@ export function useIsCallerApproved() {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<boolean>({
-    queryKey: ['callerApproved'],
+    queryKey: ["callerApproved"],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.isCallerApproved();
     },
     enabled: !!actor && !actorFetching,
@@ -35,10 +44,12 @@ export function useIsCallerApproved() {
 // Derived access: user must be admin OR (user role AND approved)
 export function useEffectiveAccess() {
   const { data: userRole, isLoading: roleLoading } = useGetCallerUserRole();
-  const { data: isApproved, isLoading: approvalLoading } = useIsCallerApproved();
+  const { data: isApproved, isLoading: approvalLoading } =
+    useIsCallerApproved();
 
   const isLoading = roleLoading || approvalLoading;
-  const hasAccess = userRole === 'admin' || (userRole === 'user' && isApproved === true);
+  const hasAccess =
+    userRole === "admin" || (userRole === "user" && isApproved === true);
 
   return { hasAccess, isLoading };
 }
@@ -48,9 +59,9 @@ export function useGetCallerUserProfile() {
   const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
 
   const query = useQuery<UserProfile | null>({
-    queryKey: ['currentUserProfile'],
+    queryKey: ["currentUserProfile"],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.getCallerUserProfile();
     },
     enabled: !!actor && !actorFetching && !accessLoading && hasAccess,
@@ -70,11 +81,11 @@ export function useSaveCallerUserProfile() {
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ["currentUserProfile"] });
     },
   });
 }
@@ -84,7 +95,7 @@ export function useIsUsernameUnique() {
 
   return useMutation({
     mutationFn: async (username: string) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.isUsernameUnique(username);
     },
   });
@@ -96,11 +107,11 @@ export function useRequestApproval() {
 
   return useMutation({
     mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.requestApproval();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['callerApproved'] });
+      queryClient.invalidateQueries({ queryKey: ["callerApproved"] });
     },
   });
 }
@@ -110,7 +121,7 @@ export function useGetFiles() {
   const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
 
   return useQuery<FileMetadata[]>({
-    queryKey: ['files'],
+    queryKey: ["files"],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getFiles();
@@ -125,7 +136,7 @@ export function useSearchFiles(searchTerm: string) {
   const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
 
   return useQuery<FileMetadata[]>({
-    queryKey: ['files', 'search', searchTerm],
+    queryKey: ["files", "search", searchTerm],
     queryFn: async () => {
       if (!actor) return [];
       if (!searchTerm.trim()) {
@@ -143,14 +154,17 @@ export function useSearchFiles(searchTerm: string) {
  * Searches folder and file names only (not content) within the current folder subtree.
  * Now includes files in descendant subfolders.
  */
-export function useSearchSubtree(searchTerm: string, startFolderId: string | null) {
+export function useSearchSubtree(
+  searchTerm: string,
+  startFolderId: string | null,
+) {
   const { actor, isFetching: actorFetching } = useActor();
   const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
 
   const trimmedTerm = searchTerm.trim();
 
   return useQuery<FileSystemItem[]>({
-    queryKey: ['subtreeSearch', startFolderId, trimmedTerm],
+    queryKey: ["subtreeSearch", startFolderId, trimmedTerm],
     queryFn: async () => {
       if (!actor || !trimmedTerm) return [];
 
@@ -164,7 +178,7 @@ export function useSearchSubtree(searchTerm: string, startFolderId: string | nul
       const subtreeFolderIds = buildSubtreeFolderIds(allFolders, startFolderId);
 
       // Filter folders: must be in subtree and match search term
-      const matchingFolders = allFolders.filter(folder => {
+      const matchingFolders = allFolders.filter((folder) => {
         // Check if folder is in the correct subtree
         let isInSubtree: boolean;
         if (startFolderId === null) {
@@ -172,9 +186,12 @@ export function useSearchSubtree(searchTerm: string, startFolderId: string | nul
           isInSubtree = true;
         } else {
           // Folder must be the start folder itself, or in its subtree, or a direct child
-          isInSubtree = folder.id === startFolderId || subtreeFolderIds.has(folder.id) || folder.parentId === startFolderId;
+          isInSubtree =
+            folder.id === startFolderId ||
+            subtreeFolderIds.has(folder.id) ||
+            folder.parentId === startFolderId;
         }
-        
+
         if (!isInSubtree) return false;
 
         // Check if name matches search term (Unicode-aware, case-insensitive, diacritics-insensitive)
@@ -182,18 +199,23 @@ export function useSearchSubtree(searchTerm: string, startFolderId: string | nul
       });
 
       // Filter files: must be in current folder OR any descendant folder, and match search term
-      const matchingFiles = allFiles.filter(file => {
+      const matchingFiles = allFiles.filter((file) => {
         // Check if file is in the correct subtree
         let isInSubtree: boolean;
         if (startFolderId === null) {
           // When searching from root, include files from ALL folders (not just root-level files)
           // A file is in the subtree if it has no parent (root-level) OR its parent is any folder
-          isInSubtree = file.parentId === null || file.parentId === undefined || subtreeFolderIds.has(file.parentId);
+          isInSubtree =
+            file.parentId === null ||
+            file.parentId === undefined ||
+            subtreeFolderIds.has(file.parentId);
         } else {
           // File must be in the current folder OR in any descendant folder
-          isInSubtree = file.parentId === startFolderId || (!!file.parentId && subtreeFolderIds.has(file.parentId));
+          isInSubtree =
+            file.parentId === startFolderId ||
+            (!!file.parentId && subtreeFolderIds.has(file.parentId));
         }
-        
+
         if (!isInSubtree) return false;
 
         // Check if name matches search term (Unicode-aware, case-insensitive, diacritics-insensitive)
@@ -202,13 +224,17 @@ export function useSearchSubtree(searchTerm: string, startFolderId: string | nul
 
       // Combine results
       const results: FileSystemItem[] = [
-        ...matchingFolders.map(folder => ({ __kind__: 'folder' as const, folder })),
-        ...matchingFiles.map(file => ({ __kind__: 'file' as const, file })),
+        ...matchingFolders.map((folder) => ({
+          __kind__: "folder" as const,
+          folder,
+        })),
+        ...matchingFiles.map((file) => ({ __kind__: "file" as const, file })),
       ];
 
       return results;
     },
-    enabled: !!actor && !actorFetching && !accessLoading && hasAccess && !!trimmedTerm,
+    enabled:
+      !!actor && !actorFetching && !accessLoading && hasAccess && !!trimmedTerm,
     retry: false,
   });
 }
@@ -231,14 +257,14 @@ export function useAddFile() {
       blob: ExternalBlob;
       parentId: string | null;
     }) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.addFile(id, name, size, parentId, blob);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
-      queryClient.invalidateQueries({ queryKey: ['storageStats'] });
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["folderContents"] });
+      queryClient.invalidateQueries({ queryKey: ["subtreeSearch"] });
+      queryClient.invalidateQueries({ queryKey: ["storageStats"] });
     },
   });
 }
@@ -249,14 +275,14 @@ export function useDeleteFile() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.deleteFile(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
-      queryClient.invalidateQueries({ queryKey: ['storageStats'] });
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["folderContents"] });
+      queryClient.invalidateQueries({ queryKey: ["subtreeSearch"] });
+      queryClient.invalidateQueries({ queryKey: ["storageStats"] });
     },
   });
 }
@@ -266,10 +292,10 @@ export function useGetMembers() {
   const { data: userRole } = useGetCallerUserRole();
 
   // Only enable if user is admin
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === "admin";
 
   return useQuery<AdminInfo[]>({
-    queryKey: ['members'],
+    queryKey: ["members"],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getMembers();
@@ -284,18 +310,21 @@ export function useAddMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ principal, role }: { principal: Principal; role: UserRole }) => {
-      if (!actor) throw new Error('Actor not available');
+    mutationFn: async ({
+      principal,
+      role,
+    }: { principal: Principal; role: UserRole }) => {
+      if (!actor) throw new Error("Actor not available");
       return actor.assignCallerUserRole(principal, role);
     },
     onSuccess: async () => {
       // Invalidate and actively refetch members list
-      await queryClient.invalidateQueries({ queryKey: ['members'] });
-      await queryClient.refetchQueries({ queryKey: ['members'] });
-      
+      await queryClient.invalidateQueries({ queryKey: ["members"] });
+      await queryClient.refetchQueries({ queryKey: ["members"] });
+
       // Also invalidate approval-related queries in case the added user is currently logged in
-      queryClient.invalidateQueries({ queryKey: ['callerApproved'] });
-      queryClient.invalidateQueries({ queryKey: ['callerUserRole'] });
+      queryClient.invalidateQueries({ queryKey: ["callerApproved"] });
+      queryClient.invalidateQueries({ queryKey: ["callerUserRole"] });
     },
   });
 }
@@ -306,13 +335,13 @@ export function useRemoveMember() {
 
   return useMutation({
     mutationFn: async (principal: Principal) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.removeMember(principal);
     },
     onSuccess: async () => {
       // Invalidate and actively refetch members list
-      await queryClient.invalidateQueries({ queryKey: ['members'] });
-      await queryClient.refetchQueries({ queryKey: ['members'] });
+      await queryClient.invalidateQueries({ queryKey: ["members"] });
+      await queryClient.refetchQueries({ queryKey: ["members"] });
     },
   });
 }
@@ -322,12 +351,12 @@ export function useGetStorageStats() {
   const { data: userRole } = useGetCallerUserRole();
 
   // Only enable if user is admin
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === "admin";
 
   return useQuery<StorageStats>({
-    queryKey: ['storageStats'],
+    queryKey: ["storageStats"],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.getStorageStats();
     },
     enabled: !!actor && !actorFetching && isAdmin,
@@ -340,7 +369,7 @@ export function useSetFrontendCanisterId() {
 
   return useMutation({
     mutationFn: async (canisterId: string) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.setFrontendCanisterId(canisterId);
     },
   });
@@ -353,14 +382,17 @@ export function useCreateFolder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ name, parentId }: { name: string; parentId: string | null }) => {
-      if (!actor) throw new Error('Actor not available');
+    mutationFn: async ({
+      name,
+      parentId,
+    }: { name: string; parentId: string | null }) => {
+      if (!actor) throw new Error("Actor not available");
       return actor.createFolder(name, parentId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-      queryClient.invalidateQueries({ queryKey: ['folders'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
+      queryClient.invalidateQueries({ queryKey: ["folderContents"] });
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
+      queryClient.invalidateQueries({ queryKey: ["subtreeSearch"] });
     },
   });
 }
@@ -371,13 +403,13 @@ export function useDeleteFolder() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.deleteFolder(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-      queryClient.invalidateQueries({ queryKey: ['folders'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
+      queryClient.invalidateQueries({ queryKey: ["folderContents"] });
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
+      queryClient.invalidateQueries({ queryKey: ["subtreeSearch"] });
     },
   });
 }
@@ -387,7 +419,7 @@ export function useGetFolderContents(folderId: string | null) {
   const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
 
   return useQuery<FileSystemItem[]>({
-    queryKey: ['folderContents', folderId],
+    queryKey: ["folderContents", folderId],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getFolderContents(folderId);
@@ -402,7 +434,7 @@ export function useGetAllFolders() {
   const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
 
   return useQuery<FolderMetadata[]>({
-    queryKey: ['folders'],
+    queryKey: ["folders"],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllFolders();
@@ -417,15 +449,19 @@ export function useMoveItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ itemId, newParentId, isFolder }: { itemId: string; newParentId: string | null; isFolder: boolean }) => {
-      if (!actor) throw new Error('Actor not available');
+    mutationFn: async ({
+      itemId,
+      newParentId,
+      isFolder,
+    }: { itemId: string; newParentId: string | null; isFolder: boolean }) => {
+      if (!actor) throw new Error("Actor not available");
       return actor.moveItem(itemId, newParentId, isFolder);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-      queryClient.invalidateQueries({ queryKey: ['folders'] });
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
+      queryClient.invalidateQueries({ queryKey: ["folderContents"] });
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["subtreeSearch"] });
     },
   });
 }
@@ -436,14 +472,14 @@ export function useMoveItems() {
 
   return useMutation({
     mutationFn: async (moves: FileMove[]) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.moveItems(moves);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-      queryClient.invalidateQueries({ queryKey: ['folders'] });
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      queryClient.invalidateQueries({ queryKey: ['subtreeSearch'] });
+      queryClient.invalidateQueries({ queryKey: ["folderContents"] });
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["subtreeSearch"] });
     },
   });
 }

@@ -1,10 +1,10 @@
-import { Heart } from 'lucide-react';
-import { APP_VERSION } from '../lib/appVersion';
+import { Heart } from "lucide-react";
+import { APP_VERSION } from "../lib/appVersion";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const appIdentifier = encodeURIComponent(
-    typeof window !== 'undefined' ? window.location.hostname : 'unknown-app'
+    typeof window !== "undefined" ? window.location.hostname : "unknown-app",
   );
 
   return (
@@ -16,7 +16,7 @@ export function Footer() {
             <span className="text-muted-foreground/50">•</span>
             <span className="text-xs">v{APP_VERSION}</span>
           </div>
-          
+
           <div className="flex items-center gap-1.5">
             <span>Built with</span>
             <Heart className="h-3.5 w-3.5 fill-pink-500 text-pink-500" />

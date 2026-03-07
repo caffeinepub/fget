@@ -1,14 +1,14 @@
-import type { FolderMetadata } from '../backend';
+import type { FolderMetadata } from "../backend";
 
 /**
  * Builds a breadcrumb path array from a folder ID
  */
 export function buildBreadcrumbPath(
   folderId: string | null,
-  allFolders: FolderMetadata[]
+  allFolders: FolderMetadata[],
 ): Array<{ id: string | null; name: string }> {
   if (folderId === null) {
-    return [{ id: null, name: 'Drive' }];
+    return [{ id: null, name: "Drive" }];
   }
 
   const path: Array<{ id: string | null; name: string }> = [];
@@ -16,7 +16,7 @@ export function buildBreadcrumbPath(
 
   // Build path from target folder up to root
   while (currentId !== null) {
-    const folder = allFolders.find(f => f.id === currentId);
+    const folder = allFolders.find((f) => f.id === currentId);
     if (!folder) break;
 
     path.unshift({ id: folder.id, name: folder.name });
@@ -24,7 +24,7 @@ export function buildBreadcrumbPath(
   }
 
   // Add root
-  path.unshift({ id: null, name: 'Drive' });
+  path.unshift({ id: null, name: "Drive" });
 
   return path;
 }
@@ -36,11 +36,11 @@ export function buildBreadcrumbPath(
  */
 export function resolvePathSegment(
   pathSegment: string,
-  currentFolderId: string | null,
-  allFolders: FolderMetadata[]
+  _currentFolderId: string | null,
+  allFolders: FolderMetadata[],
 ): string | null {
   // Split the path into parts
-  const parts = pathSegment.split('/').filter(p => p.length > 0);
+  const parts = pathSegment.split("/").filter((p) => p.length > 0);
 
   if (parts.length === 0) {
     // Empty path means root
@@ -52,7 +52,7 @@ export function resolvePathSegment(
 
   for (const part of parts) {
     const folder = allFolders.find(
-      f => f.name === part && f.parentId === currentId
+      (f) => f.name === part && f.parentId === currentId,
     );
 
     if (!folder) {
@@ -70,22 +70,22 @@ export function resolvePathSegment(
  */
 export function getFolderPath(
   folderId: string | null,
-  allFolders: FolderMetadata[]
+  allFolders: FolderMetadata[],
 ): string {
-  if (folderId === null) return '';
+  if (folderId === null) return "";
 
   const path: string[] = [];
   let currentId: string | null = folderId;
 
   while (currentId !== null) {
-    const folder = allFolders.find(f => f.id === currentId);
+    const folder = allFolders.find((f) => f.id === currentId);
     if (!folder) break;
 
     path.unshift(folder.name);
     currentId = folder.parentId || null;
   }
 
-  return path.join('/');
+  return path.join("/");
 }
 
 /**
@@ -93,13 +93,13 @@ export function getFolderPath(
  */
 export function getFolderPathString(
   folderId: string | undefined,
-  allFolders: FolderMetadata[]
+  allFolders: FolderMetadata[],
 ): string {
   if (!folderId) {
-    return 'Drive';
+    return "Drive";
   }
   const path = getFolderPath(folderId, allFolders);
-  return path || 'Drive';
+  return path || "Drive";
 }
 
 /**
@@ -108,7 +108,7 @@ export function getFolderPathString(
  */
 export function resolveFileParentPath(
   parentId: string | undefined,
-  allFolders: FolderMetadata[]
+  allFolders: FolderMetadata[],
 ): string | null {
   // If file has no parent, it's in root
   if (!parentId) {
@@ -116,9 +116,9 @@ export function resolveFileParentPath(
   }
 
   // Find the parent folder
-  const parentFolder = allFolders.find(f => f.id === parentId);
+  const parentFolder = allFolders.find((f) => f.id === parentId);
   if (!parentFolder) {
-    throw new Error(`Parent folder not found`);
+    throw new Error("Parent folder not found");
   }
 
   return parentFolder.id;
@@ -130,13 +130,13 @@ export function resolveFileParentPath(
  */
 export function getContainingFolderPath(
   parentId: string | undefined,
-  allFolders: FolderMetadata[]
+  allFolders: FolderMetadata[],
 ): string {
   if (!parentId) {
-    return 'Drive';
+    return "Drive";
   }
 
-  return getFolderPath(parentId, allFolders) || 'Drive';
+  return getFolderPath(parentId, allFolders) || "Drive";
 }
 
 /**
@@ -145,11 +145,11 @@ export function getContainingFolderPath(
  */
 export function getFolderContainingPath(
   parentId: string | undefined,
-  allFolders: FolderMetadata[]
+  allFolders: FolderMetadata[],
 ): string {
   if (!parentId) {
-    return 'Drive';
+    return "Drive";
   }
 
-  return getFolderPath(parentId, allFolders) || 'Drive';
+  return getFolderPath(parentId, allFolders) || "Drive";
 }

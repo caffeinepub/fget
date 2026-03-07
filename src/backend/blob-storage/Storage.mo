@@ -57,7 +57,7 @@ module {
     cashier : Principal,
     refillInformation : ?{
       proposed_top_up_amount : ?Nat;
-    }
+    },
   ) : async {
     success : ?Bool;
     topped_up_amount : ?Nat;
@@ -81,7 +81,9 @@ module {
       account_top_up_v1 : ({ account : Principal }) -> async ();
     };
 
-    await (with cycles = cyclesToSend) targetCanister.account_top_up_v1({ account = Prim.getSelfPrincipal<system>() });
+    await (with cycles = cyclesToSend) targetCanister.account_top_up_v1({
+      account = Prim.getSelfPrincipal<system>();
+    });
 
     {
       success = ?true;

@@ -3,7 +3,7 @@
  */
 export function formatTime(time: bigint | undefined): string {
   if (time === undefined || time === null) {
-    return 'Unknown';
+    return "Unknown";
   }
 
   try {
@@ -12,20 +12,20 @@ export function formatTime(time: bigint | undefined): string {
     const date = new Date(milliseconds);
 
     // Check if date is valid
-    if (isNaN(date.getTime())) {
-      return 'Invalid date';
+    if (Number.isNaN(date.getTime())) {
+      return "Invalid date";
     }
 
     // Format using Intl.DateTimeFormat for consistent English output
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
-  } catch (error) {
-    return 'Invalid date';
+  } catch (_error) {
+    return "Invalid date";
   }
 }
 
@@ -34,24 +34,24 @@ export function formatTime(time: bigint | undefined): string {
  */
 export function formatDate(time: bigint | undefined): string {
   if (time === undefined || time === null) {
-    return 'Unknown';
+    return "Unknown";
   }
 
   try {
     const milliseconds = Number(time / 1_000_000n);
     const date = new Date(milliseconds);
 
-    if (isNaN(date.getTime())) {
-      return 'Invalid date';
+    if (Number.isNaN(date.getTime())) {
+      return "Invalid date";
     }
 
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     }).format(date);
-  } catch (error) {
-    return 'Invalid date';
+  } catch (_error) {
+    return "Invalid date";
   }
 }
 
@@ -62,26 +62,26 @@ export function formatDate(time: bigint | undefined): string {
  */
 export function formatCompactTimestamp(time: bigint | undefined): string {
   if (time === undefined || time === null) {
-    return 'Unknown';
+    return "Unknown";
   }
 
   try {
     const milliseconds = Number(time / 1_000_000n);
     const date = new Date(milliseconds);
 
-    if (isNaN(date.getTime())) {
-      return 'Invalid date';
+    if (Number.isNaN(date.getTime())) {
+      return "Invalid date";
     }
 
-    return new Intl.DateTimeFormat('en-US', {
-      year: '2-digit',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Intl.DateTimeFormat("en-US", {
+      year: "2-digit",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
     }).format(date);
-  } catch (error) {
-    return 'Invalid date';
+  } catch (_error) {
+    return "Invalid date";
   }
 }

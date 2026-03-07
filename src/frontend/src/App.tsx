@@ -1,68 +1,82 @@
-import { useEffect, useState } from 'react';
-import { Header } from './components/Header';
-import { Footer } from './components/Footer';
-import { FileList } from './components/FileList';
-import { ProfileSetup } from './components/ProfileSetup';
-import { AccessDenied } from './components/AccessDenied';
-import { Toaster } from '@/components/ui/sonner';
-import { ThemeProvider } from 'next-themes';
-import { useInternetIdentity } from './hooks/useInternetIdentity';
-import { useGetCallerUserProfile, useEffectiveAccess, useSetFrontendCanisterId } from './hooks/useQueries';
-import { useAccessBootstrap } from './hooks/useAccessBootstrap';
-import { Loader2 } from 'lucide-react';
-import { getFrontendCanisterId } from './lib/canisterIds';
-import { useQueryClient } from '@tanstack/react-query';
+import { Toaster } from "@/components/ui/sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { ThemeProvider } from "next-themes";
+import { useEffect, useState } from "react";
+import { AccessDenied } from "./components/AccessDenied";
+import { FileList } from "./components/FileList";
+import { Footer } from "./components/Footer";
+import { Header } from "./components/Header";
+import { ProfileSetup } from "./components/ProfileSetup";
+import { useAccessBootstrap } from "./hooks/useAccessBootstrap";
+import { useInternetIdentity } from "./hooks/useInternetIdentity";
+import {
+  useEffectiveAccess,
+  useGetCallerUserProfile,
+  useSetFrontendCanisterId,
+} from "./hooks/useQueries";
+import { getFrontendCanisterId } from "./lib/canisterIds";
 
 export default function App() {
   const { identity, isInitializing } = useInternetIdentity();
   const queryClient = useQueryClient();
-  
+
   // Bootstrap access control automatically after login
   useAccessBootstrap();
-  
+
   const { hasAccess, isLoading: accessLoading } = useEffectiveAccess();
-  
+
   // Only fetch profile if user has access
-  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  const {
+    data: userProfile,
+    isLoading: profileLoading,
+    isFetched,
+  } = useGetCallerUserProfile();
   const setFrontendCanisterId = useSetFrontendCanisterId();
 
   // Folder navigation state
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   const isAuthenticated = !!identity;
-  
+
   // Show pending approval screen for authenticated users without access (regardless of profile status)
   const showPendingApproval = isAuthenticated && !accessLoading && !hasAccess;
-  
+
   // Show profile setup only if user has access but no profile
-  const showProfileSetup = isAuthenticated && hasAccess && !profileLoading && isFetched && userProfile === null;
-  
+  const showProfileSetup =
+    isAuthenticated &&
+    hasAccess &&
+    !profileLoading &&
+    isFetched &&
+    userProfile === null;
+
   // Only show content if user is authenticated, has access, and has a profile
-  const showContent = isAuthenticated && hasAccess && userProfile !== null && !accessLoading;
+  const showContent =
+    isAuthenticated && hasAccess && userProfile !== null && !accessLoading;
 
   // Set frontend canister ID when user with access is authenticated
   useEffect(() => {
     if (hasAccess && !setFrontendCanisterId.isPending) {
       const frontendId = getFrontendCanisterId();
-      
+
       // Only set if we have a valid ID (not 'unknown')
-      if (frontendId && frontendId !== 'unknown') {
+      if (frontendId && frontendId !== "unknown") {
         setFrontendCanisterId.mutate(frontendId);
       }
     }
-  }, [hasAccess]);
+  }, [hasAccess, setFrontendCanisterId]);
 
   // Clear all queries when user loses access or is unapproved
   useEffect(() => {
     if (isAuthenticated && !accessLoading && !hasAccess) {
       // User is authenticated but doesn't have access (unapproved or removed)
       // Clear all file-related queries to prevent stale data and "Error loading files"
-      queryClient.removeQueries({ queryKey: ['files'] });
-      queryClient.removeQueries({ queryKey: ['folderContents'] });
-      queryClient.removeQueries({ queryKey: ['folders'] });
-      queryClient.removeQueries({ queryKey: ['storageStats'] });
-      queryClient.removeQueries({ queryKey: ['members'] });
-      queryClient.removeQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.removeQueries({ queryKey: ["files"] });
+      queryClient.removeQueries({ queryKey: ["folderContents"] });
+      queryClient.removeQueries({ queryKey: ["folders"] });
+      queryClient.removeQueries({ queryKey: ["storageStats"] });
+      queryClient.removeQueries({ queryKey: ["members"] });
+      queryClient.removeQueries({ queryKey: ["currentUserProfile"] });
     }
   }, [isAuthenticated, accessLoading, hasAccess, queryClient]);
 
@@ -96,7 +110,7 @@ export default function App() {
             <ProfileSetup />
           ) : showContent ? (
             <div className="container mx-auto px-4 py-8 max-w-5xl">
-              <FileList 
+              <FileList
                 currentFolderId={currentFolderId}
                 onFolderNavigate={handleFolderNavigate}
               />

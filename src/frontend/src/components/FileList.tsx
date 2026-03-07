@@ -1,16 +1,3 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { Download, File, FileText, Image as ImageIcon, Video as VideoIcon, Music, Archive, Link2, Check, Loader2, Trash2, Search, Folder, FolderPlus, MoveRight, ChevronRight, Upload, FolderUp, X, FileCode, FileQuestion, LayoutList, LayoutGrid, FileImage, FileVideo, FileAudio, FileArchive, FileType } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useGetFolderContents, useDeleteFile, useDeleteFolder, useCreateFolder, useMoveItem, useMoveItems, useGetAllFolders, useAddFile, useSearchSubtree } from '../hooks/useQueries';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import type { FileSystemItem, FolderMetadata, FileMetadata, FileMove } from '../backend';
-import { ExternalBlob } from '../backend';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +7,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -28,34 +19,117 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { FilePreviewModal } from './FilePreviewModal';
-import { FileGallery } from './FileGallery';
-import { getFileExtension, getMimeType, isPreviewable, isImage, getFileTypeLabel, getFileCategory, type FileCategory } from '../lib/fileTypes';
-import { copyFileLink, downloadFile } from '../lib/fileLinks';
-import { uploadFolderRecursively, extractFolderFiles, validateFolderFiles } from '../lib/folderUpload';
-import { extractDroppedFiles } from '../lib/dragDropDirectory';
-import { resolvePathSegment, buildBreadcrumbPath, resolveFileParentPath, getContainingFolderPath, getFolderContainingPath, getFolderPathString } from '../lib/folderNavigation';
-import { sortFileSystemItems, type SortField, type SortDirection } from '../lib/sortFileSystemItems';
-import { formatCompactTimestamp } from '../lib/formatTime';
-import { formatFileSize } from '../lib/formatFileSize';
-import { FileListHeaderRow } from './FileListHeaderRow';
-import { generateSecure32ByteId } from '../lib/id';
-import { usePerFolderViewMode, type ViewMode } from '../hooks/usePerFolderViewMode';
-import { getFileTypeTintClasses, getFolderTintClasses, getUnknownTypeTintClasses } from '../lib/fileTypeTints';
+} from "@/components/ui/tooltip";
+import {
+  Archive,
+  Check,
+  ChevronRight,
+  Download,
+  File,
+  FileArchive,
+  FileAudio,
+  FileCode,
+  FileImage,
+  FileQuestion,
+  FileText,
+  FileType,
+  FileVideo,
+  Folder,
+  FolderPlus,
+  FolderUp,
+  Image as ImageIcon,
+  LayoutGrid,
+  LayoutList,
+  Link2,
+  Loader2,
+  MoveRight,
+  Music,
+  Search,
+  Trash2,
+  Upload,
+  Video as VideoIcon,
+  X,
+} from "lucide-react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
+import { toast } from "sonner";
+import type {
+  FileMetadata,
+  FileMove,
+  FileSystemItem,
+  FolderMetadata,
+} from "../backend";
+import { ExternalBlob } from "../backend";
+import {
+  type ViewMode,
+  usePerFolderViewMode,
+} from "../hooks/usePerFolderViewMode";
+import {
+  useAddFile,
+  useCreateFolder,
+  useDeleteFile,
+  useDeleteFolder,
+  useGetAllFolders,
+  useGetFolderContents,
+  useMoveItem,
+  useMoveItems,
+  useSearchSubtree,
+} from "../hooks/useQueries";
+import { extractDroppedFiles } from "../lib/dragDropDirectory";
+import { copyFileLink, downloadFile } from "../lib/fileLinks";
+import {
+  getFileTypeTintClasses,
+  getFolderTintClasses,
+  getUnknownTypeTintClasses,
+} from "../lib/fileTypeTints";
+import {
+  type FileCategory,
+  getFileCategory,
+  getFileExtension,
+  getFileTypeLabel,
+  getMimeType,
+  isImage,
+  isPreviewable,
+} from "../lib/fileTypes";
+import {
+  buildBreadcrumbPath,
+  getContainingFolderPath,
+  getFolderContainingPath,
+  getFolderPathString,
+  resolveFileParentPath,
+  resolvePathSegment,
+} from "../lib/folderNavigation";
+import {
+  extractFolderFiles,
+  uploadFolderRecursively,
+  validateFolderFiles,
+} from "../lib/folderUpload";
+import { formatFileSize } from "../lib/formatFileSize";
+import { formatCompactTimestamp } from "../lib/formatTime";
+import { generateSecure32ByteId } from "../lib/id";
+import {
+  type SortDirection,
+  type SortField,
+  sortFileSystemItems,
+} from "../lib/sortFileSystemItems";
+import { FileGallery } from "./FileGallery";
+import { FileListHeaderRow } from "./FileListHeaderRow";
+import { FilePreviewModal } from "./FilePreviewModal";
 
 interface FileListProps {
   currentFolderId: string | null;
@@ -65,35 +139,46 @@ interface FileListProps {
 interface FileUploadProgress {
   fileName: string;
   percentage: number;
-  status: 'uploading' | 'complete' | 'error';
+  status: "uploading" | "complete" | "error";
 }
 
 export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [folderPath, setFolderPath] = useState<Array<{ id: string | null; name: string }>>([{ id: null, name: 'Drive' }]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [folderPath, setFolderPath] = useState<
+    Array<{ id: string | null; name: string }>
+  >([{ id: null, name: "Drive" }]);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderName, setNewFolderName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const [fileUploadProgress, setFileUploadProgress] = useState<Map<string, FileUploadProgress>>(new Map());
+  const [fileUploadProgress, setFileUploadProgress] = useState<
+    Map<string, FileUploadProgress>
+  >(new Map());
   const [previewFile, setPreviewFile] = useState<FileMetadata | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
   // Per-folder view mode
   const { getViewMode, setViewMode } = usePerFolderViewMode();
   const currentViewMode = getViewMode(currentFolderId);
-  
+
   // Multi-select state
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  
-  const { data: items, isLoading, error } = useGetFolderContents(currentFolderId);
-  const { data: searchResults, isLoading: searchLoading } = useSearchSubtree(searchTerm, currentFolderId);
+
+  const {
+    data: items,
+    isLoading,
+    error,
+  } = useGetFolderContents(currentFolderId);
+  const { data: searchResults, isLoading: searchLoading } = useSearchSubtree(
+    searchTerm,
+    currentFolderId,
+  );
   const { data: allFolders } = useGetAllFolders();
   const createFolder = useCreateFolder();
   const addFile = useAddFile();
@@ -106,14 +191,24 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
   const moveItem = useMoveItem();
   const moveItems = useMoveItems();
 
-  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string; isFolder: boolean } | null>(null);
-  const [itemToMove, setItemToMove] = useState<{ id: string; name: string; isFolder: boolean } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{
+    id: string;
+    name: string;
+    isFolder: boolean;
+  } | null>(null);
+  const [itemToMove, setItemToMove] = useState<{
+    id: string;
+    name: string;
+    isFolder: boolean;
+  } | null>(null);
   const [moveDestination, setMoveDestination] = useState<string | null>(null);
-  
+
   // Bulk action states
   const [showBulkDelete, setShowBulkDelete] = useState(false);
   const [showBulkMove, setShowBulkMove] = useState(false);
-  const [bulkMoveDestination, setBulkMoveDestination] = useState<string | null>(null);
+  const [bulkMoveDestination, setBulkMoveDestination] = useState<string | null>(
+    null,
+  );
 
   const rawDisplayItems = isSearchActive ? searchResults : items;
 
@@ -127,32 +222,44 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
   const allFilesInContext = useMemo(() => {
     if (!displayItems) return [];
     return displayItems
-      .filter((item): item is { __kind__: 'file'; file: FileMetadata } => 
-        item.__kind__ === 'file'
+      .filter(
+        (item): item is { __kind__: "file"; file: FileMetadata } =>
+          item.__kind__ === "file",
       )
-      .map(item => item.file);
+      .map((item) => item.file);
   }, [displayItems]);
 
-  const handleFileClick = useCallback((file: FileMetadata) => {
-    const fileIndex = allFilesInContext.findIndex(f => f.id === file.id);
-    if (fileIndex !== -1) {
-      setCurrentFileIndex(fileIndex);
-      setPreviewFile(file);
-      setShowPreview(true);
-    }
-  }, [allFilesInContext]);
+  const handleFileClick = useCallback(
+    (file: FileMetadata) => {
+      const fileIndex = allFilesInContext.findIndex((f) => f.id === file.id);
+      if (fileIndex !== -1) {
+        setCurrentFileIndex(fileIndex);
+        setPreviewFile(file);
+        setShowPreview(true);
+      }
+    },
+    [allFilesInContext],
+  );
 
-  const handleNavigateFile = useCallback((index: number) => {
-    if (allFilesInContext.length === 0 || index < 0 || index >= allFilesInContext.length) return;
-    
-    setCurrentFileIndex(index);
-    setPreviewFile(allFilesInContext[index]);
-  }, [allFilesInContext]);
+  const handleNavigateFile = useCallback(
+    (index: number) => {
+      if (
+        allFilesInContext.length === 0 ||
+        index < 0 ||
+        index >= allFilesInContext.length
+      )
+        return;
+
+      setCurrentFileIndex(index);
+      setPreviewFile(allFilesInContext[index]);
+    },
+    [allFilesInContext],
+  );
 
   const handleFolderClick = (folder: FolderMetadata) => {
     onFolderNavigate(folder.id);
     setFolderPath([...folderPath, { id: folder.id, name: folder.name }]);
-    setSearchTerm('');
+    setSearchTerm("");
     setSelectedItems(new Set());
   };
 
@@ -160,48 +267,55 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     const newPath = folderPath.slice(0, index + 1);
     setFolderPath(newPath);
     onFolderNavigate(newPath[newPath.length - 1].id);
-    setSearchTerm('');
+    setSearchTerm("");
     setSelectedItems(new Set());
   };
 
   // Navigate to containing folder from search result path click
-  const handleSearchResultPathClick = (item: FileSystemItem, e: React.MouseEvent) => {
+  const handleSearchResultPathClick = (
+    item: FileSystemItem,
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
-    
+
     if (!allFolders) {
-      toast.error('Folder list not loaded');
+      toast.error("Folder list not loaded");
       return;
     }
 
     try {
       let targetFolderId: string | null;
-      
-      if (item.__kind__ === 'folder') {
+
+      if (item.__kind__ === "folder") {
         // For folders, navigate to the parent folder
         targetFolderId = item.folder.parentId || null;
       } else {
         // For files, navigate to the containing folder (parent)
         targetFolderId = item.file.parentId || null;
       }
-      
+
       const newPath = buildBreadcrumbPath(targetFolderId, allFolders);
-      
+
       onFolderNavigate(targetFolderId);
       setFolderPath(newPath);
-      setSearchTerm('');
+      setSearchTerm("");
       setSelectedItems(new Set());
-      
-      const targetName = targetFolderId === null ? 'Drive' : allFolders.find(f => f.id === targetFolderId)?.name || 'folder';
+
+      const targetName =
+        targetFolderId === null
+          ? "Drive"
+          : allFolders.find((f) => f.id === targetFolderId)?.name || "folder";
       toast.success(`Navigated to ${targetName}`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to navigate';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to navigate";
       toast.error(errorMessage);
     }
   };
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
-      toast.error('Folder name cannot be empty');
+      toast.error("Folder name cannot be empty");
       return;
     }
 
@@ -210,11 +324,12 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         name: newFolderName.trim(),
         parentId: currentFolderId,
       });
-      toast.success('Folder created successfully');
+      toast.success("Folder created successfully");
       setShowCreateFolder(false);
-      setNewFolderName('');
+      setNewFolderName("");
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create folder';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create folder";
       toast.error(errorMessage);
     }
   };
@@ -225,14 +340,15 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     try {
       if (itemToDelete.isFolder) {
         await deleteFolder.mutateAsync(itemToDelete.id);
-        toast.success('Folder deleted successfully');
+        toast.success("Folder deleted successfully");
       } else {
         await deleteFile.mutateAsync(itemToDelete.id);
-        toast.success('File deleted successfully');
+        toast.success("File deleted successfully");
       }
       setItemToDelete(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete item';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete item";
       toast.error(errorMessage);
     }
   };
@@ -246,11 +362,12 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         newParentId: moveDestination,
         isFolder: itemToMove.isFolder,
       });
-      toast.success('Item moved successfully');
+      toast.success("Item moved successfully");
       setItemToMove(null);
       setMoveDestination(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to move item';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to move item";
       toast.error(errorMessage);
     }
   };
@@ -268,11 +385,13 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
 
   const handleSelectAll = (checked: boolean) => {
     if (!displayItems) return;
-    
+
     if (checked) {
-      const allIds = new Set(displayItems.map(item => 
-        item.__kind__ === 'file' ? item.file.id : item.folder.id
-      ));
+      const allIds = new Set(
+        displayItems.map((item) =>
+          item.__kind__ === "file" ? item.file.id : item.folder.id,
+        ),
+      );
       setSelectedItems(allIds);
     } else {
       setSelectedItems(new Set());
@@ -287,13 +406,14 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     if (selectedItems.size === 0) return;
 
     try {
-      const itemsToDelete = displayItems?.filter(item => {
-        const id = item.__kind__ === 'file' ? item.file.id : item.folder.id;
-        return selectedItems.has(id);
-      }) || [];
+      const itemsToDelete =
+        displayItems?.filter((item) => {
+          const id = item.__kind__ === "file" ? item.file.id : item.folder.id;
+          return selectedItems.has(id);
+        }) || [];
 
       for (const item of itemsToDelete) {
-        if (item.__kind__ === 'folder') {
+        if (item.__kind__ === "folder") {
           await deleteFolder.mutateAsync(item.folder.id);
         } else {
           await deleteFile.mutateAsync(item.file.id);
@@ -304,7 +424,8 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
       setSelectedItems(new Set());
       setShowBulkDelete(false);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete items';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete items";
       toast.error(errorMessage);
     }
   };
@@ -313,14 +434,15 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     if (selectedItems.size === 0) return;
 
     try {
-      const itemsToMove = displayItems?.filter(item => {
-        const id = item.__kind__ === 'file' ? item.file.id : item.folder.id;
-        return selectedItems.has(id);
-      }) || [];
+      const itemsToMove =
+        displayItems?.filter((item) => {
+          const id = item.__kind__ === "file" ? item.file.id : item.folder.id;
+          return selectedItems.has(id);
+        }) || [];
 
-      const moves: FileMove[] = itemsToMove.map(item => ({
-        id: item.__kind__ === 'file' ? item.file.id : item.folder.id,
-        isFolder: item.__kind__ === 'folder',
+      const moves: FileMove[] = itemsToMove.map((item) => ({
+        id: item.__kind__ === "file" ? item.file.id : item.folder.id,
+        isFolder: item.__kind__ === "folder",
         newParentId: bulkMoveDestination || undefined,
       }));
 
@@ -331,23 +453,28 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
       setShowBulkMove(false);
       setBulkMoveDestination(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to move items';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to move items";
       toast.error(errorMessage);
     }
   };
 
-  const allSelected = Boolean(displayItems && displayItems.length > 0 && selectedItems.size === displayItems.length);
+  const allSelected = Boolean(
+    displayItems &&
+      displayItems.length > 0 &&
+      selectedItems.size === displayItems.length,
+  );
   const someSelected = selectedItems.size > 0 && !allSelected;
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     const fileArray = Array.from(files);
-    
+
     // Filter out empty files
     const nonEmptyFiles: File[] = [];
     const emptyFiles: string[] = [];
-    
+
     for (const file of fileArray) {
       if (file.size === 0) {
         emptyFiles.push(file.name);
@@ -367,9 +494,9 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
 
     // If all files were empty, return early
     if (nonEmptyFiles.length === 0) {
-      toast.info('No non-empty files to upload');
+      toast.info("No non-empty files to upload");
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
       return;
     }
@@ -380,7 +507,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
       newProgress.set(file.name, {
         fileName: file.name,
         percentage: 0,
-        status: 'uploading',
+        status: "uploading",
       });
     }
     setFileUploadProgress(newProgress);
@@ -390,17 +517,19 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
       try {
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
-        
-        const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
-          setFileUploadProgress(prev => {
-            const updated = new Map(prev);
-            const current = updated.get(file.name);
-            if (current) {
-              updated.set(file.name, { ...current, percentage });
-            }
-            return updated;
-          });
-        });
+
+        const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress(
+          (percentage) => {
+            setFileUploadProgress((prev) => {
+              const updated = new Map(prev);
+              const current = updated.get(file.name);
+              if (current) {
+                updated.set(file.name, { ...current, percentage });
+              }
+              return updated;
+            });
+          },
+        );
 
         await addFile.mutateAsync({
           id: generateSecure32ByteId(),
@@ -411,29 +540,34 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         });
 
         // Mark as complete
-        setFileUploadProgress(prev => {
+        setFileUploadProgress((prev) => {
           const updated = new Map(prev);
           const current = updated.get(file.name);
           if (current) {
-            updated.set(file.name, { ...current, percentage: 100, status: 'complete' });
+            updated.set(file.name, {
+              ...current,
+              percentage: 100,
+              status: "complete",
+            });
           }
           return updated;
         });
 
         toast.success(`${file.name} uploaded successfully`);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-        
+        const errorMessage =
+          error instanceof Error ? error.message : "Upload failed";
+
         // Mark as error
-        setFileUploadProgress(prev => {
+        setFileUploadProgress((prev) => {
           const updated = new Map(prev);
           const current = updated.get(file.name);
           if (current) {
-            updated.set(file.name, { ...current, status: 'error' });
+            updated.set(file.name, { ...current, status: "error" });
           }
           return updated;
         });
-        
+
         toast.error(`Failed to upload ${file.name}: ${errorMessage}`);
       }
     }
@@ -444,31 +578,35 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     }, 2000);
 
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
-  const handleFolderUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFolderUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     const fileArray = Array.from(files);
-    
+
     // Validate that all files have relative paths
     if (!validateFolderFiles(fileArray)) {
-      toast.error('Browser does not support folder upload with structure. Please try drag-and-drop instead.');
+      toast.error(
+        "Browser does not support folder upload with structure. Please try drag-and-drop instead.",
+      );
       if (folderInputRef.current) {
-        folderInputRef.current.value = '';
+        folderInputRef.current.value = "";
       }
       return;
     }
 
     const folderFiles = extractFolderFiles(files);
-    
+
     if (folderFiles.length === 0) {
-      toast.error('No files found in the selected folder');
+      toast.error("No files found in the selected folder");
       if (folderInputRef.current) {
-        folderInputRef.current.value = '';
+        folderInputRef.current.value = "";
       }
       return;
     }
@@ -480,7 +618,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         newProgress.set(folderFile.file.name, {
           fileName: folderFile.file.name,
           percentage: 0,
-          status: 'uploading',
+          status: "uploading",
         });
       }
       setFileUploadProgress(newProgress);
@@ -494,7 +632,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         },
         onProgress: (current, total, fileName) => {
           const percentage = Math.round((current / total) * 100);
-          setFileUploadProgress(prev => {
+          setFileUploadProgress((prev) => {
             const updated = new Map(prev);
             const fileProgress = updated.get(fileName);
             if (fileProgress) {
@@ -506,35 +644,36 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
       });
 
       // Mark all as complete
-      setFileUploadProgress(prev => {
+      setFileUploadProgress((prev) => {
         const updated = new Map(prev);
         for (const [key, value] of updated.entries()) {
-          updated.set(key, { ...value, percentage: 100, status: 'complete' });
+          updated.set(key, { ...value, percentage: 100, status: "complete" });
         }
         return updated;
       });
 
-      toast.success('Folder uploaded successfully');
-      
+      toast.success("Folder uploaded successfully");
+
       // Clear progress after a short delay
       setTimeout(() => {
         setFileUploadProgress(new Map());
       }, 2000);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Folder upload failed';
+      const errorMessage =
+        error instanceof Error ? error.message : "Folder upload failed";
       toast.error(errorMessage);
-      
+
       // Mark all as error
-      setFileUploadProgress(prev => {
+      setFileUploadProgress((prev) => {
         const updated = new Map(prev);
         for (const [key, value] of updated.entries()) {
-          updated.set(key, { ...value, status: 'error' });
+          updated.set(key, { ...value, status: "error" });
         }
         return updated;
       });
     } finally {
       if (folderInputRef.current) {
-        folderInputRef.current.value = '';
+        folderInputRef.current.value = "";
       }
     }
   };
@@ -554,13 +693,14 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     setIsDragging(false);
 
     const dataTransfer = e.dataTransfer;
-    if (!dataTransfer || !dataTransfer.items || dataTransfer.items.length === 0) return;
+    if (!dataTransfer || !dataTransfer.items || dataTransfer.items.length === 0)
+      return;
 
     try {
       const folderFiles = await extractDroppedFiles(dataTransfer);
-      
+
       if (folderFiles.length === 0) {
-        toast.error('No files found in the dropped items');
+        toast.error("No files found in the dropped items");
         return;
       }
 
@@ -570,7 +710,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         newProgress.set(folderFile.file.name, {
           fileName: folderFile.file.name,
           percentage: 0,
-          status: 'uploading',
+          status: "uploading",
         });
       }
       setFileUploadProgress(newProgress);
@@ -584,7 +724,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         },
         onProgress: (current, total, fileName) => {
           const percentage = Math.round((current / total) * 100);
-          setFileUploadProgress(prev => {
+          setFileUploadProgress((prev) => {
             const updated = new Map(prev);
             const fileProgress = updated.get(fileName);
             if (fileProgress) {
@@ -596,29 +736,30 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
       });
 
       // Mark all as complete
-      setFileUploadProgress(prev => {
+      setFileUploadProgress((prev) => {
         const updated = new Map(prev);
         for (const [key, value] of updated.entries()) {
-          updated.set(key, { ...value, percentage: 100, status: 'complete' });
+          updated.set(key, { ...value, percentage: 100, status: "complete" });
         }
         return updated;
       });
 
-      toast.success('Files uploaded successfully');
-      
+      toast.success("Files uploaded successfully");
+
       // Clear progress after a short delay
       setTimeout(() => {
         setFileUploadProgress(new Map());
       }, 2000);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      const errorMessage =
+        error instanceof Error ? error.message : "Upload failed";
       toast.error(errorMessage);
-      
+
       // Mark all as error
-      setFileUploadProgress(prev => {
+      setFileUploadProgress((prev) => {
         const updated = new Map(prev);
         for (const [key, value] of updated.entries()) {
-          updated.set(key, { ...value, status: 'error' });
+          updated.set(key, { ...value, status: "error" });
         }
         return updated;
       });
@@ -627,10 +768,10 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -655,9 +796,12 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-sm">
           {folderPath.map((segment, index) => (
-            <React.Fragment key={segment.id || 'root'}>
-              {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+            <React.Fragment key={segment.id || "root"}>
+              {index > 0 && (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
               <button
+                type="button"
                 onClick={() => handleBreadcrumbClick(index)}
                 className="breadcrumb-link"
               >
@@ -681,8 +825,9 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             />
             {searchTerm && (
               <button
+                type="button"
                 onClick={() => {
-                  setSearchTerm('');
+                  setSearchTerm("");
                   searchInputRef.current?.focus();
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
@@ -700,10 +845,19 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setViewMode(currentFolderId, currentViewMode === 'list' ? 'gallery' : 'list')}
-                  aria-label={currentViewMode === 'list' ? 'Switch to Grid View' : 'Switch to List View'}
+                  onClick={() =>
+                    setViewMode(
+                      currentFolderId,
+                      currentViewMode === "list" ? "gallery" : "list",
+                    )
+                  }
+                  aria-label={
+                    currentViewMode === "list"
+                      ? "Switch to Grid View"
+                      : "Switch to List View"
+                  }
                 >
-                  {currentViewMode === 'list' ? (
+                  {currentViewMode === "list" ? (
                     <LayoutGrid className="h-4 w-4" />
                   ) : (
                     <LayoutList className="h-4 w-4" />
@@ -711,14 +865,16 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {currentViewMode === 'list' ? 'Switch to Grid View' : 'Switch to List View'}
+                {currentViewMode === "list"
+                  ? "Switch to Grid View"
+                  : "Switch to List View"}
               </TooltipContent>
             </Tooltip>
 
             {/* Upload Files Button */}
             <Button
               onClick={() => fileInputRef.current?.click()}
-              className="bg-background text-foreground border-2 border-blue-500 hover:bg-accent hover:text-accent-foreground"
+              className="bg-background text-foreground border border-blue-500/25 hover:bg-accent hover:text-accent-foreground"
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload Files
@@ -734,7 +890,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             {/* New Folder Button */}
             <Button
               onClick={() => setShowCreateFolder(true)}
-              className="bg-background text-foreground border-2 border-yellow-500 hover:bg-accent hover:text-accent-foreground"
+              className="bg-background text-foreground border border-yellow-500/25 hover:bg-accent hover:text-accent-foreground"
             >
               <FolderPlus className="h-4 w-4 mr-2" />
               New Folder
@@ -743,7 +899,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             {/* Upload Folder Button */}
             <Button
               onClick={() => folderInputRef.current?.click()}
-              className="bg-background text-foreground border-2 border-yellow-500 hover:bg-accent hover:text-accent-foreground"
+              className="bg-background text-foreground border border-yellow-500/25 hover:bg-accent hover:text-accent-foreground"
             >
               <FolderUp className="h-4 w-4 mr-2" />
               Upload Folder
@@ -771,13 +927,16 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
               {Array.from(fileUploadProgress.values()).map((progress) => (
                 <div key={progress.fileName} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="truncate max-w-[70%]" title={progress.fileName}>
+                    <span
+                      className="truncate max-w-[70%]"
+                      title={progress.fileName}
+                    >
                       {progress.fileName}
                     </span>
                     <span className="text-muted-foreground">
-                      {progress.status === 'complete' ? (
+                      {progress.status === "complete" ? (
                         <Check className="h-4 w-4 text-green-500" />
-                      ) : progress.status === 'error' ? (
+                      ) : progress.status === "error" ? (
                         <X className="h-4 w-4 text-destructive" />
                       ) : (
                         `${progress.percentage}%`
@@ -834,13 +993,15 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="text-center">
               <Upload className="h-16 w-16 mx-auto mb-4 text-primary" />
-              <p className="text-xl font-semibold">Drop files or folders here</p>
+              <p className="text-xl font-semibold">
+                Drop files or folders here
+              </p>
             </div>
           </div>
         )}
 
         {/* File List or Gallery */}
-        {currentViewMode === 'list' ? (
+        {currentViewMode === "list" ? (
           <Card>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -864,19 +1025,27 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                     </tr>
                   ) : error ? (
                     <tr>
-                      <td colSpan={isSearchActive ? 6 : 5} className="p-8 text-center text-destructive">
+                      <td
+                        colSpan={isSearchActive ? 6 : 5}
+                        className="p-8 text-center text-destructive"
+                      >
                         Error loading files: {error.message}
                       </td>
                     </tr>
                   ) : !displayItems || displayItems.length === 0 ? (
                     <tr>
-                      <td colSpan={isSearchActive ? 6 : 5} className="p-8 text-center text-muted-foreground">
-                        {isSearchActive ? 'No results found' : 'No files or folders yet'}
+                      <td
+                        colSpan={isSearchActive ? 6 : 5}
+                        className="p-8 text-center text-muted-foreground"
+                      >
+                        {isSearchActive
+                          ? "No results found"
+                          : "No files or folders yet"}
                       </td>
                     </tr>
                   ) : (
                     displayItems.map((item) => {
-                      const isFolder = item.__kind__ === 'folder';
+                      const isFolder = item.__kind__ === "folder";
                       const data = isFolder ? item.folder : item.file;
                       const itemId = data.id;
                       const isSelected = selectedItems.has(itemId);
@@ -890,7 +1059,9 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                           <td className="p-3 w-12">
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={(checked) => handleSelectItem(itemId, checked as boolean)}
+                              onCheckedChange={(checked) =>
+                                handleSelectItem(itemId, checked as boolean)
+                              }
                               aria-label={`Select ${data.name}`}
                             />
                           </td>
@@ -898,7 +1069,12 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                           {/* Name */}
                           <td className="p-3">
                             <button
-                              onClick={() => isFolder ? handleFolderClick(item.folder) : handleFileClick(item.file)}
+                              type="button"
+                              onClick={() =>
+                                isFolder
+                                  ? handleFolderClick(item.folder)
+                                  : handleFileClick(item.file)
+                              }
                               className="flex items-center gap-3 text-left w-full group"
                             >
                               {isFolder ? (
@@ -906,7 +1082,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                               ) : (
                                 <File className="h-5 w-5 text-muted-foreground shrink-0" />
                               )}
-                              <span 
+                              <span
                                 className="font-medium group-hover:text-primary transition-colors truncate max-w-xs"
                                 title={data.name}
                               >
@@ -919,16 +1095,24 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                           {isSearchActive && (
                             <td className="p-3 text-sm text-muted-foreground">
                               <button
-                                onClick={(e) => handleSearchResultPathClick(item, e)}
+                                type="button"
+                                onClick={(e) =>
+                                  handleSearchResultPathClick(item, e)
+                                }
                                 className="hover:text-foreground transition-colors flex items-center gap-1 truncate max-w-xs"
                                 title="Click to navigate to containing folder"
                               >
                                 <ChevronRight className="h-3 w-3 shrink-0" />
                                 <span className="truncate">
-                                  {isFolder 
-                                    ? getFolderContainingPath(item.folder.parentId, allFolders || [])
-                                    : getContainingFolderPath(item.file.parentId, allFolders || [])
-                                  }
+                                  {isFolder
+                                    ? getFolderContainingPath(
+                                        item.folder.parentId,
+                                        allFolders || [],
+                                      )
+                                    : getContainingFolderPath(
+                                        item.file.parentId,
+                                        allFolders || [],
+                                      )}
                                 </span>
                               </button>
                             </td>
@@ -940,18 +1124,21 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                               <Badge className={getFolderTintClasses()}>
                                 Folder
                               </Badge>
-                            ) : (() => {
-                              const typeLabel = getFileTypeLabel(data.name);
-                              const category = getFileCategory(data.name);
-                              const tintClasses = typeLabel === 'N/A' 
-                                ? getUnknownTypeTintClasses()
-                                : getFileTypeTintClasses(category);
-                              return (
-                                <Badge className={tintClasses}>
-                                  {typeLabel}
-                                </Badge>
-                              );
-                            })()}
+                            ) : (
+                              (() => {
+                                const typeLabel = getFileTypeLabel(data.name);
+                                const category = getFileCategory(data.name);
+                                const tintClasses =
+                                  typeLabel === "N/A"
+                                    ? getUnknownTypeTintClasses()
+                                    : getFileTypeTintClasses(category);
+                                return (
+                                  <Badge className={tintClasses}>
+                                    {typeLabel}
+                                  </Badge>
+                                );
+                              })()
+                            )}
                           </td>
 
                           {/* Created */}
@@ -961,7 +1148,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
 
                           {/* Size */}
                           <td className="p-3 text-sm text-muted-foreground text-center">
-                            {isFolder ? '—' : formatFileSize(item.file.size)}
+                            {isFolder ? "—" : formatFileSize(item.file.size)}
                           </td>
 
                           {/* Actions */}
@@ -974,7 +1161,9 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => handleDownload(item.file)}
+                                        onClick={() =>
+                                          handleDownload(item.file)
+                                        }
                                         className="h-8 w-8"
                                       >
                                         <Download className="h-4 w-4" />
@@ -987,7 +1176,9 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => handleCopyLink(item.file)}
+                                        onClick={() =>
+                                          handleCopyLink(item.file)
+                                        }
                                         className="h-8 w-8"
                                       >
                                         <Link2 className="h-4 w-4" />
@@ -1002,7 +1193,13 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => setItemToMove({ id: itemId, name: data.name, isFolder })}
+                                    onClick={() =>
+                                      setItemToMove({
+                                        id: itemId,
+                                        name: data.name,
+                                        isFolder,
+                                      })
+                                    }
                                     className="h-8 w-8"
                                   >
                                     <MoveRight className="h-4 w-4" />
@@ -1015,7 +1212,13 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => setItemToDelete({ id: itemId, name: data.name, isFolder })}
+                                    onClick={() =>
+                                      setItemToDelete({
+                                        id: itemId,
+                                        name: data.name,
+                                        isFolder,
+                                      })
+                                    }
                                     className="h-8 w-8 text-destructive hover:text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -1045,8 +1248,12 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             onFileClick={handleFileClick}
             onDownload={handleDownload}
             onCopyLink={handleCopyLink}
-            onMove={(id, name, isFolder) => setItemToMove({ id, name, isFolder })}
-            onDelete={(id, name, isFolder) => setItemToDelete({ id, name, isFolder })}
+            onMove={(id, name, isFolder) =>
+              setItemToMove({ id, name, isFolder })
+            }
+            onDelete={(id, name, isFolder) =>
+              setItemToDelete({ id, name, isFolder })
+            }
             onSearchResultPathClick={handleSearchResultPathClick}
             allFolders={allFolders || []}
           />
@@ -1066,23 +1273,29 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder="Folder name"
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   handleCreateFolder();
                 }
               }}
             />
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateFolder(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateFolder(false)}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleCreateFolder} disabled={createFolder.isPending}>
+              <Button
+                onClick={handleCreateFolder}
+                disabled={createFolder.isPending}
+              >
                 {createFolder.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creating...
                   </>
                 ) : (
-                  'Create'
+                  "Create"
                 )}
               </Button>
             </DialogFooter>
@@ -1090,14 +1303,19 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialog
+          open={!!itemToDelete}
+          onOpenChange={() => setItemToDelete(null)}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete {itemToDelete?.isFolder ? 'the folder' : 'the file'} "{itemToDelete?.name}"
-                {itemToDelete?.isFolder && ' and all its contents'}.
-                This action cannot be undone.
+                This will permanently delete{" "}
+                {itemToDelete?.isFolder ? "the folder" : "the file"} "
+                {itemToDelete?.name}"
+                {itemToDelete?.isFolder && " and all its contents"}. This action
+                cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1112,7 +1330,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                     Deleting...
                   </>
                 ) : (
-                  'Delete'
+                  "Delete"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -1123,10 +1341,12 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         <AlertDialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete {selectedItems.size} item(s)?</AlertDialogTitle>
+              <AlertDialogTitle>
+                Delete {selectedItems.size} item(s)?
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the selected items and all their contents.
-                This action cannot be undone.
+                This will permanently delete the selected items and all their
+                contents. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1141,7 +1361,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                     Deleting...
                   </>
                 ) : (
-                  'Delete All'
+                  "Delete All"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -1153,13 +1373,13 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Move "{itemToMove?.name}"</DialogTitle>
-              <DialogDescription>
-                Select a destination folder
-              </DialogDescription>
+              <DialogDescription>Select a destination folder</DialogDescription>
             </DialogHeader>
             <Select
-              value={moveDestination || 'root'}
-              onValueChange={(value) => setMoveDestination(value === 'root' ? null : value)}
+              value={moveDestination || "root"}
+              onValueChange={(value) =>
+                setMoveDestination(value === "root" ? null : value)
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select destination" />
@@ -1184,7 +1404,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                     Moving...
                   </>
                 ) : (
-                  'Move'
+                  "Move"
                 )}
               </Button>
             </DialogFooter>
@@ -1196,13 +1416,13 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Move {selectedItems.size} item(s)</DialogTitle>
-              <DialogDescription>
-                Select a destination folder
-              </DialogDescription>
+              <DialogDescription>Select a destination folder</DialogDescription>
             </DialogHeader>
             <Select
-              value={bulkMoveDestination || 'root'}
-              onValueChange={(value) => setBulkMoveDestination(value === 'root' ? null : value)}
+              value={bulkMoveDestination || "root"}
+              onValueChange={(value) =>
+                setBulkMoveDestination(value === "root" ? null : value)
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select destination" />
@@ -1220,14 +1440,17 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
               <Button variant="outline" onClick={() => setShowBulkMove(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleBulkMoveConfirm} disabled={moveItems.isPending}>
+              <Button
+                onClick={handleBulkMoveConfirm}
+                disabled={moveItems.isPending}
+              >
                 {moveItems.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Moving...
                   </>
                 ) : (
-                  'Move All'
+                  "Move All"
                 )}
               </Button>
             </DialogFooter>

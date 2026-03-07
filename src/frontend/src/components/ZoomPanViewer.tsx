@@ -1,30 +1,37 @@
-import { useState, useRef, useEffect, ReactNode } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface ZoomPanViewerProps {
   children: ReactNode;
   className?: string;
 }
 
-export function ZoomPanViewer({ children, className = '' }: ZoomPanViewerProps) {
+export function ZoomPanViewer({
+  children,
+  className = "",
+}: ZoomPanViewerProps) {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleWheel = (e: WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
-    
+
     const delta = e.deltaY * -0.001;
-    const newScale = Math.min(Math.max(0.5, scale + delta), 5);
-    
-    setScale(newScale);
-  };
+    setScale((prev) => Math.min(Math.max(0.5, prev + delta), 5));
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Only start dragging on left mouse button
     if (e.button !== 0) return;
-    
+
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -34,7 +41,7 @@ export function ZoomPanViewer({ children, className = '' }: ZoomPanViewerProps) 
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    
+
     setPosition({
       x: e.clientX - dragStart.x,
       y: e.clientY - dragStart.y,
@@ -53,18 +60,18 @@ export function ZoomPanViewer({ children, className = '' }: ZoomPanViewerProps) 
     const container = containerRef.current;
     if (!container) return;
 
-    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener("wheel", handleWheel, { passive: false });
 
     return () => {
-      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener("wheel", handleWheel);
     };
-  }, [scale]);
+  }, [handleWheel]);
 
   // Reset zoom and pan when children change
   useEffect(() => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
-  }, [children]);
+  }, []);
 
   return (
     <div
@@ -74,13 +81,13 @@ export function ZoomPanViewer({ children, className = '' }: ZoomPanViewerProps) 
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
-      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      style={{ cursor: isDragging ? "grabbing" : "grab" }}
     >
       <div
         style={{
           transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-          transformOrigin: 'center center',
-          transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+          transformOrigin: "center center",
+          transition: isDragging ? "none" : "transform 0.1s ease-out",
         }}
         className="w-full h-full flex items-center justify-center"
       >

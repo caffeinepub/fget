@@ -1,14 +1,25 @@
-import { Upload, LogOut, LogIn, Loader2, Copy, Check, Settings } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
-import { Button } from '@/components/ui/button';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useQueryClient } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
-import { useGetCallerUserProfile, useGetCallerUserRole } from '../hooks/useQueries';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { ManagePanel } from './ManagePanel';
-import { UserRole } from '../backend';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Check,
+  Copy,
+  Loader2,
+  LogIn,
+  LogOut,
+  Settings,
+  Upload,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { UserRole } from "../backend";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import {
+  useGetCallerUserProfile,
+  useGetCallerUserRole,
+} from "../hooks/useQueries";
+import { ManagePanel } from "./ManagePanel";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Header() {
   const { login, clear, loginStatus, identity } = useInternetIdentity();
@@ -18,7 +29,7 @@ export function Header() {
   const [copiedPrincipal, setCopiedPrincipal] = useState(false);
 
   const isAuthenticated = !!identity;
-  const isLoggingIn = loginStatus === 'logging-in';
+  const isLoggingIn = loginStatus === "logging-in";
   const isAdmin = userRole === UserRole.admin;
 
   const handleAuth = async () => {
@@ -29,8 +40,8 @@ export function Header() {
       try {
         await login();
       } catch (error: any) {
-        console.error('Login error:', error);
-        if (error.message === 'User is already authenticated') {
+        console.error("Login error:", error);
+        if (error.message === "User is already authenticated") {
           await clear();
           setTimeout(() => login(), 300);
         }
@@ -39,7 +50,7 @@ export function Header() {
   };
 
   const getShortenedPrincipal = () => {
-    if (!identity) return '';
+    if (!identity) return "";
     const principal = identity.getPrincipal().toString();
     if (principal.length <= 11) return principal;
     return `${principal.slice(0, 4)}...${principal.slice(-4)}`;
@@ -51,10 +62,10 @@ export function Header() {
     try {
       await navigator.clipboard.writeText(principal);
       setCopiedPrincipal(true);
-      toast.success('Principal ID copied to clipboard');
+      toast.success("Principal ID copied to clipboard");
       setTimeout(() => setCopiedPrincipal(false), 2000);
-    } catch (error) {
-      toast.error('Failed to copy Principal ID');
+    } catch (_error) {
+      toast.error("Failed to copy Principal ID");
     }
   };
 
@@ -69,7 +80,7 @@ export function Header() {
             <h1 className="text-xl font-bold">fget</h1>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {isAuthenticated && userProfile && (
             <>
@@ -98,7 +109,7 @@ export function Header() {
           <Button
             onClick={handleAuth}
             disabled={isLoggingIn}
-            variant={isAuthenticated ? 'outline' : 'default'}
+            variant={isAuthenticated ? "outline" : "default"}
             size="sm"
             className="gap-2"
           >

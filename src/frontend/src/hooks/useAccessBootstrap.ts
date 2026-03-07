@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { useActor } from './useActor';
-import { useInternetIdentity } from './useInternetIdentity';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { useActor } from "./useActor";
+import { useInternetIdentity } from "./useInternetIdentity";
 
 /**
  * Bootstrap hook that automatically calls initializeAccessControl() once per authenticated session
@@ -38,22 +38,24 @@ export function useAccessBootstrap() {
     (async () => {
       try {
         await actor.initializeAccessControl();
-        
+
         // Mark this principal as bootstrapped in sessionStorage
-        sessionStorage.setItem(sessionKey, 'true');
+        sessionStorage.setItem(sessionKey, "true");
 
         // Invalidate and refetch all access-related queries so the UI updates immediately
-        await queryClient.invalidateQueries({ queryKey: ['callerUserRole'] });
-        await queryClient.invalidateQueries({ queryKey: ['callerApproved'] });
-        await queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-        await queryClient.invalidateQueries({ queryKey: ['members'] });
-        
+        await queryClient.invalidateQueries({ queryKey: ["callerUserRole"] });
+        await queryClient.invalidateQueries({ queryKey: ["callerApproved"] });
+        await queryClient.invalidateQueries({
+          queryKey: ["currentUserProfile"],
+        });
+        await queryClient.invalidateQueries({ queryKey: ["members"] });
+
         // Refetch to ensure the UI gets the new state
-        await queryClient.refetchQueries({ queryKey: ['callerUserRole'] });
-        await queryClient.refetchQueries({ queryKey: ['callerApproved'] });
+        await queryClient.refetchQueries({ queryKey: ["callerUserRole"] });
+        await queryClient.refetchQueries({ queryKey: ["callerApproved"] });
       } catch (error) {
         // Silently handle errors - initializeAccessControl may fail if already initialized
-        console.debug('Bootstrap attempt completed:', error);
+        console.debug("Bootstrap attempt completed:", error);
       } finally {
         isBootstrappingRef.current = false;
       }

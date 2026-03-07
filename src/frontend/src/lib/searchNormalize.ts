@@ -3,10 +3,13 @@
  * Converts text to lowercase and removes diacritics (accents) for comparison.
  */
 export function normalizeForSearch(text: string): string {
-  return text
-    .normalize('NFD') // Decompose combined characters into base + diacritics
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
-    .toLowerCase(); // Case-insensitive
+  return (
+    text
+      .normalize("NFD") // Decompose combined characters into base + diacritics
+      // biome-ignore lint/suspicious/noMisleadingCharacterClass: intentional Unicode range for diacritic removal
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritical marks
+      .toLowerCase()
+  ); // Case-insensitive
 }
 
 /**

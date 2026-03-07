@@ -1,12 +1,35 @@
-import { useState, useEffect } from 'react';
-import { X, Download, ChevronLeft, ChevronRight, Loader2, AlertCircle, Maximize2, Minimize2, File, FileText, Image as ImageIcon, Video as VideoIcon, Music, Archive } from 'lucide-react';
-import { Dialog, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { toast } from 'sonner';
-import { getFileExtension, getMimeType, isImage, isVideo, isAudio, isDocument, isText } from '../lib/fileTypes';
-import type { FileMetadata } from '../backend';
-import { ZoomPanViewer } from './ZoomPanViewer';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogOverlay, DialogPortal } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertCircle,
+  Archive,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  File,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Maximize2,
+  Minimize2,
+  Music,
+  Video as VideoIcon,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import type { FileMetadata } from "../backend";
+import {
+  getFileExtension,
+  getMimeType,
+  isAudio,
+  isDocument,
+  isImage,
+  isText,
+  isVideo,
+} from "../lib/fileTypes";
+import { ZoomPanViewer } from "./ZoomPanViewer";
 
 interface FilePreviewModalProps {
   file: FileMetadata | null;
@@ -32,14 +55,15 @@ export function FilePreviewModal({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
 
-  const extension = file ? getFileExtension(file.name) : '';
+  const extension = file ? getFileExtension(file.name) : "";
   const mimeType = getMimeType(extension);
   const isImageFile = isImage(extension);
   const isVideoFile = isVideo(extension);
   const isAudioFile = isAudio(extension);
   const isDocumentFile = isDocument(extension);
   const isTextFile = isText(extension);
-  const isSupported = isImageFile || isVideoFile || isAudioFile || isDocumentFile || isTextFile;
+  const isSupported =
+    isImageFile || isVideoFile || isAudioFile || isDocumentFile || isTextFile;
 
   const canNavigate = allFiles.length > 1;
   const hasPrevious = canNavigate && currentFileIndex > 0;
@@ -61,7 +85,7 @@ export function FilePreviewModal({
       try {
         // Check if file type is supported
         if (!isSupported) {
-          setError('Preview not available for this file type');
+          setError("Preview not available for this file type");
           setIsLoading(false);
           return;
         }
@@ -71,7 +95,7 @@ export function FilePreviewModal({
           const directUrl = file.blob.getDirectURL();
           setBlobUrl(directUrl);
           setIsLoading(false);
-        } 
+        }
         // For documents, create blob URL for iframe preview
         else if (isDocumentFile) {
           const bytes = await file.blob.getBytes();
@@ -88,8 +112,8 @@ export function FilePreviewModal({
           setIsLoading(false);
         }
       } catch (err) {
-        console.error('Preview error:', err);
-        setError('Failed to load preview');
+        console.error("Preview error:", err);
+        setError("Failed to load preview");
         setIsLoading(false);
       }
     };
@@ -101,7 +125,18 @@ export function FilePreviewModal({
         URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [file, isOpen, extension]);
+  }, [
+    file,
+    isOpen,
+    isSupported,
+    isImageFile,
+    isVideoFile,
+    isAudioFile,
+    isDocumentFile,
+    isTextFile,
+    mimeType,
+    blobUrl,
+  ]);
 
   // Handle fullscreen changes
   useEffect(() => {
@@ -109,9 +144,9 @@ export function FilePreviewModal({
       setIsFullscreen(!!document.fullscreenElement);
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
@@ -131,44 +166,44 @@ export function FilePreviewModal({
       const bytes = await file.blob.getBytes();
       const blob = new Blob([bytes], { type: mimeType });
       const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
+
+      const link = document.createElement("a");
       link.href = url;
       link.download = file.name;
-      link.style.display = 'none';
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
-      
+
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }, 100);
-      
-      toast.success('Download started', {
-        description: `Downloading ${file.name}`
+
+      toast.success("Download started", {
+        description: `Downloading ${file.name}`,
       });
     } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Download failed', {
-        description: 'Please try again'
+      console.error("Download error:", error);
+      toast.error("Download failed", {
+        description: "Please try again",
       });
     }
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (hasPrevious && onNavigateFile) {
       onNavigateFile(currentFileIndex - 1);
     }
-  };
+  }, [hasPrevious, onNavigateFile, currentFileIndex]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (hasNext && onNavigateFile) {
       onNavigateFile(currentFileIndex + 1);
     }
-  };
+  }, [hasNext, onNavigateFile, currentFileIndex]);
 
-  const toggleFullscreen = async () => {
-    const viewerElement = document.getElementById('file-viewer-container');
+  const toggleFullscreen = useCallback(async () => {
+    const viewerElement = document.getElementById("file-viewer-container");
     if (!viewerElement) return;
 
     try {
@@ -178,39 +213,45 @@ export function FilePreviewModal({
         await document.exitFullscreen();
       }
     } catch (error) {
-      console.error('Fullscreen error:', error);
-      toast.error('Fullscreen not supported');
+      console.error("Fullscreen error:", error);
+      toast.error("Fullscreen not supported");
     }
-  };
+  }, []);
 
   const toggleMaximize = () => {
     setIsMaximized(!isMaximized);
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'ArrowLeft' && hasPrevious) {
-      handlePrevious();
-    } else if (e.key === 'ArrowRight' && hasNext) {
-      handleNext();
-    } else if (e.key === 'Escape') {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        onClose();
-      }
-    } else if (e.key === 'f' || e.key === 'F') {
-      toggleFullscreen();
-    }
-  };
-
   useEffect(() => {
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-      };
-    }
-  }, [isOpen, hasPrevious, hasNext]);
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" && hasPrevious) {
+        handlePrevious();
+      } else if (e.key === "ArrowRight" && hasNext) {
+        handleNext();
+      } else if (e.key === "Escape") {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          onClose();
+        }
+      } else if (e.key === "f" || e.key === "F") {
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    isOpen,
+    hasPrevious,
+    hasNext,
+    handlePrevious,
+    handleNext,
+    onClose,
+    toggleFullscreen,
+  ]);
 
   const getFileIcon = (fileName: string) => {
     const ext = getFileExtension(fileName);
@@ -218,12 +259,13 @@ export function FilePreviewModal({
     if (isVideo(ext)) return <VideoIcon className="h-4 w-4" />;
     if (isAudio(ext)) return <Music className="h-4 w-4" />;
     if (isText(ext)) return <FileText className="h-4 w-4" />;
-    if (ext === 'zip' || ext === 'rar' || ext === '7z') return <Archive className="h-4 w-4" />;
+    if (ext === "zip" || ext === "rar" || ext === "7z")
+      return <Archive className="h-4 w-4" />;
     return <File className="h-4 w-4" />;
   };
 
   const formatFileSize = (size: number): string => {
-    const units = ['B', 'KB', 'MB', 'GB'];
+    const units = ["B", "KB", "MB", "GB"];
     let fileSize = size;
     let unitIndex = 0;
 
@@ -237,9 +279,9 @@ export function FilePreviewModal({
 
   if (!file) return null;
 
-  const viewerSizeClass = isMaximized 
-    ? 'w-[95vw] h-[95vh]' 
-    : 'w-[90vw] max-w-6xl h-[85vh] sm:w-[85vw] sm:h-[80vh]';
+  const viewerSizeClass = isMaximized
+    ? "w-[95vw] h-[95vh]"
+    : "w-[90vw] max-w-6xl h-[85vh] sm:w-[85vw] sm:h-[80vh]";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -253,9 +295,12 @@ export function FilePreviewModal({
             {/* Header */}
             <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 border-b bg-background/95 backdrop-blur flex-shrink-0">
               <div className="flex-1 min-w-0 mr-2 sm:mr-4">
-                <h2 className="text-sm sm:text-lg font-semibold truncate">{file.name}</h2>
+                <h2 className="text-sm sm:text-lg font-semibold truncate">
+                  {file.name}
+                </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {extension.toUpperCase()} • {formatFileSize(Number(file.size))}
+                  {extension.toUpperCase()} •{" "}
+                  {formatFileSize(Number(file.size))}
                 </p>
               </div>
               <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -270,7 +315,9 @@ export function FilePreviewModal({
                       title="Previous (←)"
                     >
                       <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline text-xs sm:text-sm">Previous</span>
+                      <span className="hidden sm:inline text-xs sm:text-sm">
+                        Previous
+                      </span>
                     </Button>
                     <Button
                       onClick={handleNext}
@@ -280,7 +327,9 @@ export function FilePreviewModal({
                       className="gap-1 sm:gap-2 h-8 sm:h-9"
                       title="Next (→)"
                     >
-                      <span className="hidden sm:inline text-xs sm:text-sm">Next</span>
+                      <span className="hidden sm:inline text-xs sm:text-sm">
+                        Next
+                      </span>
                       <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </>
@@ -293,7 +342,9 @@ export function FilePreviewModal({
                   title="Download (D)"
                 >
                   <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline text-xs sm:text-sm">Download</span>
+                  <span className="hidden sm:inline text-xs sm:text-sm">
+                    Download
+                  </span>
                 </Button>
                 <Button
                   onClick={toggleMaximize}
@@ -321,7 +372,7 @@ export function FilePreviewModal({
                     <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
                   )}
                   <span className="hidden md:inline text-xs sm:text-sm">
-                    {isFullscreen ? 'Exit' : 'Fullscreen'}
+                    {isFullscreen ? "Exit" : "Fullscreen"}
                   </span>
                 </Button>
                 <Button
@@ -350,12 +401,13 @@ export function FilePreviewModal({
                     <div className="p-2 space-y-1">
                       {allFiles.map((f, idx) => (
                         <button
+                          type="button"
                           key={f.id}
                           onClick={() => onNavigateFile?.(idx)}
                           className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
                             idx === currentFileIndex
-                              ? 'bg-primary text-primary-foreground'
-                              : 'hover:bg-muted'
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-muted"
                           }`}
                           title={f.name}
                         >
@@ -374,6 +426,7 @@ export function FilePreviewModal({
                 {canNavigate && (
                   <>
                     <button
+                      type="button"
                       onClick={handlePrevious}
                       disabled={!hasPrevious}
                       className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 bg-background/90 hover:bg-background border rounded-full p-2 sm:p-3 shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
@@ -382,6 +435,7 @@ export function FilePreviewModal({
                       <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                     </button>
                     <button
+                      type="button"
                       onClick={handleNext}
                       disabled={!hasNext}
                       className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 bg-background/90 hover:bg-background border rounded-full p-2 sm:p-3 shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
@@ -395,15 +449,24 @@ export function FilePreviewModal({
                 {isLoading && (
                   <div className="flex flex-col items-center justify-center gap-3 p-4 sm:p-8">
                     <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
-                    <p className="text-xs sm:text-sm text-muted-foreground">Loading preview...</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Loading preview...
+                    </p>
                   </div>
                 )}
 
                 {error && (
                   <div className="flex flex-col items-center justify-center gap-3 p-4 sm:p-8">
                     <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
-                    <p className="text-xs sm:text-sm text-muted-foreground text-center">{error}</p>
-                    <Button onClick={handleDownload} variant="outline" className="gap-2" size="sm">
+                    <p className="text-xs sm:text-sm text-muted-foreground text-center">
+                      {error}
+                    </p>
+                    <Button
+                      onClick={handleDownload}
+                      variant="outline"
+                      className="gap-2"
+                      size="sm"
+                    >
                       <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                       Download file
                     </Button>
@@ -419,7 +482,7 @@ export function FilePreviewModal({
                           src={blobUrl}
                           alt={file.name}
                           className="max-w-full max-h-full object-contain"
-                          onError={() => setError('Failed to load image')}
+                          onError={() => setError("Failed to load image")}
                         />
                       </ZoomPanViewer>
                     )}
@@ -431,8 +494,9 @@ export function FilePreviewModal({
                           src={blobUrl}
                           controls
                           className="max-w-full max-h-full"
-                          onError={() => setError('Failed to load video')}
+                          onError={() => setError("Failed to load video")}
                         >
+                          <track kind="captions" />
                           Your browser does not support video playback.
                         </video>
                       </div>
@@ -445,8 +509,9 @@ export function FilePreviewModal({
                           src={blobUrl}
                           controls
                           className="w-full max-w-md"
-                          onError={() => setError('Failed to load audio')}
+                          onError={() => setError("Failed to load audio")}
                         >
+                          <track kind="captions" />
                           Your browser does not support audio playback.
                         </audio>
                       </div>
@@ -459,7 +524,7 @@ export function FilePreviewModal({
                           src={blobUrl}
                           className="w-full h-full border-0"
                           title={file.name}
-                          onError={() => setError('Failed to load document')}
+                          onError={() => setError("Failed to load document")}
                         />
                       </div>
                     )}

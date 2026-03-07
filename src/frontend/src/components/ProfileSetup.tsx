@@ -1,16 +1,25 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { useSaveCallerUserProfile, useIsUsernameUnique } from '../hooks/useQueries';
-import { toast } from 'sonner';
-import { Loader2, User, AlertCircle, CheckCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AlertCircle, CheckCircle, Loader2, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  useIsUsernameUnique,
+  useSaveCallerUserProfile,
+} from "../hooks/useQueries";
 
 export function ProfileSetup() {
-  const [username, setUsername] = useState('');
-  const [debouncedUsername, setDebouncedUsername] = useState('');
+  const [username, setUsername] = useState("");
+  const [debouncedUsername, setDebouncedUsername] = useState("");
   const [isUnique, setIsUnique] = useState<boolean | null>(null);
   const [checkingUnique, setCheckingUnique] = useState(false);
   const saveProfile = useSaveCallerUserProfile();
@@ -21,13 +30,13 @@ export function ProfileSetup() {
     const timer = setTimeout(async () => {
       const trimmed = username.trim();
       setDebouncedUsername(trimmed);
-      
+
       if (trimmed.length >= 2) {
         setCheckingUnique(true);
         try {
           const result = await checkUsername.mutateAsync(trimmed);
           setIsUnique(result);
-        } catch (error) {
+        } catch (_error) {
           setIsUnique(null);
         } finally {
           setCheckingUnique(false);
@@ -38,37 +47,41 @@ export function ProfileSetup() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [username]);
+  }, [username, checkUsername]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const trimmedUsername = username.trim();
-    
+
     if (!trimmedUsername) {
-      toast.error('Please enter a username');
+      toast.error("Please enter a username");
       return;
     }
 
     if (trimmedUsername.length < 2) {
-      toast.error('Username must be at least 2 characters');
+      toast.error("Username must be at least 2 characters");
       return;
     }
 
     if (!isUnique) {
-      toast.error('This username is already taken');
+      toast.error("This username is already taken");
       return;
     }
 
     try {
       await saveProfile.mutateAsync({ name: trimmedUsername });
-      toast.success('Profile created successfully');
+      toast.success("Profile created successfully");
     } catch (error: any) {
       // Handle backend validation errors
-      const errorMessage = error?.message || 'Failed to create profile';
-      if (errorMessage.includes('Username already taken') || errorMessage.includes('already taken')) {
-        toast.error('Username Already Taken', {
-          description: 'This username was just taken by another user. Please choose a different one.'
+      const errorMessage = error?.message || "Failed to create profile";
+      if (
+        errorMessage.includes("Username already taken") ||
+        errorMessage.includes("already taken")
+      ) {
+        toast.error("Username Already Taken", {
+          description:
+            "This username was just taken by another user. Please choose a different one.",
         });
         // Re-check uniqueness
         setIsUnique(null);
@@ -81,13 +94,13 @@ export function ProfileSetup() {
         } finally {
           setCheckingUnique(false);
         }
-      } else if (errorMessage.includes('Username cannot be empty')) {
-        toast.error('Invalid Username', {
-          description: 'Username cannot be empty or contain only spaces.'
+      } else if (errorMessage.includes("Username cannot be empty")) {
+        toast.error("Invalid Username", {
+          description: "Username cannot be empty or contain only spaces.",
         });
       } else {
-        toast.error('Failed to Create Profile', {
-          description: errorMessage
+        toast.error("Failed to Create Profile", {
+          description: errorMessage,
         });
       }
     }
@@ -125,8 +138,11 @@ export function ProfileSetup() {
                   disabled={saveProfile.isPending}
                   autoFocus
                   className={
-                    isValid ? 'border-green-500 focus-visible:ring-green-500' :
-                    isInvalid ? 'border-destructive focus-visible:ring-destructive' : ''
+                    isValid
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : isInvalid
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : ""
                   }
                 />
                 {checkingUnique && debouncedUsername && (
@@ -165,7 +181,12 @@ export function ProfileSetup() {
             <Button
               type="submit"
               className="w-full"
-              disabled={saveProfile.isPending || !username.trim() || username.trim().length < 2 || !isUnique}
+              disabled={
+                saveProfile.isPending ||
+                !username.trim() ||
+                username.trim().length < 2 ||
+                !isUnique
+              }
             >
               {saveProfile.isPending ? (
                 <>
@@ -173,7 +194,7 @@ export function ProfileSetup() {
                   Creating profile...
                 </>
               ) : (
-                'Continue'
+                "Continue"
               )}
             </Button>
           </form>
