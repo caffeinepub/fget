@@ -510,7 +510,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         status: "uploading",
       });
     }
-    setFileUploadProgress(newProgress);
+    setFileUploadProgress((prev) => new Map([...prev, ...newProgress]));
 
     for (let i = 0; i < nonEmptyFiles.length; i++) {
       const file = nonEmptyFiles[i];
@@ -621,7 +621,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
           status: "uploading",
         });
       }
-      setFileUploadProgress(newProgress);
+      setFileUploadProgress((prev) => new Map([...prev, ...newProgress]));
 
       await uploadFolderRecursively(folderFiles, currentFolderId, {
         createFolder: async (name: string, parentId: string | null) => {
@@ -713,7 +713,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
           status: "uploading",
         });
       }
-      setFileUploadProgress(newProgress);
+      setFileUploadProgress((prev) => new Map([...prev, ...newProgress]));
 
       await uploadFolderRecursively(folderFiles, currentFolderId, {
         createFolder: async (name: string, parentId: string | null) => {
@@ -1078,9 +1078,9 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                               className="flex items-center gap-3 text-left w-full group"
                             >
                               {isFolder ? (
-                                <Folder className="h-5 w-5 text-primary shrink-0" />
+                                <Folder className="h-5 w-5 text-yellow-500 shrink-0" />
                               ) : (
-                                <File className="h-5 w-5 text-muted-foreground shrink-0" />
+                                <File className="h-5 w-5 text-blue-400 shrink-0" />
                               )}
                               <span
                                 className="font-medium group-hover:text-primary transition-colors truncate max-w-xs"

@@ -210,7 +210,7 @@ export function FileGallery({
               >
                 <div className="flex-1 flex items-center justify-center p-4 bg-muted/30">
                   {isFolder ? (
-                    <Folder className="h-16 w-16 text-primary" />
+                    <Folder className="h-16 w-16 text-yellow-500" />
                   ) : isImage(getFileExtension(data.name)) ? (
                     <img
                       src={item.file.blob.getDirectURL()}

@@ -96,12 +96,10 @@ export function FilePreviewModal({
           setBlobUrl(directUrl);
           setIsLoading(false);
         }
-        // For documents, create blob URL for iframe preview
+        // For documents, use direct URL for immediate loading (avoids downloading all bytes first)
         else if (isDocumentFile) {
-          const bytes = await file.blob.getBytes();
-          const blob = new Blob([bytes], { type: mimeType });
-          const url = URL.createObjectURL(blob);
-          setBlobUrl(url);
+          const directUrl = file.blob.getDirectURL();
+          setBlobUrl(directUrl);
           setIsLoading(false);
         }
         // For text files, load content as text
@@ -121,9 +119,7 @@ export function FilePreviewModal({
     loadFile();
 
     return () => {
-      if (blobUrl && (isDocumentFile || isTextFile)) {
-        URL.revokeObjectURL(blobUrl);
-      }
+      // No cleanup needed - direct URLs don't need to be revoked
     };
   }, [
     file,
@@ -134,8 +130,6 @@ export function FilePreviewModal({
     isAudioFile,
     isDocumentFile,
     isTextFile,
-    mimeType,
-    blobUrl,
   ]);
 
   // Handle fullscreen changes
