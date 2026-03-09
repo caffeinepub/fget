@@ -572,10 +572,15 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
       }
     }
 
-    // Clear progress after a short delay
+    // Clear progress after a delay, only if no uploads are still in progress
     setTimeout(() => {
-      setFileUploadProgress(new Map());
-    }, 2000);
+      setFileUploadProgress((prev) => {
+        const anyUploading = Array.from(prev.values()).some(
+          (p) => p.status === "uploading",
+        );
+        return anyUploading ? prev : new Map();
+      });
+    }, 10000);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -654,10 +659,15 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
 
       toast.success("Folder uploaded successfully");
 
-      // Clear progress after a short delay
+      // Clear progress after a delay, only if no uploads are still in progress
       setTimeout(() => {
-        setFileUploadProgress(new Map());
-      }, 2000);
+        setFileUploadProgress((prev) => {
+          const anyUploading = Array.from(prev.values()).some(
+            (p) => p.status === "uploading",
+          );
+          return anyUploading ? prev : new Map();
+        });
+      }, 10000);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Folder upload failed";
@@ -746,10 +756,15 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
 
       toast.success("Files uploaded successfully");
 
-      // Clear progress after a short delay
+      // Clear progress after a delay, only if no uploads are still in progress
       setTimeout(() => {
-        setFileUploadProgress(new Map());
-      }, 2000);
+        setFileUploadProgress((prev) => {
+          const anyUploading = Array.from(prev.values()).some(
+            (p) => p.status === "uploading",
+          );
+          return anyUploading ? prev : new Map();
+        });
+      }, 10000);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Upload failed";

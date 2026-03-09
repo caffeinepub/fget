@@ -96,10 +96,14 @@ export function FilePreviewModal({
           setBlobUrl(directUrl);
           setIsLoading(false);
         }
-        // For documents, use direct URL for immediate loading (avoids downloading all bytes first)
+        // For documents, fetch bytes and create a blob URL with correct MIME type so browser renders inline
         else if (isDocumentFile) {
-          const directUrl = file.blob.getDirectURL();
-          setBlobUrl(directUrl);
+          const bytes = await file.blob.getBytes();
+          const blob = new Blob([bytes], {
+            type: mimeType || "application/pdf",
+          });
+          const url = URL.createObjectURL(blob);
+          setBlobUrl(url);
           setIsLoading(false);
         }
         // For text files, load content as text
@@ -119,7 +123,13 @@ export function FilePreviewModal({
     loadFile();
 
     return () => {
-      // No cleanup needed - direct URLs don't need to be revoked
+      // Revoke any object URL to avoid memory leaks
+      setBlobUrl((prev) => {
+        if (prev?.startsWith("blob:")) {
+          URL.revokeObjectURL(prev);
+        }
+        return null;
+      });
     };
   }, [
     file,
@@ -130,6 +140,7 @@ export function FilePreviewModal({
     isAudioFile,
     isDocumentFile,
     isTextFile,
+    mimeType,
   ]);
 
   // Handle fullscreen changes
