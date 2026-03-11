@@ -66,7 +66,13 @@ import {
   Video as VideoIcon,
   X,
 } from "lucide-react";
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { toast } from "sonner";
 import type {
   FileMetadata,
@@ -99,6 +105,7 @@ import {
 } from "../lib/fileTypeTints";
 import {
   type FileCategory,
+  detectTypeFromBytes,
   getFileCategory,
   getFileExtension,
   getFileTypeLabel,
@@ -142,6 +149,9 @@ interface FileUploadProgress {
   status: "uploading" | "complete" | "error";
 }
 
+// Module-level cache to avoid re-fetching bytes for type detection
+const _typeDetectionCache = new Map<string, string>();
+
 export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [folderPath, setFolderPath] = useState<
@@ -165,6 +175,9 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
 
   // Multi-select state
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [detectedTypeLabels, setDetectedTypeLabels] = useState<
+    Map<string, string>
+  >(new Map());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -180,6 +193,82 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     currentFolderId,
   );
   const { data: allFolders } = useGetAllFolders();
+
+  // Detect file types from magic bytes for files showing as N/A
+  useEffect(() => {
+    let cancelled = false;
+    const detect = async () => {
+      for (const item of items ?? []) {
+        if (cancelled) break;
+        const file = "file" in item ? item.file : null;
+        if (!file) continue;
+        if (getFileTypeLabel(file.name) !== "N/A") continue;
+        if (_typeDetectionCache.has(file.id)) continue;
+        try {
+          const rawBytes = await file.blob.getBytes();
+          if (cancelled) break;
+          const uint8 = new Uint8Array(rawBytes);
+          const mime = detectTypeFromBytes(uint8);
+          if (mime && mime !== "application/octet-stream") {
+            const sub = mime.split("/")[1] || "";
+            const labelMap: Record<string, string> = {
+              jpeg: "JPEG",
+              png: "PNG",
+              gif: "GIF",
+              webp: "WEBP",
+              bmp: "BMP",
+              pdf: "PDF",
+              zip: "ZIP",
+              gzip: "GZIP",
+              mp4: "MP4",
+              webm: "WEBM",
+              "x-msvideo": "AVI",
+              mpeg: "MP3",
+              wav: "WAV",
+              flac: "FLAC",
+              ogg: "OGG",
+              rtf: "RTF",
+              "x-rar-compressed": "RAR",
+              "x-7z-compressed": "7Z",
+            };
+            const label = labelMap[sub] || sub.toUpperCase() || "?";
+            _typeDetectionCache.set(file.id, label);
+            setDetectedTypeLabels((prev) => {
+              const next = new Map(prev);
+              next.set(file.id, label);
+              return next;
+            });
+          } else {
+            // Try to decode as UTF-8 text as last resort
+            try {
+              const decoded = new TextDecoder("utf-8", { fatal: true }).decode(
+                uint8,
+              );
+              if (decoded.length > 0) {
+                _typeDetectionCache.set(file.id, "TXT");
+                setDetectedTypeLabels((prev) => {
+                  const next = new Map(prev);
+                  next.set(file.id, "TXT");
+                  return next;
+                });
+              } else {
+                _typeDetectionCache.set(file.id, "N/A");
+              }
+            } catch {
+              _typeDetectionCache.set(file.id, "N/A");
+            }
+          }
+        } catch {
+          // skip on error
+        }
+      }
+    };
+    detect();
+    return () => {
+      cancelled = true;
+    };
+    // biome-ignore lint/correctness/useExhaustiveDependencies: items is intentional
+  }, [items]);
   const createFolder = useCreateFolder();
   const addFile = useAddFile();
 
@@ -1141,7 +1230,12 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                               </Badge>
                             ) : (
                               (() => {
-                                const typeLabel = getFileTypeLabel(data.name);
+                                const rawLabel = getFileTypeLabel(data.name);
+                                const typeLabel =
+                                  rawLabel === "N/A"
+                                    ? (detectedTypeLabels.get(item.file.id) ??
+                                      "N/A")
+                                    : rawLabel;
                                 const category = getFileCategory(data.name);
                                 const tintClasses =
                                   typeLabel === "N/A"

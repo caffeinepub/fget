@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { FileMetadata } from "../backend";
 import {
+  detectTypeFromBytes,
   getFileExtension,
   getMimeType,
   isAudio,
@@ -54,6 +55,7 @@ export function FilePreviewModal({
   const [textContent, setTextContent] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [overrideMime, setOverrideMime] = useState<string | null>(null);
 
   const extension = file ? getFileExtension(file.name) : "";
   const mimeType = getMimeType(extension);
@@ -73,6 +75,7 @@ export function FilePreviewModal({
     if (!file || !isOpen) {
       setBlobUrl(null);
       setTextContent(null);
+      setOverrideMime(null);
       setIsLoading(true);
       setError(null);
       return;
@@ -81,11 +84,49 @@ export function FilePreviewModal({
     const loadFile = async () => {
       setIsLoading(true);
       setError(null);
+      setOverrideMime(null);
 
       try {
         // Check if file type is supported
         if (!isSupported) {
-          setError("Preview not available for this file type");
+          // Try to detect type from magic bytes before giving up
+          try {
+            const rawBytes = await file.blob.getBytes();
+            const uint8 = new Uint8Array(rawBytes);
+            const detectedMime = detectTypeFromBytes(uint8);
+            if (detectedMime && detectedMime !== "application/octet-stream") {
+              setOverrideMime(detectedMime);
+              if (
+                detectedMime.startsWith("image/") ||
+                detectedMime.startsWith("video/") ||
+                detectedMime.startsWith("audio/")
+              ) {
+                const blob = new Blob([uint8], { type: detectedMime });
+                setBlobUrl(URL.createObjectURL(blob));
+              } else if (detectedMime === "application/pdf") {
+                const blob = new Blob([uint8], { type: "application/pdf" });
+                setBlobUrl(URL.createObjectURL(blob));
+              } else {
+                setTextContent(new TextDecoder().decode(uint8));
+              }
+            } else {
+              // Try to decode as UTF-8 text as last resort
+              try {
+                const decoded = new TextDecoder("utf-8", {
+                  fatal: true,
+                }).decode(uint8);
+                if (decoded.length > 0) {
+                  setTextContent(decoded);
+                } else {
+                  setError("Preview not available for this file type");
+                }
+              } catch {
+                setError("Preview not available for this file type");
+              }
+            }
+          } catch {
+            setError("Preview not available for this file type");
+          }
           setIsLoading(false);
           return;
         }
@@ -281,6 +322,18 @@ export function FilePreviewModal({
 
     return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
   };
+
+  // Effective type flags — fall back to magic-byte detected MIME when extension is unknown
+  const effectiveIsImage =
+    isImageFile || (!!overrideMime && overrideMime.startsWith("image/"));
+  const effectiveIsVideo =
+    isVideoFile || (!!overrideMime && overrideMime.startsWith("video/"));
+  const effectiveIsAudio =
+    isAudioFile || (!!overrideMime && overrideMime.startsWith("audio/"));
+  const effectiveIsDocument =
+    isDocumentFile || overrideMime === "application/pdf";
+  const effectiveIsText =
+    isTextFile || (!overrideMime && textContent !== null && !blobUrl);
 
   if (!file) return null;
 
@@ -481,7 +534,7 @@ export function FilePreviewModal({
                 {!isLoading && !error && (
                   <div className="w-full h-full flex flex-col min-h-0">
                     {/* Image Preview with Zoom/Pan */}
-                    {isImageFile && blobUrl && (
+                    {effectiveIsImage && blobUrl && (
                       <ZoomPanViewer className="p-2 sm:p-4">
                         <img
                           src={blobUrl}
@@ -493,7 +546,7 @@ export function FilePreviewModal({
                     )}
 
                     {/* Video Preview */}
-                    {isVideoFile && blobUrl && (
+                    {effectiveIsVideo && blobUrl && (
                       <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 overflow-auto">
                         <video
                           src={blobUrl}
@@ -508,7 +561,7 @@ export function FilePreviewModal({
                     )}
 
                     {/* Audio Preview */}
-                    {isAudioFile && blobUrl && (
+                    {effectiveIsAudio && blobUrl && (
                       <div className="w-full h-full flex items-center justify-center p-4 sm:p-8 overflow-auto">
                         <audio
                           src={blobUrl}
@@ -523,7 +576,7 @@ export function FilePreviewModal({
                     )}
 
                     {/* Document Preview */}
-                    {isDocumentFile && blobUrl && (
+                    {effectiveIsDocument && blobUrl && (
                       <div className="w-full h-full overflow-auto">
                         <iframe
                           src={blobUrl}
@@ -535,13 +588,14 @@ export function FilePreviewModal({
                     )}
 
                     {/* Text Preview */}
-                    {isTextFile && textContent !== null && (
-                      <ScrollArea className="w-full h-full">
-                        <pre className="p-4 sm:p-6 text-xs sm:text-sm font-mono whitespace-pre-wrap break-words">
-                          {textContent}
-                        </pre>
-                      </ScrollArea>
-                    )}
+                    {(effectiveIsText || overrideMime) &&
+                      textContent !== null && (
+                        <ScrollArea className="w-full h-full">
+                          <pre className="p-4 sm:p-6 text-xs sm:text-sm font-mono whitespace-pre-wrap break-words">
+                            {textContent}
+                          </pre>
+                        </ScrollArea>
+                      )}
                   </div>
                 )}
               </div>

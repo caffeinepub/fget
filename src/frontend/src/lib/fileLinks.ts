@@ -1,5 +1,10 @@
 import { toast } from "sonner";
 import type { FileMetadata } from "../backend";
+import {
+  detectTypeFromBytes,
+  getFileExtension,
+  getMimeType,
+} from "./fileTypes";
 
 /**
  * Generates a fully-qualified direct download URL from a file blob
@@ -42,25 +47,32 @@ export async function copyFileLink(file: FileMetadata): Promise<void> {
 }
 
 /**
- * Downloads a file with the correct filename using blob approach for reliable naming
+ * Downloads a file with the correct filename.
+ * Uses explicit MIME type (from extension or magic bytes) so the browser
+ * never appends its own extension to the downloaded filename.
  */
 export async function downloadFile(file: FileMetadata): Promise<void> {
   try {
-    // Fetch the file bytes and create a local blob URL for reliable filename control
     const bytes = await file.blob.getBytes();
-    const blob = new Blob([bytes]);
+
+    // Determine MIME type: first by extension, then by magic bytes, then octet-stream
+    const ext = getFileExtension(file.name);
+    let mimeType = ext ? getMimeType(ext) : "";
+    if (!mimeType) {
+      mimeType = detectTypeFromBytes(bytes) || "application/octet-stream";
+    }
+
+    const blob = new Blob([bytes], { type: mimeType });
     const blobUrl = URL.createObjectURL(blob);
 
-    // Create a temporary anchor element with the correct filename
     const a = document.createElement("a");
     a.href = blobUrl;
-    a.download = file.name; // Set the download filename to the original name
+    a.download = file.name;
     a.style.display = "none";
 
     document.body.appendChild(a);
     a.click();
 
-    // Clean up
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
