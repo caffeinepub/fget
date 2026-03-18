@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogOverlay, DialogPortal } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertCircle,
@@ -11,6 +12,7 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  Lock,
   Maximize2,
   Minimize2,
   Music,
@@ -20,6 +22,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { FileMetadata } from "../backend";
+import { decryptBytes } from "../lib/encryption";
 import {
   detectTypeFromBytes,
   getFileExtension,
@@ -39,6 +42,8 @@ interface FilePreviewModalProps {
   allFiles?: FileMetadata[];
   currentFileIndex?: number;
   onNavigateFile?: (index: number) => void;
+  /** Called when encryption is detected for a file, so parent can update its state */
+  onEncryptionDetected?: (fileId: string) => void;
 }
 
 export function FilePreviewModal({
@@ -48,6 +53,7 @@ export function FilePreviewModal({
   allFiles = [],
   currentFileIndex = 0,
   onNavigateFile,
+  onEncryptionDetected,
 }: FilePreviewModalProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +62,11 @@ export function FilePreviewModal({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [overrideMime, setOverrideMime] = useState<string | null>(null);
+  const [showDecryptPrompt, setShowDecryptPrompt] = useState(false);
+  const [decryptPassword, setDecryptPassword] = useState("");
+  const [pendingEncryptedBytes, setPendingEncryptedBytes] =
+    useState<Uint8Array | null>(null);
+  const [isDecrypting, setIsDecrypting] = useState(false);
 
   const extension = file ? getFileExtension(file.name) : "";
   const mimeType = getMimeType(extension);
@@ -64,9 +75,6 @@ export function FilePreviewModal({
   const isAudioFile = isAudio(extension);
   const isDocumentFile = isDocument(extension);
   const isTextFile = isText(extension);
-  const isSupported =
-    isImageFile || isVideoFile || isAudioFile || isDocumentFile || isTextFile;
-
   const canNavigate = allFiles.length > 1;
   const hasPrevious = canNavigate && currentFileIndex > 0;
   const hasNext = canNavigate && currentFileIndex < allFiles.length - 1;
@@ -78,6 +86,9 @@ export function FilePreviewModal({
       setOverrideMime(null);
       setIsLoading(true);
       setError(null);
+      setShowDecryptPrompt(false);
+      setDecryptPassword("");
+      setPendingEncryptedBytes(null);
       return;
     }
 
@@ -85,73 +96,73 @@ export function FilePreviewModal({
       setIsLoading(true);
       setError(null);
       setOverrideMime(null);
+      setShowDecryptPrompt(false);
+      setPendingEncryptedBytes(null);
 
       try {
-        // Check if file type is supported
-        if (!isSupported) {
-          // Try to detect type from magic bytes before giving up
-          try {
-            const rawBytes = await file.blob.getBytes();
-            const uint8 = new Uint8Array(rawBytes);
-            const detectedMime = detectTypeFromBytes(uint8);
-            if (detectedMime && detectedMime !== "application/octet-stream") {
-              setOverrideMime(detectedMime);
-              if (
-                detectedMime.startsWith("image/") ||
-                detectedMime.startsWith("video/") ||
-                detectedMime.startsWith("audio/")
-              ) {
-                const blob = new Blob([uint8], { type: detectedMime });
-                setBlobUrl(URL.createObjectURL(blob));
-              } else if (detectedMime === "application/pdf") {
-                const blob = new Blob([uint8], { type: "application/pdf" });
-                setBlobUrl(URL.createObjectURL(blob));
-              } else {
-                setTextContent(new TextDecoder().decode(uint8));
-              }
-            } else {
-              // Try to decode as UTF-8 text as last resort
-              try {
-                const decoded = new TextDecoder("utf-8", {
-                  fatal: true,
-                }).decode(uint8);
-                if (decoded.length > 0) {
-                  setTextContent(decoded);
-                } else {
-                  setError("Preview not available for this file type");
-                }
-              } catch {
-                setError("Preview not available for this file type");
-              }
-            }
-          } catch {
-            setError("Preview not available for this file type");
-          }
+        // Always fetch bytes first to check for encryption regardless of file type
+        const rawBytes = await file.blob.getBytes();
+        const uint8 = new Uint8Array(rawBytes);
+        const detectedMime = detectTypeFromBytes(uint8);
+
+        // Check for encryption before anything else
+        if (detectedMime === "application/x-fget-encrypted") {
+          setPendingEncryptedBytes(uint8);
+          setShowDecryptPrompt(true);
+          // Notify parent so the ENC badge updates
+          onEncryptionDetected?.(file.id);
           setIsLoading(false);
           return;
         }
 
-        // For images and videos, use direct URL for better performance
+        // Not encrypted — render based on file type
         if (isImageFile || isVideoFile || isAudioFile) {
-          const directUrl = file.blob.getDirectURL();
-          setBlobUrl(directUrl);
+          // Create blob URL from fetched bytes
+          const mime = mimeType || detectedMime || "application/octet-stream";
+          const blob = new Blob([uint8], { type: mime });
+          setBlobUrl(URL.createObjectURL(blob));
           setIsLoading(false);
-        }
-        // For documents, fetch bytes and create a blob URL with correct MIME type so browser renders inline
-        else if (isDocumentFile) {
-          const bytes = await file.blob.getBytes();
-          const blob = new Blob([bytes], {
+        } else if (isDocumentFile) {
+          const blob = new Blob([uint8], {
             type: mimeType || "application/pdf",
           });
-          const url = URL.createObjectURL(blob);
-          setBlobUrl(url);
+          setBlobUrl(URL.createObjectURL(blob));
           setIsLoading(false);
-        }
-        // For text files, load content as text
-        else if (isTextFile) {
-          const bytes = await file.blob.getBytes();
-          const text = new TextDecoder().decode(bytes);
-          setTextContent(text);
+        } else if (isTextFile) {
+          setTextContent(new TextDecoder().decode(uint8));
+          setIsLoading(false);
+        } else {
+          // Unknown extension — try magic bytes then UTF-8
+          if (detectedMime && detectedMime !== "application/octet-stream") {
+            setOverrideMime(detectedMime);
+            if (
+              detectedMime.startsWith("image/") ||
+              detectedMime.startsWith("video/") ||
+              detectedMime.startsWith("audio/")
+            ) {
+              const blob = new Blob([uint8], { type: detectedMime });
+              setBlobUrl(URL.createObjectURL(blob));
+            } else if (detectedMime === "application/pdf") {
+              const blob = new Blob([uint8], { type: "application/pdf" });
+              setBlobUrl(URL.createObjectURL(blob));
+            } else {
+              setTextContent(new TextDecoder().decode(uint8));
+            }
+          } else {
+            // Try to decode as UTF-8 text as last resort
+            try {
+              const decoded = new TextDecoder("utf-8", {
+                fatal: true,
+              }).decode(uint8);
+              if (decoded.length > 0) {
+                setTextContent(decoded);
+              } else {
+                setError("Preview not available for this file type");
+              }
+            } catch {
+              setError("Preview not available for this file type");
+            }
+          }
           setIsLoading(false);
         }
       } catch (err) {
@@ -173,15 +184,16 @@ export function FilePreviewModal({
       });
     };
   }, [
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional deps
     file,
     isOpen,
-    isSupported,
     isImageFile,
     isVideoFile,
     isAudioFile,
     isDocumentFile,
     isTextFile,
     mimeType,
+    onEncryptionDetected,
   ]);
 
   // Handle fullscreen changes
@@ -236,6 +248,50 @@ export function FilePreviewModal({
     }
   };
 
+  const handlePreviewDecrypt = async () => {
+    if (!pendingEncryptedBytes || !decryptPassword) return;
+    setIsDecrypting(true);
+    try {
+      const decrypted = await decryptBytes(
+        pendingEncryptedBytes,
+        decryptPassword,
+      );
+      setShowDecryptPrompt(false);
+      setPendingEncryptedBytes(null);
+      setDecryptPassword("");
+      setIsLoading(true);
+      const ext = getFileExtension(file?.name ?? "");
+      const mime =
+        getMimeType(ext) ||
+        detectTypeFromBytes(decrypted) ||
+        "application/octet-stream";
+      if (
+        mime.startsWith("image/") ||
+        mime.startsWith("video/") ||
+        mime.startsWith("audio/") ||
+        mime === "application/pdf"
+      ) {
+        const blob = new Blob([decrypted], { type: mime });
+        setBlobUrl(URL.createObjectURL(blob));
+        setOverrideMime(mime);
+      } else {
+        try {
+          const text = new TextDecoder("utf-8", { fatal: true }).decode(
+            decrypted,
+          );
+          setTextContent(text);
+        } catch {
+          setError("Cannot preview this file type after decryption");
+        }
+      }
+      setIsLoading(false);
+    } catch {
+      toast.error("Decryption failed. Check your password.");
+    } finally {
+      setIsDecrypting(false);
+    }
+  };
+
   const handlePrevious = useCallback(() => {
     if (hasPrevious && onNavigateFile) {
       onNavigateFile(currentFileIndex - 1);
@@ -258,63 +314,45 @@ export function FilePreviewModal({
       } else {
         await document.exitFullscreen();
       }
-    } catch (error) {
-      console.error("Fullscreen error:", error);
-      toast.error("Fullscreen not supported");
+    } catch (err) {
+      console.error("Fullscreen error:", err);
     }
   }, []);
 
-  const toggleMaximize = () => {
-    setIsMaximized(!isMaximized);
-  };
+  const toggleMaximize = useCallback(() => {
+    setIsMaximized((prev) => !prev);
+  }, []);
 
+  // Keyboard navigation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: handleDownload is stable
   useEffect(() => {
     if (!isOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" && hasPrevious) {
-        handlePrevious();
-      } else if (e.key === "ArrowRight" && hasNext) {
-        handleNext();
-      } else if (e.key === "Escape") {
-        if (document.fullscreenElement) {
-          document.exitFullscreen();
-        } else {
-          onClose();
-        }
-      } else if (e.key === "f" || e.key === "F") {
-        toggleFullscreen();
-      }
+      if (e.key === "ArrowLeft") handlePrevious();
+      else if (e.key === "ArrowRight") handleNext();
+      else if (e.key === "Escape") onClose();
+      else if (e.key === "f" || e.key === "F") toggleFullscreen();
+      else if (e.key === "d" || e.key === "D") handleDownload();
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [
-    isOpen,
-    hasPrevious,
-    hasNext,
-    handlePrevious,
-    handleNext,
-    onClose,
-    toggleFullscreen,
-  ]);
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handlePrevious, handleNext, onClose, toggleFullscreen]);
 
   const getFileIcon = (fileName: string) => {
     const ext = getFileExtension(fileName);
-    if (isImage(ext)) return <ImageIcon className="h-4 w-4" />;
-    if (isVideo(ext)) return <VideoIcon className="h-4 w-4" />;
-    if (isAudio(ext)) return <Music className="h-4 w-4" />;
-    if (isText(ext)) return <FileText className="h-4 w-4" />;
-    if (ext === "zip" || ext === "rar" || ext === "7z")
-      return <Archive className="h-4 w-4" />;
-    return <File className="h-4 w-4" />;
+    if (isImage(ext)) return <ImageIcon className="h-3 w-3" />;
+    if (isVideo(ext)) return <VideoIcon className="h-3 w-3" />;
+    if (isAudio(ext)) return <Music className="h-3 w-3" />;
+    if (isText(ext)) return <FileText className="h-3 w-3" />;
+    return <File className="h-3 w-3" />;
   };
 
-  const formatFileSize = (size: number): string => {
+  const formatFileSize = (bytes: bigint | number): string => {
+    let fileSize = Number(bytes);
     const units = ["B", "KB", "MB", "GB"];
-    let fileSize = size;
     let unitIndex = 0;
-
     while (fileSize >= 1024 && unitIndex < units.length - 1) {
       fileSize /= 1024;
       unitIndex++;
@@ -357,7 +395,7 @@ export function FilePreviewModal({
                   {file.name}
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {extension.toUpperCase()} •{" "}
+                  {extension.toUpperCase()} &bull;{" "}
                   {formatFileSize(Number(file.size))}
                 </p>
               </div>
@@ -370,7 +408,7 @@ export function FilePreviewModal({
                       size="sm"
                       variant="outline"
                       className="gap-1 sm:gap-2 h-8 sm:h-9"
-                      title="Previous (←)"
+                      title="Previous (\u2190)"
                     >
                       <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline text-xs sm:text-sm">
@@ -383,7 +421,7 @@ export function FilePreviewModal({
                       size="sm"
                       variant="outline"
                       className="gap-1 sm:gap-2 h-8 sm:h-9"
-                      title="Next (→)"
+                      title="Next (\u2192)"
                     >
                       <span className="hidden sm:inline text-xs sm:text-sm">
                         Next
@@ -488,7 +526,7 @@ export function FilePreviewModal({
                       onClick={handlePrevious}
                       disabled={!hasPrevious}
                       className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 bg-background/90 hover:bg-background border rounded-full p-2 sm:p-3 shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Previous (←)"
+                      title="Previous (\u2190)"
                     >
                       <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                     </button>
@@ -497,7 +535,7 @@ export function FilePreviewModal({
                       onClick={handleNext}
                       disabled={!hasNext}
                       className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 bg-background/90 hover:bg-background border rounded-full p-2 sm:p-3 shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Next (→)"
+                      title="Next (\u2192)"
                     >
                       <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
                     </button>
@@ -601,6 +639,49 @@ export function FilePreviewModal({
               </div>
             </div>
           </div>
+          {/* Decrypt prompt overlay */}
+          {showDecryptPrompt && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10 rounded-lg">
+              <div className="bg-card border rounded-lg p-6 shadow-lg max-w-sm w-full mx-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-purple-500" />
+                  <h3 className="font-semibold">Encrypted File</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  This file is encrypted. Enter the password to preview it.
+                </p>
+                <Input
+                  type="password"
+                  placeholder="Decryption password"
+                  value={decryptPassword}
+                  onChange={(e) => setDecryptPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handlePreviewDecrypt();
+                  }}
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" size="sm" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handlePreviewDecrypt}
+                    disabled={!decryptPassword || isDecrypting}
+                  >
+                    {isDecrypting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Decrypting...
+                      </>
+                    ) : (
+                      "Decrypt & Preview"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </DialogPortal>
     </Dialog>

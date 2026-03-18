@@ -58,6 +58,7 @@ import {
   LayoutList,
   Link2,
   Loader2,
+  Lock,
   MoveRight,
   Music,
   Search,
@@ -97,6 +98,11 @@ import {
   useSearchSubtree,
 } from "../hooks/useQueries";
 import { extractDroppedFiles } from "../lib/dragDropDirectory";
+import {
+  decryptBytes,
+  encryptBytes,
+  isEncryptedBytes,
+} from "../lib/encryption";
 import { copyFileLink, downloadFile } from "../lib/fileLinks";
 import {
   getFileTypeTintClasses,
@@ -179,6 +185,18 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     Map<string, string>
   >(new Map());
 
+  // Encryption state
+  const [encryptUploads, setEncryptUploads] = useState(false);
+  const [encryptPassword, setEncryptPassword] = useState("");
+  const [encryptedFileIds, setEncryptedFileIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [showDecryptDialog, setShowDecryptDialog] = useState(false);
+  const [decryptTargetFile, setDecryptTargetFile] =
+    useState<FileMetadata | null>(null);
+  const [decryptPassword, setDecryptPassword] = useState("");
+  const [isDecrypting, setIsDecrypting] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -209,6 +227,16 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
           if (cancelled) break;
           const uint8 = new Uint8Array(rawBytes);
           const mime = detectTypeFromBytes(uint8);
+          if (mime === "application/x-fget-encrypted") {
+            _typeDetectionCache.set(file.id, "ENC");
+            setDetectedTypeLabels((prev) => {
+              const next = new Map(prev);
+              next.set(file.id, "ENC");
+              return next;
+            });
+            setEncryptedFileIds((prev) => new Set([...prev, file.id]));
+            continue;
+          }
           if (mime && mime !== "application/octet-stream") {
             const sub = mime.split("/")[1] || "";
             const labelMap: Record<string, string> = {
@@ -607,7 +635,14 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
 
-        const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress(
+        // Encrypt if enabled
+        const fileId = generateSecure32ByteId();
+        const uploadBytes =
+          encryptUploads && encryptPassword.length > 0
+            ? await encryptBytes(uint8Array, encryptPassword)
+            : (uint8Array as Uint8Array<ArrayBuffer>);
+
+        const blob = ExternalBlob.fromBytes(uploadBytes).withUploadProgress(
           (percentage) => {
             setFileUploadProgress((prev) => {
               const updated = new Map(prev);
@@ -621,12 +656,23 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         );
 
         await addFile.mutateAsync({
-          id: generateSecure32ByteId(),
+          id: fileId,
           name: file.name,
-          size: BigInt(file.size),
+          size: BigInt(uploadBytes.length),
           blob,
           parentId: currentFolderId,
         });
+
+        // Track encrypted file IDs
+        if (encryptUploads && encryptPassword.length > 0) {
+          setEncryptedFileIds((prev) => new Set([...prev, fileId]));
+          _typeDetectionCache.set(fileId, "ENC");
+          setDetectedTypeLabels((prev) => {
+            const next = new Map(prev);
+            next.set(fileId, "ENC");
+            return next;
+          });
+        }
 
         // Mark as complete
         setFileUploadProgress((prev) => {
@@ -705,6 +751,8 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
       return;
     }
 
+    const shouldEncrypt = encryptUploads && encryptPassword.length > 0;
+
     try {
       // Initialize progress for all files
       const newProgress = new Map<string, FileUploadProgress>();
@@ -735,6 +783,21 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             return updated;
           });
         },
+        ...(shouldEncrypt
+          ? {
+              encryptFile: async (bytes: Uint8Array) =>
+                encryptBytes(bytes, encryptPassword),
+              onFileUploaded: (fileId: string) => {
+                _typeDetectionCache.set(fileId, "ENC");
+                setEncryptedFileIds((prev) => new Set([...prev, fileId]));
+                setDetectedTypeLabels((prev) => {
+                  const next = new Map(prev);
+                  next.set(fileId, "ENC");
+                  return next;
+                });
+              },
+            }
+          : {}),
       });
 
       // Mark all as complete
@@ -795,6 +858,8 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     if (!dataTransfer || !dataTransfer.items || dataTransfer.items.length === 0)
       return;
 
+    const shouldEncrypt = encryptUploads && encryptPassword.length > 0;
+
     try {
       const folderFiles = await extractDroppedFiles(dataTransfer);
 
@@ -832,6 +897,21 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             return updated;
           });
         },
+        ...(shouldEncrypt
+          ? {
+              encryptFile: async (bytes: Uint8Array) =>
+                encryptBytes(bytes, encryptPassword),
+              onFileUploaded: (fileId: string) => {
+                _typeDetectionCache.set(fileId, "ENC");
+                setEncryptedFileIds((prev) => new Set([...prev, fileId]));
+                setDetectedTypeLabels((prev) => {
+                  const next = new Map(prev);
+                  next.set(fileId, "ENC");
+                  return next;
+                });
+              },
+            }
+          : {}),
       });
 
       // Mark all as complete
@@ -883,9 +963,95 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     await copyFileLink(file);
   }, []);
 
-  const handleDownload = useCallback(async (file: FileMetadata) => {
-    await downloadFile(file);
-  }, []);
+  const handleDownload = useCallback(
+    async (file: FileMetadata) => {
+      // If already known to be encrypted, show decrypt dialog immediately
+      if (
+        encryptedFileIds.has(file.id) ||
+        detectedTypeLabels.get(file.id) === "ENC"
+      ) {
+        setDecryptTargetFile(file);
+        setDecryptPassword("");
+        setShowDecryptDialog(true);
+        return;
+      }
+      // Always fetch bytes and check for encryption before downloading
+      try {
+        const rawBytes = await file.blob.getBytes();
+        const uint8 = new Uint8Array(rawBytes);
+        if (detectTypeFromBytes(uint8) === "application/x-fget-encrypted") {
+          // Discovered to be encrypted — update state and show decrypt dialog
+          _typeDetectionCache.set(file.id, "ENC");
+          setDetectedTypeLabels((prev) => {
+            const next = new Map(prev);
+            next.set(file.id, "ENC");
+            return next;
+          });
+          setEncryptedFileIds((prev) => new Set([...prev, file.id]));
+          setDecryptTargetFile(file);
+          setDecryptPassword("");
+          setShowDecryptDialog(true);
+          return;
+        }
+        // Not encrypted — download using already-fetched bytes
+        const ext = getFileExtension(file.name);
+        const detectedMime = detectTypeFromBytes(uint8);
+        const mime =
+          getMimeType(ext) ||
+          (detectedMime !== "application/octet-stream" ? detectedMime : null) ||
+          "application/octet-stream";
+        const blob = new Blob([uint8], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = file.name;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 100);
+      } catch {
+        await downloadFile(file);
+      }
+    },
+    [encryptedFileIds, detectedTypeLabels],
+  );
+
+  const handleDecryptAndDownload = async () => {
+    if (!decryptTargetFile || !decryptPassword) return;
+    setIsDecrypting(true);
+    try {
+      const rawBytes = await decryptTargetFile.blob.getBytes();
+      const decrypted = await decryptBytes(
+        new Uint8Array(rawBytes),
+        decryptPassword,
+      );
+      const ext = getFileExtension(decryptTargetFile.name);
+      const mime = getMimeType(ext) || "application/octet-stream";
+      const blob = new Blob([decrypted], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = decryptTargetFile.name;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      setShowDecryptDialog(false);
+      setDecryptPassword("");
+      setDecryptTargetFile(null);
+      toast.success(`${decryptTargetFile.name} downloaded`);
+    } catch {
+      toast.error("Decryption failed. Check your password.");
+    } finally {
+      setIsDecrypting(false);
+    }
+  };
 
   const isUploading = fileUploadProgress.size > 0;
 
@@ -942,7 +1108,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Single View Toggle Button */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -1018,6 +1184,30 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
               onChange={handleFolderUpload}
               className="hidden"
             />
+
+            {/* Encrypt uploads option — inline with upload buttons */}
+            <label className="flex items-center gap-1.5 cursor-pointer select-none text-sm text-muted-foreground border border-transparent px-2 py-1.5 rounded hover:text-foreground transition-colors">
+              <input
+                type="checkbox"
+                checked={encryptUploads}
+                onChange={(e) => {
+                  setEncryptUploads(e.target.checked);
+                  if (!e.target.checked) setEncryptPassword("");
+                }}
+                className="h-3.5 w-3.5"
+              />
+              <Lock className="h-3.5 w-3.5" />
+              <span>Encrypt</span>
+            </label>
+            {encryptUploads && (
+              <Input
+                type="password"
+                placeholder="Password"
+                value={encryptPassword}
+                onChange={(e) => setEncryptPassword(e.target.value)}
+                className="h-9 w-36 text-sm"
+              />
+            )}
           </div>
         </div>
 
@@ -1047,19 +1237,24 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                       )}
                     </span>
                   </div>
-                  <Progress value={progress.percentage} className="h-1" />
+                  <Progress
+                    value={progress.percentage}
+                    className={`h-1.5 ${
+                      progress.status === "error" ? "bg-destructive/20" : ""
+                    }`}
+                  />
                 </div>
               ))}
             </CardContent>
           </Card>
         )}
 
-        {/* Multi-select Actions */}
+        {/* Multi-select actions */}
         {selectedItems.size > 0 && (
-          <Card className="bg-muted/50">
-            <CardContent className="py-3">
+          <Card>
+            <CardContent className="py-3 px-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
+                <span className="text-sm text-muted-foreground">
                   {selectedItems.size} item(s) selected
                 </span>
                 <div className="flex items-center gap-2">
@@ -1231,16 +1426,29 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                             ) : (
                               (() => {
                                 const rawLabel = getFileTypeLabel(data.name);
+                                // ENC overrides any known-extension label
+                                const detectedLabel = detectedTypeLabels.get(
+                                  item.file.id,
+                                );
                                 const typeLabel =
-                                  rawLabel === "N/A"
-                                    ? (detectedTypeLabels.get(item.file.id) ??
-                                      "N/A")
-                                    : rawLabel;
+                                  detectedLabel === "ENC"
+                                    ? "ENC"
+                                    : rawLabel === "N/A"
+                                      ? (detectedLabel ?? "N/A")
+                                      : rawLabel;
                                 const category = getFileCategory(data.name);
                                 const tintClasses =
                                   typeLabel === "N/A"
                                     ? getUnknownTypeTintClasses()
                                     : getFileTypeTintClasses(category);
+                                if (typeLabel === "ENC") {
+                                  return (
+                                    <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 flex items-center gap-1">
+                                      <Lock className="h-3 w-3" />
+                                      ENC
+                                    </Badge>
+                                  );
+                                }
                                 return (
                                   <Badge className={tintClasses}>
                                     {typeLabel}
@@ -1257,7 +1465,9 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
 
                           {/* Size */}
                           <td className="p-3 text-sm text-muted-foreground text-center">
-                            {isFolder ? "—" : formatFileSize(item.file.size)}
+                            {isFolder
+                              ? "\u2014"
+                              : formatFileSize(item.file.size)}
                           </td>
 
                           {/* Actions */}
@@ -1578,8 +1788,77 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             allFiles={allFilesInContext}
             currentFileIndex={currentFileIndex}
             onNavigateFile={handleNavigateFile}
+            onEncryptionDetected={(fileId) => {
+              _typeDetectionCache.set(fileId, "ENC");
+              setEncryptedFileIds((prev) => new Set([...prev, fileId]));
+              setDetectedTypeLabels((prev) => {
+                const next = new Map(prev);
+                next.set(fileId, "ENC");
+                return next;
+              });
+            }}
           />
         )}
+
+        {/* Decrypt Download Dialog */}
+        <Dialog
+          open={showDecryptDialog}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowDecryptDialog(false);
+              setDecryptPassword("");
+              setDecryptTargetFile(null);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Decrypt File
+              </DialogTitle>
+              <DialogDescription>
+                &quot;{decryptTargetFile?.name}&quot; is encrypted. Enter the
+                password to download.
+              </DialogDescription>
+            </DialogHeader>
+            <Input
+              type="password"
+              placeholder="Decryption password"
+              value={decryptPassword}
+              onChange={(e) => setDecryptPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleDecryptAndDownload();
+              }}
+              autoFocus
+            />
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDecryptDialog(false);
+                  setDecryptPassword("");
+                  setDecryptTargetFile(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDecryptAndDownload}
+                disabled={!decryptPassword || isDecrypting}
+              >
+                {isDecrypting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Decrypting...
+                  </>
+                ) : (
+                  "Download"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );

@@ -69,6 +69,13 @@ export function getMimeType(extension: string): string {
  */
 export function detectTypeFromBytes(bytes: Uint8Array): string {
   const b = bytes;
+
+  // Check for FGETENC encryption header
+  const FGETENC_MAGIC = [0x46, 0x47, 0x45, 0x54, 0x45, 0x4e, 0x43]; // "FGETENC"
+  if (bytes.length >= FGETENC_MAGIC.length) {
+    const isFgetEnc = FGETENC_MAGIC.every((bv, i) => bytes[i] === bv);
+    if (isFgetEnc) return "application/x-fget-encrypted";
+  }
   if (b.length < 4) return "";
 
   // JPEG: FF D8 FF

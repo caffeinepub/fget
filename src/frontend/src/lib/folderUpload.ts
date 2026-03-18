@@ -18,6 +18,10 @@ export interface UploadCallbacks {
   }) => Promise<void>;
   onProgress?: (current: number, total: number, fileName: string) => void;
   onSkipEmptyFile?: (fileName: string) => void;
+  /** Optional: encrypt each file's bytes before upload */
+  encryptFile?: (bytes: Uint8Array) => Promise<Uint8Array>;
+  /** Optional: called after each file is uploaded, with its generated ID */
+  onFileUploaded?: (fileId: string) => void;
 }
 
 /**
@@ -155,9 +159,16 @@ export async function uploadFolderRecursively(
       ? folderMap.get(folderPath) || rootParentId
       : rootParentId;
 
-    // Read file and create blob
+    // Read file bytes
     const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
+    let uint8Array = new Uint8Array(arrayBuffer);
+
+    // Encrypt if callback provided
+    if (callbacks.encryptFile) {
+      uint8Array = new Uint8Array(await callbacks.encryptFile(uint8Array));
+    }
+
+    const fileId = generateSecure32ByteId();
 
     const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress(
       (_percentage) => {
@@ -167,14 +178,19 @@ export async function uploadFolderRecursively(
       },
     );
 
-    // Upload file with shared ID generator
+    // Upload file
     await callbacks.addFile({
-      id: generateSecure32ByteId(),
+      id: fileId,
       name: fileName,
-      size: BigInt(file.size),
+      size: BigInt(uint8Array.length),
       blob,
       parentId,
     });
+
+    // Notify caller of uploaded file ID (for tracking encrypted files etc.)
+    if (callbacks.onFileUploaded) {
+      callbacks.onFileUploaded(fileId);
+    }
 
     if (callbacks.onProgress) {
       callbacks.onProgress(i + 1, nonEmptyFiles.length, fileName);
