@@ -220,7 +220,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
         if (cancelled) break;
         const file = "file" in item ? item.file : null;
         if (!file) continue;
-        if (getFileTypeLabel(file.name) !== "N/A") continue;
+        // scan all files for encryption, not just N/A ones
         if (_typeDetectionCache.has(file.id)) continue;
         try {
           const rawBytes = await file.blob.getBytes();
@@ -372,6 +372,16 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
     },
     [allFilesInContext],
   );
+
+  const handleEncryptionDetected = useCallback((fileId: string) => {
+    _typeDetectionCache.set(fileId, "ENC");
+    setEncryptedFileIds((prev) => new Set([...prev, fileId]));
+    setDetectedTypeLabels((prev) => {
+      const next = new Map(prev);
+      next.set(fileId, "ENC");
+      return next;
+    });
+  }, []);
 
   const handleFolderClick = (folder: FolderMetadata) => {
     onFolderNavigate(folder.id);
@@ -1379,7 +1389,16 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                               {isFolder ? (
                                 <Folder className="h-5 w-5 text-yellow-500 shrink-0" />
                               ) : (
-                                <File className="h-5 w-5 text-blue-400 shrink-0" />
+                                <span className="relative shrink-0 inline-flex">
+                                  <File className="h-5 w-5 text-blue-400" />
+                                  {detectedTypeLabels.get(item.file.id) ===
+                                    "ENC" && (
+                                    <Lock
+                                      className="h-4 w-4 text-purple-700 absolute -bottom-1 -right-1"
+                                      strokeWidth={3}
+                                    />
+                                  )}
+                                </span>
                               )}
                               <span
                                 className="font-medium group-hover:text-primary transition-colors truncate max-w-xs"
@@ -1426,29 +1445,21 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                             ) : (
                               (() => {
                                 const rawLabel = getFileTypeLabel(data.name);
-                                // ENC overrides any known-extension label
                                 const detectedLabel = detectedTypeLabels.get(
                                   item.file.id,
                                 );
+                                // Show original file type; ENC badge is on the file icon in Name column
                                 const typeLabel =
-                                  detectedLabel === "ENC"
-                                    ? "ENC"
-                                    : rawLabel === "N/A"
-                                      ? (detectedLabel ?? "N/A")
-                                      : rawLabel;
+                                  rawLabel === "N/A"
+                                    ? detectedLabel && detectedLabel !== "ENC"
+                                      ? detectedLabel
+                                      : "N/A"
+                                    : rawLabel;
                                 const category = getFileCategory(data.name);
                                 const tintClasses =
                                   typeLabel === "N/A"
                                     ? getUnknownTypeTintClasses()
                                     : getFileTypeTintClasses(category);
-                                if (typeLabel === "ENC") {
-                                  return (
-                                    <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 flex items-center gap-1">
-                                      <Lock className="h-3 w-3" />
-                                      ENC
-                                    </Badge>
-                                  );
-                                }
                                 return (
                                   <Badge className={tintClasses}>
                                     {typeLabel}
@@ -1496,14 +1507,32 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() =>
+                                          !encryptedFileIds.has(item.file.id) &&
                                           handleCopyLink(item.file)
                                         }
-                                        className="h-8 w-8"
+                                        disabled={encryptedFileIds.has(
+                                          item.file.id,
+                                        )}
+                                        className={
+                                          encryptedFileIds.has(item.file.id)
+                                            ? "h-8 w-8 opacity-40 cursor-not-allowed"
+                                            : "h-8 w-8"
+                                        }
                                       >
-                                        <Link2 className="h-4 w-4" />
+                                        <Link2
+                                          className={
+                                            encryptedFileIds.has(item.file.id)
+                                              ? "h-4 w-4 text-red-500"
+                                              : "h-4 w-4"
+                                          }
+                                        />
                                       </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>Copy Link</TooltipContent>
+                                    <TooltipContent>
+                                      {encryptedFileIds.has(item.file.id)
+                                        ? "Not available for encrypted files"
+                                        : "Copy Link"}
+                                    </TooltipContent>
                                   </Tooltip>
                                 </>
                               )}
@@ -1788,15 +1817,7 @@ export function FileList({ currentFolderId, onFolderNavigate }: FileListProps) {
             allFiles={allFilesInContext}
             currentFileIndex={currentFileIndex}
             onNavigateFile={handleNavigateFile}
-            onEncryptionDetected={(fileId) => {
-              _typeDetectionCache.set(fileId, "ENC");
-              setEncryptedFileIds((prev) => new Set([...prev, fileId]));
-              setDetectedTypeLabels((prev) => {
-                const next = new Map(prev);
-                next.set(fileId, "ENC");
-                return next;
-              });
-            }}
+            onEncryptionDetected={handleEncryptionDetected}
           />
         )}
 

@@ -562,27 +562,31 @@ actor {
   };
 
   func recursiveDelete(folderId : Text) {
-    let folder = folders.get(folderId);
-    switch (folder) {
-      case (?_) {
-        for ((_, folder) in folders.entries()) {
-          if (folder.parentId == ?folderId) {
-            recursiveDelete(folder.id);
-          };
-        };
+    // Snapshot child folder IDs before modifying to avoid mutation-during-iteration
+    let childFolderIds = List.empty<Text>();
+    for ((_, folder) in folders.entries()) {
+      if (folder.parentId == ?folderId) {
+        childFolderIds.add(folder.id);
       };
-      case (null) {};
+    };
+    for (childId in childFolderIds.toArray().vals()) {
+      recursiveDelete(childId);
     };
 
+    // Snapshot file IDs to remove before deleting
+    let fileIdsToRemove = List.empty<Text>();
     for ((fileId, file) in files.entries()) {
       switch (file.parentId) {
         case (?parentId) {
           if (parentId == folderId) {
-            files.remove(fileId);
+            fileIdsToRemove.add(fileId);
           };
         };
         case (null) {};
       };
+    };
+    for (fileId in fileIdsToRemove.toArray().vals()) {
+      files.remove(fileId);
     };
     folders.remove(folderId);
   };
